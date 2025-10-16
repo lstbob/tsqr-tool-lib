@@ -1,9 +1,9 @@
-namespace TSQR.ToolLibrary.Domain.Entities;
+namespace TSQR.ToolLibrary.Domain;
 
 /// <summary>
 /// Represents a value object in the domain-driven design context.
 /// </summary>
-public record ValueObject
+public abstract class ValueObject
 {
     /// <summary>
     /// Compares two value objects for equality.
@@ -22,7 +22,7 @@ public record ValueObject
     /// </summary>
     protected static bool NotEqualOperator(ValueObject left, ValueObject right)
     {
-        return !(EqualOperator(left, right));
+        return !EqualOperator(left, right);
     }
 
     /// <summary>
@@ -33,7 +33,7 @@ public record ValueObject
     /// <summary>
     /// Determines whether the specified value object is equal to the current object.
     /// </summary>
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj == null || obj.GetType() != GetType())
         {
@@ -42,7 +42,7 @@ public record ValueObject
 
         var other = (ValueObject)obj;
 
-        return this.GetEqualityComponents().SequenceEqual(other.GetEqualityComponents());
+        return GetEqualityComponents().SequenceEqual(other.GetEqualityComponents());
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ public record ValueObject
     /// </summary>
     public ValueObject GetCopy()
     {
-        return this.MemberwiseClone() as ValueObject;
+        return MemberwiseClone() as ValueObject;
     }
 }
 

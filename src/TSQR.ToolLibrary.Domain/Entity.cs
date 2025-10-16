@@ -1,16 +1,16 @@
-namespace TSQR.ToolLibrary.Domain.Entities;
+namespace TSQR.ToolLibrary.Domain;
 
 /// <summary>
 /// Represents an entity in the domain-driven design context.
 /// </summary>
-public abstract class Entity<TId> where TId : notnull, ValueObject
+public abstract class Entity<TId>(TId id) where TId : notnull, ValueObject 
 {
-   TId Id { get; protected set; }
+   TId Id  => id;
 
    /// <summary>
    /// Determines whether the specified object is equal to the current entity.
    /// </summary>
-   public override Equals(object? obj)
+   public override bool Equals(object? obj)
    {
         if (obj is not Entity<TId> other)
             return false;
@@ -33,17 +33,17 @@ public abstract class Entity<TId> where TId : notnull, ValueObject
    /// <summary>
    /// Equality operator for entities.
    /// </summary>
-   public static bool operator  == (this Entity<TId> left, Entity<TId> right)
+   public static bool operator  == (Entity<TId> left, Entity<TId> right)
    {
-        return Equals();
+        return Equals(left, right);
    }
 
    /// <summary>
    /// Inequality operator for entities.
    /// </summary>
-   public static bool operator !=(this Entity<TId> left, Entity<TId> right)
+   public static bool operator !=(Entity<TId> left, Entity<TId> right)
    {
-        return !Equals();
+        return !Equals(left, right);
    }
 }
 

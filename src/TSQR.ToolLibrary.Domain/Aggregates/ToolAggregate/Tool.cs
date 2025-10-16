@@ -1,4 +1,6 @@
-namespace TSQR.ToolLibrary.Domain.Entities;
+using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
+
+namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 
 /// <summary>
 /// Represents a tool in the tool library system.
@@ -14,32 +16,32 @@ public class Tool : Entity<ToolId>
         string description,
         string manufacturer,
         string serialNumber,
-        Member originalOwner,
-        DateTime initialAcquisitionDate)
+        MemberId originalOwnerId,
+        DateTime initialAcquisitionDate) : base(id)
     {
         Id = id ?? throw new ArgumentNullException(nameof(id));
-        Name = name ?? throw new ArgumentNullException(nameof(name));
+        Model = name ?? throw new ArgumentNullException(nameof(name));
         Description = description ?? throw new ArgumentNullException(nameof(description));
         Manufacturer = manufacturer ?? throw new ArgumentNullException(nameof(manufacturer));
         SerialNumber = serialNumber ?? throw new ArgumentNullException(nameof(serialNumber));
-        OriginalOwner = originalOwner ?? throw new ArgumentNullException(nameof(originalOwner));
+        OriginalOwnerId = originalOwnerId ?? throw new ArgumentNullException(nameof(originalOwnerId));
         InitialAcquisitionDate = initialAcquisitionDate == default ?
             throw new ArgumentNullException(nameof(initialAcquisitionDate)) : initialAcquisitionDate;
-        OriginalOwner = originalOwner;
+        OriginalOwnerId = originalOwnerId;
         IsAvailable = true;
-    }
+    } 
 
-
-    public string Name { get; }
+    public ToolId Id { get; }
+    public string Model { get; }
     public string Description { get; }
     public string Manufacturer { get; }
     public string SerialNumber { get; }
-    public Member OriginalOwner { get; }
-    public bool IsAvailable { get; }
-    public Member CurrentHolder { get; private set; }
+    public MemberId OriginalOwnerId { get; }
+    public bool IsAvailable { get;private set; }
+    public MemberId? CurrentHolderId { get; private set; }
     public DateTime? LastBorrowedDate { get; private set; }
     public DateTime? ReservationDate { get; private set; }    
-    public Member? ReservationMember {get; private set;}
+    public MemberId? ReservationMember {get; private set;}
     public DateTime InitialAcquisitionDate { get; }
 
     /// <summary>
@@ -51,7 +53,7 @@ public class Tool : Entity<ToolId>
         string description,
         string manufacturer,
         string serialNumber,
-        Member originalOwner,
+        MemberId originalOwnerId,
         DateTime initialAcquisitionDate)
     {
         return new Tool(
@@ -60,7 +62,7 @@ public class Tool : Entity<ToolId>
             description,
             manufacturer,
             serialNumber,
-            originalOwner,
+            originalOwnerId,
             initialAcquisitionDate);
     }
     
@@ -73,23 +75,23 @@ public class Tool : Entity<ToolId>
         string description,
         string manufacturer,
         string serialNumber,
-        Member originalOwner,
+        MemberId originalOwnerId,
         DateTime initialAcquisitionDate,
         bool isAvailable,
-        Member currentHolder,
+        MemberId currentHolder,
         DateTime? lastBorrowedDate,
         DateTime? nextBorrowedDate)
     {
-        var tool = new (
+        var tool = new Tool(
             id,
             name,
             description,
             manufacturer,
             serialNumber,
-            originalOwner,
+            originalOwnerId,
             initialAcquisitionDate);
         
-        tool.CurrentHolder = currentHolder;
+        tool.CurrentHolderId = currentHolder;
         tool.IsAvailable = isAvailable;
         tool.LastBorrowedDate = lastBorrowedDate;
         tool.ReservationDate = nextBorrowedDate;
@@ -105,7 +107,7 @@ public class Tool : Entity<ToolId>
         if (IsAvailable)
             throw new InvalidOperationException("Tool is already available.");
 
-        CurrentHolder = null;
+        CurrentHolderId = null;
         IsAvailable = false;
     }
 
@@ -117,20 +119,19 @@ public class Tool : Entity<ToolId>
         if (IsAvailable)
             throw new InvalidOperationException("Tool is already available.");
 
-        CurrentHolder = null;
+        CurrentHolderId = null;
         IsAvailable = true;
     }
 
     /// <summary>
     /// Borrows the tool to a member.
     /// </summary>
-    public void Borrow(Member borrower, DateTime borrowDate)
+    public void Borrow(MemberId borrower, DateTime borrowDate)
     {
         if (!IsAvailable)
             throw new InvalidOperationException("Tool is not available for borrowing.");
 
-        if (borrower == null)
-            throw new ArgumentNullException(nameof(borrower));
+        ArgumentNullException.ThrowIfNull(borrower);
 
         if (borrowDate == default)
             throw new ArgumentNullException(nameof(borrowDate));
@@ -138,7 +139,7 @@ public class Tool : Entity<ToolId>
         if (ReservationDate is not null && ReservationDate != borrowDate)
             throw new ArgumentException("Tool");
 
-        CurrentHolder = borrower;
+        CurrentHolderId = borrower;
         IsAvailable = false;
         LastBorrowedDate = borrowDate;
         ReservationDate = null;
@@ -147,17 +148,17 @@ public class Tool : Entity<ToolId>
     /// <summary>
     /// Reserves the tool for a member on a specific date.
     /// </summary>  
-    public void Reserve(DateTime reserveDate, Member borrower)
+    public void Reserve(DateTime reserveDate, MemberId borrower)
     {
         if(ReservationDate is not null)
             throw new InvalidOperationException("Tool is already reserved.");
 
-        if (borrower == null)
-            throw new ArgumentNullException(nameof(borrower));
+        ArgumentNullException.ThrowIfNull(borrower);
 
         if (reserveDate == default || reserveDate <= DateTime.UtcNow)
             throw new ArgumentNullException(nameof(reserveDate));
 
+        // TODO: Change when loan policy is introduced
         if(reserveDate > DateTime.UtcNow.AddYears(1)) 
             throw new InvalidOperationException("Tool cannot be reserved more than a year in advance.");
 
