@@ -21,7 +21,6 @@ public class InventoryItem : Entity<InventoryItemId>
             DateTime? lastBorrowedDate = null,
             DateTime? reservationDate = null,
             MemberId? reservationMember = null,
-            
             ) : base(id)
     {
 
