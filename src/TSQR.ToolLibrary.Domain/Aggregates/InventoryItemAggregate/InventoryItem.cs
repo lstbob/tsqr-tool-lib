@@ -1,5 +1,4 @@
-using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
-using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
+using TSQR.ToolLibrary.Domain.Events;
 
 namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryItemAggregate;
 
@@ -17,7 +16,7 @@ public class InventoryItem : Entity<InventoryItemId>
             ToolId toolId,
             MemberId originalOwnerId,
             DateTime initialAcquisitionDate,
-            ItemStatus itemStatus,
+            ItemStatus status,
             Condition condition,
             MemberId? currentHolderId = null,
             DateTime? lastBorrowedDate = null,
@@ -30,7 +29,7 @@ public class InventoryItem : Entity<InventoryItemId>
         InitialAcquisitionDate = initialAcquisitionDate == default?
              throw new ArgumentNullException(nameof(initialAcquisitionDate)) 
              : initialAcquisitionDate;
-        ItemStatus = itemStatus;
+        Status = status;
         Condition = condition;
         CurrentHolderId = currentHolderId;
         LastBorrowedDate = lastBorrowedDate;
@@ -41,7 +40,7 @@ public class InventoryItem : Entity<InventoryItemId>
     public ToolId ToolId { get; }
     public MemberId OriginalOwnerId { get; }
     public DateTime InitialAcquisitionDate { get; }
-    public ItemStatus ItemStatus { get;private set; }
+    public ItemStatus Status { get;private set; }
     public Condition Condition { get; private set; }
     public MemberId? CurrentHolderId { get; private set; }
     public DateTime? LastBorrowedDate { get; private set; }
@@ -57,7 +56,7 @@ public class InventoryItem : Entity<InventoryItemId>
             DateTime initialAcquisitionDate,
             Condition condition)
     {
-        return new InventoryItem(
+        return new(
             new InventoryItemId(default),
             toolId,
             originalOwnerId,
@@ -74,19 +73,19 @@ public class InventoryItem : Entity<InventoryItemId>
             ToolId toolId,
             MemberId originalOwnerId,
             DateTime initialAcquisitionDate,
-            ItemStatus itemStatus,
+            ItemStatus status,
             Condition condition,
             MemberId currentHolderId, 
             DateTime lastBorrowedDate,
             DateTime reservationDate,
             MemberId reservationMemberId)
     {
-        return new InventoryItem(
+        return new(
             id,
             toolId,
             originalOwnerId,
             initialAcquisitionDate,
-            itemStatus,
+            status,
             condition,
             currentHolderId,
             lastBorrowedDate,
@@ -99,11 +98,11 @@ public class InventoryItem : Entity<InventoryItemId>
     /// </summary>
     public void MarkAsLost(MemberId reporter)
     {
-        if (ItemStatus.Equals(ItemStatus.Lost))
+        if (Status.Equals(ItemStatus.Lost))
             throw new InvalidOperationException("Tool is already marked as lost.");
 
         CurrentHolderId = null;
-        ItemStatus = ItemStatus.Lost;
+        Status = ItemStatus.Lost;
         // TODO: Add Domain Event for reporting lost tool. Notifying original owner and admin.
         // CurrentHolder should pay a fine or replace the tool.
         // 
@@ -114,11 +113,11 @@ public class InventoryItem : Entity<InventoryItemId>
     /// </summary>
     public void Return()
     {
-        if (ItemStatus)
-            throw new InvalidOperationException("Tool is already available.");
+        if (!Status.Equals(ItemStatus.Loaned))
+            throw new InvalidOperationException("Tool is not currently loaned out.");
 
         CurrentHolderId = null;
-        ItemStatus = true;
+        Status = ItemStatus.Available;
     }
 
     /// <summary>
@@ -128,15 +127,16 @@ public class InventoryItem : Entity<InventoryItemId>
     {
         ArgumentNullException.ThrowIfNull(memberId);
 
-        if (!ItemStatus.Equals(ItemStatus.Available))
+        if (!Status.Equals(ItemStatus.Available))
             throw new InvalidOperationException("Tool is not available for borrowing.");
 
         if(ReservationDate is not null || ReservationMemberId is not null)
             throw new InvalidOperationException("Tool is reserved and cannot be borrowed.");
 
         CurrentHolderId = memberId;
-        ItemStatus = ItemStatus.Loaned;
+        Status = ItemStatus.Loaned;
         LastBorrowedDate = DateTime.UtcNow;
+        AddDomainEvent(new ItemLoanedEvent(Id, memberId, LastBorrowedDate.Value));
     }
 
     /// <summary>

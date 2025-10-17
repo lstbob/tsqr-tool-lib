@@ -19,7 +19,6 @@ public class Tool : Entity<ToolId>
         ToolType type,
         string? metadata = null) : base(id)
     {
-        Id = id ?? throw new ArgumentNullException(nameof(id));
         Model = model ?? throw new ArgumentNullException(nameof(model));
         Description = description ?? throw new ArgumentNullException(nameof(description));
         Manufacturer = manufacturer ?? throw new ArgumentNullException(nameof(manufacturer));
@@ -27,7 +26,6 @@ public class Tool : Entity<ToolId>
         Metadata = metadata;
     } 
 
-    public ToolId Id { get; }
     public string Model { get; }
     public string Description { get; }
     public string Manufacturer { get; }
@@ -44,7 +42,7 @@ public class Tool : Entity<ToolId>
         ToolType type,
         string? metadata = null)
     {
-        return new Tool(new ToolId(default), model, description, manufacturer, type, metadata);
+        return new (new ToolId(default), model, description, manufacturer, type, metadata);
     }
     
     /// <summary>

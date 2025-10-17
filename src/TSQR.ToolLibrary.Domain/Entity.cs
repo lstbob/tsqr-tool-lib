@@ -5,17 +5,16 @@ namespace TSQR.ToolLibrary.Domain;
 /// </summary>
 public abstract class Entity<TId>(TId id) where TId : notnull, ValueObject 
 {
-   private List<INotification> _domainEvents;
-
+   private List<INotification> _domainEvents = [];
    public TId Id  => id;
-   public IReadOnlyCollection<INotification> DomainEvents => _domainEvents?.AsReadOnly();
+   public IReadOnlyCollection<INotification> DomainEvents => _domainEvents.AsReadOnly();
 
    /// <summary>
    /// Adds a domain event to the entity.
    /// </summary>
    public void AddDomainEvent(INotification eventItem)
    {
-        _domainEvents ??= new List<INotification>();
+        _domainEvents ??= [];
         _domainEvents.Add(eventItem);
    }
 
@@ -48,13 +47,13 @@ public abstract class Entity<TId>(TId id) where TId : notnull, ValueObject
    /// </summary>
    public override bool Equals(object? obj)
    {
-       if (obj == null || !(obj is Entity))
+       if (obj == null || !(obj is Entity<TId>))
             return false;
 
-        if (Object.ReferenceEquals(this, obj))
+        if (ReferenceEquals(this, obj))
             return true;
 
-        if (this.GetType() != obj.GetType())
+        if (GetType() != obj.GetType())
             return false;
 
         Entity<TId> item = (Entity<TId>)obj;
