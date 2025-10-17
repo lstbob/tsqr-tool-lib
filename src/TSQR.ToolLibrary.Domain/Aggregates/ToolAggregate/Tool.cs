@@ -12,15 +12,16 @@ public class Tool : Entity<ToolId>
     /// </summary>
     private Tool(
         ToolId id,
-        string name,
+        string model,
         string description,
         string manufacturer,
         string serialNumber,
         MemberId originalOwnerId,
-        DateTime initialAcquisitionDate) : base(id)
+        DateTime initialAcquisitionDate,
+        AmortizationRate amortizationRate) : base(id)
     {
         Id = id ?? throw new ArgumentNullException(nameof(id));
-        Model = name ?? throw new ArgumentNullException(nameof(name));
+        Model = model ?? throw new ArgumentNullException(nameof(model));
         Description = description ?? throw new ArgumentNullException(nameof(description));
         Manufacturer = manufacturer ?? throw new ArgumentNullException(nameof(manufacturer));
         SerialNumber = serialNumber ?? throw new ArgumentNullException(nameof(serialNumber));
@@ -29,6 +30,7 @@ public class Tool : Entity<ToolId>
             throw new ArgumentNullException(nameof(initialAcquisitionDate)) : initialAcquisitionDate;
         OriginalOwnerId = originalOwnerId;
         IsAvailable = true;
+        AmortizationRate = amortizationRate;
     } 
 
     public ToolId Id { get; }
@@ -36,34 +38,28 @@ public class Tool : Entity<ToolId>
     public string Description { get; }
     public string Manufacturer { get; }
     public string SerialNumber { get; }
-    public MemberId OriginalOwnerId { get; }
-    public bool IsAvailable { get;private set; }
-    public MemberId? CurrentHolderId { get; private set; }
-    public DateTime? LastBorrowedDate { get; private set; }
-    public DateTime? ReservationDate { get; private set; }    
-    public MemberId? ReservationMember {get; private set;}
-    public DateTime InitialAcquisitionDate { get; }
 
     /// <summary>
     /// Factory method to create a new instance of the <see cref="Tool"/> class.
     /// </summary>
     public static Tool Create(
-        ToolId id,
-        string name,
+        string model,
         string description,
         string manufacturer,
         string serialNumber,
         MemberId originalOwnerId,
-        DateTime initialAcquisitionDate)
+        DateTime initialAcquisitionDate,
+        AmortizationRate amortizationRate)
     {
         return new Tool(
-            id,
-            name,
+            new ToolId(default),
+            model,
             description,
             manufacturer,
             serialNumber,
             originalOwnerId,
-            initialAcquisitionDate);
+            initialAcquisitionDate,
+            amortizationRate);
     }
     
     /// <summary>
@@ -71,7 +67,7 @@ public class Tool : Entity<ToolId>
     /// </summary>
     public static Tool Create(
         ToolId id,
-        string name,
+        string model,
         string description,
         string manufacturer,
         string serialNumber,
@@ -80,11 +76,12 @@ public class Tool : Entity<ToolId>
         bool isAvailable,
         MemberId currentHolder,
         DateTime? lastBorrowedDate,
-        DateTime? nextBorrowedDate)
+        DateTime? nextBorrowedDate,
+        AmortizationRate amortizationRate)
     {
         var tool = new Tool(
             id,
-            name,
+            model,
             description,
             manufacturer,
             serialNumber,
@@ -97,6 +94,10 @@ public class Tool : Entity<ToolId>
         tool.ReservationDate = nextBorrowedDate;
 
         return tool;
+    }
+
+    public Tool Register()
+    {
     }
 
     /// <summary>
