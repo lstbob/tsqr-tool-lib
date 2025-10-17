@@ -61,6 +61,5 @@ public class Tool : Entity<ToolId>
     {
         return new (id, model, description, manufacturer, type, metadata);
     }
-
 }
 

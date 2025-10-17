@@ -5,21 +5,64 @@ namespace TSQR.ToolLibrary.Domain;
 /// </summary>
 public abstract class Entity<TId>(TId id) where TId : notnull, ValueObject 
 {
-   TId Id  => id;
+   private List<INotification> _domainEvents;
+
+   public TId Id  => id;
+   public IReadOnlyCollection<INotification> DomainEvents => _domainEvents?.AsReadOnly();
+
+   /// <summary>
+   /// Adds a domain event to the entity.
+   /// </summary>
+   public void AddDomainEvent(INotification eventItem)
+   {
+        _domainEvents ??= new List<INotification>();
+        _domainEvents.Add(eventItem);
+   }
+
+   /// <summary>
+   /// Removes a domain event from the entity.
+   /// </summary>
+   public void RemoveDomainEvent(INotification eventItem)
+   {
+        _domainEvents?.Remove(eventItem);
+   }    
+
+   /// <summary>
+   /// Clears all domain events from the entity.
+   /// </summary>
+   public void ClearDomainEvents()
+   {
+        _domainEvents?.Clear();
+   }
+
+   /// <summary>
+   /// Determines whether the entity is transient (i.e., has not been persisted).
+   /// </summary>
+   public bool IsTransient()
+   {
+        return Id.Equals(default(TId));
+   }
 
    /// <summary>
    /// Determines whether the specified object is equal to the current entity.
    /// </summary>
    public override bool Equals(object? obj)
    {
-        if (obj is not Entity<TId> other)
-            return false;
-        if (ReferenceEquals(this, other))
-            return true;
-        if (GetType() != other.GetType())
+       if (obj == null || !(obj is Entity))
             return false;
 
-        return Id.Equals(other.Id);
+        if (Object.ReferenceEquals(this, obj))
+            return true;
+
+        if (this.GetType() != obj.GetType())
+            return false;
+
+        Entity<TId> item = (Entity<TId>)obj;
+
+        if (item.IsTransient() || IsTransient())
+            return false;
+        else
+            return item.Id == Id;
    }
 
    /// <summary>

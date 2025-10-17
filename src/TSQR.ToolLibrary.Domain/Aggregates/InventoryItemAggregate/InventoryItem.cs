@@ -1,4 +1,5 @@
 using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
+using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 
 namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryItemAggregate;
 
@@ -13,42 +14,99 @@ public class InventoryItem : Entity<InventoryItemId>
     /// </summary>
     private InventoryItem(
             InventoryItemId id,
+            ToolId toolId,
             MemberId originalOwnerId,
             DateTime initialAcquisitionDate,
-            bool isAvailable = true,
-            AmortizationRate amortizationRate,
+            ItemStatus itemStatus,
+            Condition condition,
             MemberId? currentHolderId = null,
             DateTime? lastBorrowedDate = null,
             DateTime? reservationDate = null,
-            MemberId? reservationMember = null,
+            MemberId? reservationMemberId = null
             ) : base(id)
     {
-
+        ToolId = toolId ?? throw new ArgumentNullException(nameof(toolId));
+        OriginalOwnerId = originalOwnerId ?? throw new ArgumentNullException(nameof(originalOwnerId));
+        InitialAcquisitionDate = initialAcquisitionDate == default?
+             throw new ArgumentNullException(nameof(initialAcquisitionDate)) 
+             : initialAcquisitionDate;
+        ItemStatus = itemStatus;
+        Condition = condition;
+        CurrentHolderId = currentHolderId;
+        LastBorrowedDate = lastBorrowedDate;
+        ReservationDate = reservationDate;
+        ReservationMemberId = reservationMemberId;
     }
 
+    public ToolId ToolId { get; }
     public MemberId OriginalOwnerId { get; }
     public DateTime InitialAcquisitionDate { get; }
-    public bool IsAvailable { get;private set; }
-    public AmortizationRate AmortizationRate { get; private set; }
+    public ItemStatus ItemStatus { get;private set; }
+    public Condition Condition { get; private set; }
     public MemberId? CurrentHolderId { get; private set; }
     public DateTime? LastBorrowedDate { get; private set; }
     public DateTime? ReservationDate { get; private set; }    
-    public MemberId? ReservationMember {get; private set;}
+    public MemberId? ReservationMemberId {get; private set;}
 
-    public InventoryItem Register()
+    /// <summary>
+    /// Factory method to create a new instance of the <see cref="InventoryItem"/> class
+    /// </summary>
+    public static InventoryItem Create(
+            ToolId toolId,
+            MemberId originalOwnerId,
+            DateTime initialAcquisitionDate,
+            Condition condition)
     {
+        return new InventoryItem(
+            new InventoryItemId(default),
+            toolId,
+            originalOwnerId,
+            initialAcquisitionDate,
+            ItemStatus.Available,
+            condition);
     }
 
     /// <summary>
+    /// Factory method to rehydrate an existing instance of the <see cref="InventoryItem"/> class.
+    /// </summary>
+    public static InventoryItem Create(
+            InventoryItemId id,
+            ToolId toolId,
+            MemberId originalOwnerId,
+            DateTime initialAcquisitionDate,
+            ItemStatus itemStatus,
+            Condition condition,
+            MemberId currentHolderId, 
+            DateTime lastBorrowedDate,
+            DateTime reservationDate,
+            MemberId reservationMemberId)
+    {
+        return new InventoryItem(
+            id,
+            toolId,
+            originalOwnerId,
+            initialAcquisitionDate,
+            itemStatus,
+            condition,
+            currentHolderId,
+            lastBorrowedDate,
+            reservationDate,
+            reservationMemberId);
+    }
+    
+    /// <summary>
     /// Marks the tool as lost.
     /// </summary>
-    public void MarkAsLost()
+    public void MarkAsLost(MemberId reporter)
     {
-        if (IsAvailable)
-            throw new InvalidOperationException("Tool is already available.");
+        if (ItemStatus.Equals(ItemStatus.Lost))
+            throw new InvalidOperationException("Tool is already marked as lost.");
 
         CurrentHolderId = null;
-        IsAvailable = false;
+        ItemStatus = ItemStatus.Lost;
+        // TODO: Add Domain Event for reporting lost tool. Notifying original owner and admin.
+        // CurrentHolder should pay a fine or replace the tool.
+        // 
     }
 
     /// <summary>
@@ -56,44 +114,40 @@ public class InventoryItem : Entity<InventoryItemId>
     /// </summary>
     public void Return()
     {
-        if (IsAvailable)
+        if (ItemStatus)
             throw new InvalidOperationException("Tool is already available.");
 
         CurrentHolderId = null;
-        IsAvailable = true;
+        ItemStatus = true;
     }
 
     /// <summary>
-    /// Borrows the tool to a member.
+    /// Loans the tool to a member.
     /// </summary>
-    public void Borrow(MemberId borrower, DateTime borrowDate)
+    public void Loan(MemberId memberId)
     {
-        if (!IsAvailable)
+        ArgumentNullException.ThrowIfNull(memberId);
+
+        if (!ItemStatus.Equals(ItemStatus.Available))
             throw new InvalidOperationException("Tool is not available for borrowing.");
 
-        ArgumentNullException.ThrowIfNull(borrower);
+        if(ReservationDate is not null || ReservationMemberId is not null)
+            throw new InvalidOperationException("Tool is reserved and cannot be borrowed.");
 
-        if (borrowDate == default)
-            throw new ArgumentNullException(nameof(borrowDate));
-
-        if (ReservationDate is not null && ReservationDate != borrowDate)
-            throw new ArgumentException("Tool");
-
-        CurrentHolderId = borrower;
-        IsAvailable = false;
-        LastBorrowedDate = borrowDate;
-        ReservationDate = null;
+        CurrentHolderId = memberId;
+        ItemStatus = ItemStatus.Loaned;
+        LastBorrowedDate = DateTime.UtcNow;
     }
 
     /// <summary>
     /// Reserves the tool for a member on a specific date.
     /// </summary>  
-    public void Reserve(DateTime reserveDate, MemberId borrower)
+    public void Reserve(DateTime reserveDate, MemberId member)
     {
         if(ReservationDate is not null)
             throw new InvalidOperationException("Tool is already reserved.");
 
-        ArgumentNullException.ThrowIfNull(borrower);
+        ArgumentNullException.ThrowIfNull(member);
 
         if (reserveDate == default || reserveDate <= DateTime.UtcNow)
             throw new ArgumentNullException(nameof(reserveDate));
