@@ -8,7 +8,7 @@ public class ManufcaturerId(int value) : ValueObject
     /// <summary>
     /// Gets the value of the manufacturer identifier.
     /// </summary>
-    public int Value => value; 
+    public int Value {get; } = value.ValidatePositive(nameof(value)); 
 
     /// <inheritdoc/>
     protected override IEnumerable<object> GetEqualityComponents()

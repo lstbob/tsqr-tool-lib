@@ -6,7 +6,7 @@ namespace TSQR.ToolLibrary.Domain;
 public abstract class Entity<TId>(TId id) where TId : notnull, ValueObject 
 {
    private List<INotification> _domainEvents = [];
-   public TId Id  => id;
+   public TId Id  {get; } = id;
    public IReadOnlyCollection<INotification> DomainEvents => _domainEvents.AsReadOnly();
 
    /// <summary>
