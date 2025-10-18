@@ -18,7 +18,7 @@ public class Country : Entity<CountryId>
     /// </summary>
     public static Country Create(string name)
     {
-        return new (default, name);
+        return new (new (default), name);
     }
 
     /// <summary>
