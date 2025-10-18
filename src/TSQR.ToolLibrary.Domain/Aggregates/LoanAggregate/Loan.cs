@@ -83,8 +83,9 @@ public class Loan : Entity<LoanId>
     /// <summary>
     /// Responsible for ending a loan;
     /// </summary>
-    public void EndLoanForItem(DateTime expectedEndDate) 
-    { _ = expectedEndDate
+    public void EndLoan(DateTime expectedEndDate) 
+    {
+        _ = expectedEndDate
             .Validate(nameof(expectedEndDate))
             .ValidateNotInPast(nameof(expectedEndDate));
 
@@ -92,12 +93,13 @@ public class Loan : Entity<LoanId>
         {
             Status = LoanStatus.Overdue;
             TimeSpan overdueTime = expectedEndDate - DueDate;
-            AddDomainEvent(new LoanOverdueDomainEvent(Id, ItemId, overdueTime))
+            AddDomainEvent(new LoanOverdueDomainEvent(Id, ItemId, overdueTime));
         } else
         {
             Status = LoanStatus.Returned;
             ReturnedDate = DateTime.UtcNow;
         }
     }
+
 }
 
