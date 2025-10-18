@@ -5,7 +5,7 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.LocationAggregate;
 /// </summary>
 public class CountryId(int value) : ValueObject
 {
-    public int Value { get; } = value.Validate(nameof(value));
+    public int Value { get; } = value;
 
     /// <inheritdoc/>
     protected override IEnumerable<object> GetEqualityComponents()

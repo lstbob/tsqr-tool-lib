@@ -10,11 +10,25 @@ public class Country : Entity<CountryId>
     /// </summary>
     private Country(CountryId id, string name) : base(id)
     {
-        Name = string.IsNullOrWhiteSpace(name)
-            ? throw new ArgumentException("Country name is invalid.", nameof(name))
-            : name;
+        Name = name.Validate(nameof(name));
+    }
+    
+    /// <summary>
+    /// Static factory method to create a new <see cref="Country"/> instance. 
+    /// </summary>
+    public static Country Create(string name)
+    {
+        return new (default, name);
     }
 
+    /// <summary>
+    /// Static factory method to rehydrate a <see cref="Country"/> instance. 
+    /// </summary>
+    public static Country Create(CountryId id, string name)
+    {
+        return new (id, name);
+    }
+    
     public string Name { get; } 
 }
     
