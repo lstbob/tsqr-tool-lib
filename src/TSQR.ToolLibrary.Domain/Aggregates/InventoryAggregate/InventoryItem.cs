@@ -1,9 +1,9 @@
-namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryItemAggregate;
+namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
 
 /// <summary>
 /// Represents an inventory item in the tool library system.
 /// </summary>
-public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
+public class InventoryItem : Entity<InventoryItemId>
 {
  
     /// <summary>
@@ -60,6 +60,7 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
     public DateTime? LastBorrowedDate { get; private set; }
     public DateTime? ReservationDate { get; private set; }    
     public MemberId? ReservationMemberId {get; private set;}
+    public Loan? CurrentLoan { get; private set; }
 
     /// <summary>
     /// Factory method to create a new instance of the <see cref="InventoryItem"/> class
