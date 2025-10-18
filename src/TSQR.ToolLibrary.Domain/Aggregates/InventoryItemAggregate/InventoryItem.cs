@@ -3,7 +3,7 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryItemAggregate;
 /// <summary>
 /// Represents an inventory item in the tool library system.
 /// </summary>
-public class InventoryItem : Entity<InventoryItemId>
+public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
 {
  
     /// <summary>

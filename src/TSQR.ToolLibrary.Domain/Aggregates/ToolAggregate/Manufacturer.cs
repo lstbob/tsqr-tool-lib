@@ -3,17 +3,15 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 /// <summary>
 /// Represents a manufacturer in the tool library system.
 /// </summary>
-public class Manufacturer(int value) : ValueObject
+public class Manufacturer : Entity<ManufacturerId>
 {
-    /// <summary>
-    /// Gets the value of the manufacturer identifier.
-    /// </summary>
-    public int Value => value; 
-
-    /// <inheritdoc/>
-    protected override IEnumerable<object> GetEqualityComponents()
+    private Manufacturer(ManufacturerId id, string name) : base(id)
     {
-        yield return Value;
-    } 
+        Name = string.IsNullOrWhiteSpace(name) 
+            ? throw new ArgumentException("Manufacturer name is invalid.", nameof(name)) 
+            : name;
+    }
+
+    public string Name { get; }
 }
 
