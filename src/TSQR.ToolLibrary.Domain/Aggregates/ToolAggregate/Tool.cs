@@ -1,69 +1,51 @@
-using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
-
 namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 
 /// <summary>
 /// Represents a tool in the tool library system.
 /// </summary>
-public class Tool : Entity<ToolId>
+public class Tool : Entity<ToolId>, IAggregateRoot
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Tool"/> class.
     /// </summary>
     private Tool(
         ToolId id,
-        string name,
+        string model,
         string description,
-        string manufacturer,
-        string serialNumber,
-        MemberId originalOwnerId,
-        DateTime initialAcquisitionDate) : base(id)
+        Manufacturer manufacturer,
+        ToolType type,
+        string? metadata = null) : base(id)
     {
-        Id = id ?? throw new ArgumentNullException(nameof(id));
-        Model = name ?? throw new ArgumentNullException(nameof(name));
-        Description = description ?? throw new ArgumentNullException(nameof(description));
+        Model = model.Validate(nameof(model));
+
+        Description = model.Validate(nameof(description)); 
+
         Manufacturer = manufacturer ?? throw new ArgumentNullException(nameof(manufacturer));
-        SerialNumber = serialNumber ?? throw new ArgumentNullException(nameof(serialNumber));
-        OriginalOwnerId = originalOwnerId ?? throw new ArgumentNullException(nameof(originalOwnerId));
-        InitialAcquisitionDate = initialAcquisitionDate == default ?
-            throw new ArgumentNullException(nameof(initialAcquisitionDate)) : initialAcquisitionDate;
-        OriginalOwnerId = originalOwnerId;
-        IsAvailable = true;
+
+        Type = type
+            .ValidateDefined(nameof(type))
+            .ValidateNotDefault(nameof(type)); 
+
+        Metadata = metadata;
     } 
 
-    public ToolId Id { get; }
-    public string Model { get; }
-    public string Description { get; }
-    public string Manufacturer { get; }
-    public string SerialNumber { get; }
-    public MemberId OriginalOwnerId { get; }
-    public bool IsAvailable { get;private set; }
-    public MemberId? CurrentHolderId { get; private set; }
-    public DateTime? LastBorrowedDate { get; private set; }
-    public DateTime? ReservationDate { get; private set; }    
-    public MemberId? ReservationMember {get; private set;}
-    public DateTime InitialAcquisitionDate { get; }
+    public string Model { get; private set; }
+    public string Description { get; private set; }
+    public Manufacturer Manufacturer { get; private set; }
+    public ToolType Type { get; private set; }
+    public string? Metadata { get; private set; }
 
     /// <summary>
     /// Factory method to create a new instance of the <see cref="Tool"/> class.
     /// </summary>
     public static Tool Create(
-        ToolId id,
-        string name,
+        string model,
         string description,
-        string manufacturer,
-        string serialNumber,
-        MemberId originalOwnerId,
-        DateTime initialAcquisitionDate)
+        Manufacturer manufacturer,
+        ToolType type,
+        string? metadata = null)
     {
-        return new Tool(
-            id,
-            name,
-            description,
-            manufacturer,
-            serialNumber,
-            originalOwnerId,
-            initialAcquisitionDate);
+        return new (new (default), model, description, manufacturer, type, metadata);
     }
     
     /// <summary>
@@ -71,98 +53,27 @@ public class Tool : Entity<ToolId>
     /// </summary>
     public static Tool Create(
         ToolId id,
-        string name,
+        string model,
         string description,
-        string manufacturer,
-        string serialNumber,
-        MemberId originalOwnerId,
-        DateTime initialAcquisitionDate,
-        bool isAvailable,
-        MemberId currentHolder,
-        DateTime? lastBorrowedDate,
-        DateTime? nextBorrowedDate)
+        Manufacturer manufacturer,
+        ToolType type,
+        string? metadata = null)
     {
-        var tool = new Tool(
-            id,
-            name,
-            description,
-            manufacturer,
-            serialNumber,
-            originalOwnerId,
-            initialAcquisitionDate);
-        
-        tool.CurrentHolderId = currentHolder;
-        tool.IsAvailable = isAvailable;
-        tool.LastBorrowedDate = lastBorrowedDate;
-        tool.ReservationDate = nextBorrowedDate;
-
-        return tool;
+        return new (id, model, description, manufacturer, type, metadata);
     }
 
     /// <summary>
-    /// Marks the tool as lost.
+    /// Updates the tool details.
     /// </summary>
-    public void MarkAsLost()
+    public void UpdateToolDetails(string model, string description, Manufacturer manufacturer,
+            ToolType type,  string? metadata = null)
     {
-        if (IsAvailable)
-            throw new InvalidOperationException("Tool is already available.");
-
-        CurrentHolderId = null;
-        IsAvailable = false;
-    }
-
-    /// <summary>
-    /// Returns the tool to the library.
-    /// </summary>
-    public void Return()
-    {
-        if (IsAvailable)
-            throw new InvalidOperationException("Tool is already available.");
-
-        CurrentHolderId = null;
-        IsAvailable = true;
-    }
-
-    /// <summary>
-    /// Borrows the tool to a member.
-    /// </summary>
-    public void Borrow(MemberId borrower, DateTime borrowDate)
-    {
-        if (!IsAvailable)
-            throw new InvalidOperationException("Tool is not available for borrowing.");
-
-        ArgumentNullException.ThrowIfNull(borrower);
-
-        if (borrowDate == default)
-            throw new ArgumentNullException(nameof(borrowDate));
-
-        if (ReservationDate is not null && ReservationDate != borrowDate)
-            throw new ArgumentException("Tool");
-
-        CurrentHolderId = borrower;
-        IsAvailable = false;
-        LastBorrowedDate = borrowDate;
-        ReservationDate = null;
-    }
-
-    /// <summary>
-    /// Reserves the tool for a member on a specific date.
-    /// </summary>  
-    public void Reserve(DateTime reserveDate, MemberId borrower)
-    {
-        if(ReservationDate is not null)
-            throw new InvalidOperationException("Tool is already reserved.");
-
-        ArgumentNullException.ThrowIfNull(borrower);
-
-        if (reserveDate == default || reserveDate <= DateTime.UtcNow)
-            throw new ArgumentNullException(nameof(reserveDate));
-
-        // TODO: Change when loan policy is introduced
-        if(reserveDate > DateTime.UtcNow.AddYears(1)) 
-            throw new InvalidOperationException("Tool cannot be reserved more than a year in advance.");
-
-        ReservationDate = reserveDate;
+        Model = model.Validate(nameof(model)); 
+        Description = model.Validate(nameof(description));
+        Manufacturer = manufacturer ?? throw new ArgumentNullException(nameof(manufacturer));
+        Type = type
+            .ValidateDefined(nameof(type))
+            .ValidateNotDefault(nameof(type));    
+        Metadata = metadata;
     }
 }
-
