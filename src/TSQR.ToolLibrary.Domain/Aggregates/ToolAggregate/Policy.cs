@@ -1,4 +1,4 @@
-namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryItemAggregate;
+namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 
 /// <summary>
 /// Represents a policy in the tool library system.

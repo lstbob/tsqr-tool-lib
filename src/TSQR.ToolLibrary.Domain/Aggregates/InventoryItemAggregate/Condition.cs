@@ -5,7 +5,8 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryItemAggregate;
 /// </summary>
 public enum Condition 
 {
-    New = 0,
+    NotSet = 0,
+    New,
     Good,
     Fair,
     Repaired,

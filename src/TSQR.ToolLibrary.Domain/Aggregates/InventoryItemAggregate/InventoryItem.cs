@@ -1,11 +1,9 @@
-using TSQR.ToolLibrary.Domain.Events;
-
 namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryItemAggregate;
 
 /// <summary>
 /// Represents an inventory item in the tool library system.
 /// </summary>
-public class InventoryItem : Entity<InventoryItemId>
+public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
 {
  
     /// <summary>
@@ -16,6 +14,7 @@ public class InventoryItem : Entity<InventoryItemId>
             ToolId toolId,
             MemberId originalOwnerId,
             DateTime initialAcquisitionDate,
+            string serialNumber,
             ItemStatus status,
             Condition condition,
             MemberId? currentHolderId = null,
@@ -26,11 +25,23 @@ public class InventoryItem : Entity<InventoryItemId>
     {
         ToolId = toolId ?? throw new ArgumentNullException(nameof(toolId));
         OriginalOwnerId = originalOwnerId ?? throw new ArgumentNullException(nameof(originalOwnerId));
+
         InitialAcquisitionDate = initialAcquisitionDate == default?
              throw new ArgumentNullException(nameof(initialAcquisitionDate)) 
              : initialAcquisitionDate;
-        Status = status;
-        Condition = condition;
+
+        SerialNumber = string.IsNullOrWhiteSpace(serialNumber) 
+            ? throw new ArgumentNullException(nameof(serialNumber)) 
+            : serialNumber;
+
+        Status = status.Equals(ItemStatus.NotSet) 
+            ? throw new ArgumentException("Item status cannot be NotSet.", nameof(status)) 
+            : status;
+
+        Condition = condition.Equals(Condition.NotSet) 
+            ? throw new ArgumentException("Item condition cannot be NotSet.", nameof(condition)) 
+            : condition;
+
         CurrentHolderId = currentHolderId;
         LastBorrowedDate = lastBorrowedDate;
         ReservationDate = reservationDate;
@@ -40,6 +51,7 @@ public class InventoryItem : Entity<InventoryItemId>
     public ToolId ToolId { get; }
     public MemberId OriginalOwnerId { get; }
     public DateTime InitialAcquisitionDate { get; }
+    public string SerialNumber {get; }
     public ItemStatus Status { get;private set; }
     public Condition Condition { get; private set; }
     public MemberId? CurrentHolderId { get; private set; }
@@ -54,6 +66,7 @@ public class InventoryItem : Entity<InventoryItemId>
             ToolId toolId,
             MemberId originalOwnerId,
             DateTime initialAcquisitionDate,
+            string serialNumber,
             Condition condition)
     {
         return new(
@@ -61,6 +74,7 @@ public class InventoryItem : Entity<InventoryItemId>
             toolId,
             originalOwnerId,
             initialAcquisitionDate,
+            serialNumber,
             ItemStatus.Available,
             condition);
     }
@@ -73,6 +87,7 @@ public class InventoryItem : Entity<InventoryItemId>
             ToolId toolId,
             MemberId originalOwnerId,
             DateTime initialAcquisitionDate,
+            string serialNumber,
             ItemStatus status,
             Condition condition,
             MemberId currentHolderId, 
@@ -85,6 +100,7 @@ public class InventoryItem : Entity<InventoryItemId>
             toolId,
             originalOwnerId,
             initialAcquisitionDate,
+            serialNumber,
             status,
             condition,
             currentHolderId,
@@ -136,6 +152,7 @@ public class InventoryItem : Entity<InventoryItemId>
         CurrentHolderId = memberId;
         Status = ItemStatus.Loaned;
         LastBorrowedDate = DateTime.UtcNow;
+
         AddDomainEvent(new ItemLoanedEvent(Id, memberId, LastBorrowedDate.Value));
     }
 

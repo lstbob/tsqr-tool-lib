@@ -3,9 +3,14 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 public enum ToolType 
 {
     /// <summary>
+    /// Represents an invalid or unset tool type.
+    /// </summary>
+    NotSet = 0,
+
+    /// <summary>
     /// Represents a hand tool.E.g., hammer, screwdriver.
     /// </summary>
-    HandTool = 0,
+    HandTool,
 
     /// <summary>
     /// Represents a power tool. E.g., drill, saw.
