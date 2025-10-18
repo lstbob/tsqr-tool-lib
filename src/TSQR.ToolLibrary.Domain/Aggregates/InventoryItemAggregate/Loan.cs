@@ -5,9 +5,5 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryItemAggregate;
 /// </summary>
 public class Loan(LoanId id) : Entity<LoanId>(id)
 {
-    public void Test()
-    {
-        var t = Tool.Create(null , null ,new Manufacturer(1), ToolType.ConstructionTool ); 
-    }    
 }
 

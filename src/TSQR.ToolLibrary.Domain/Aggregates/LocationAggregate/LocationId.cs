@@ -8,7 +8,7 @@ public class LocationId(int value) : ValueObject
     /// <summary>
     /// Gets the integer value of the location identifier.
     /// </summary>
-    public int Value { get; } = value;
+    public int Value { get; } = value.ValidatePositive(nameof(value));
 
     /// <inheritdoc/>
     protected override IEnumerable<object> GetEqualityComponents()

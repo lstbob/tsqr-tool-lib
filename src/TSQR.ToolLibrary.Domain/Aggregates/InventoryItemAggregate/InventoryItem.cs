@@ -23,24 +23,26 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
             MemberId? reservationMemberId = null
             ) : base(id)
     {
-        ToolId = toolId ?? throw new ArgumentNullException(nameof(toolId));
-        OriginalOwnerId = originalOwnerId ?? throw new ArgumentNullException(nameof(originalOwnerId));
+        ToolId = toolId ?? 
+            throw new ArgumentNullException(nameof(toolId));
 
-        InitialAcquisitionDate = initialAcquisitionDate == default?
-             throw new ArgumentNullException(nameof(initialAcquisitionDate)) 
-             : initialAcquisitionDate;
+        OriginalOwnerId = originalOwnerId ?? 
+            throw new ArgumentNullException(nameof(originalOwnerId));
 
-        SerialNumber = string.IsNullOrWhiteSpace(serialNumber) 
-            ? throw new ArgumentNullException(nameof(serialNumber)) 
-            : serialNumber;
+        InitialAcquisitionDate = initialAcquisitionDate
+            .Validate(nameof(initialAcquisitionDate))
+            .ValidateNotInFuture(nameof(initialAcquisitionDate));
 
-        Status = status.Equals(ItemStatus.NotSet) 
-            ? throw new ArgumentException("Item status cannot be NotSet.", nameof(status)) 
-            : status;
+        SerialNumber = serialNumber
+            .Validate(serialNumber);
 
-        Condition = condition.Equals(Condition.NotSet) 
-            ? throw new ArgumentException("Item condition cannot be NotSet.", nameof(condition)) 
-            : condition;
+        Status = status
+            .ValidateDefined(nameof(status))
+            .ValidateNotDefault(nameof(status)); 
+
+        Condition = Condition
+            .ValidateDefined(nameof(condition))
+            .ValidateNotDefault(nameof(condition)); 
 
         CurrentHolderId = currentHolderId;
         LastBorrowedDate = lastBorrowedDate;
@@ -121,7 +123,6 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         Status = ItemStatus.Lost;
         // TODO: Add Domain Event for reporting lost tool. Notifying original owner and admin.
         // CurrentHolder should pay a fine or replace the tool.
-        // 
     }
 
     /// <summary>

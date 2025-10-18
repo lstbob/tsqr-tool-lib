@@ -5,7 +5,7 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryItemAggregate;
 /// </summary>
 public class LoanId(int value) : ValueObject
 {
-    public int Value { get; } = value;
+    public int Value { get; } = value.ValidatePositive(nameof(value));
 
     /// <inheritdoc/>
     protected override IEnumerable<object> GetEqualityComponents()
