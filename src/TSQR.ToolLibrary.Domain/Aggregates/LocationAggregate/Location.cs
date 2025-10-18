@@ -13,6 +13,14 @@ public class Location : Entity<LocationId>
         Name = name.Validate(nameof(name));
     }
 
+    /// <summary>
+    /// Static factory method to create a new instance of the <see cref="Location"/> class. 
+    /// </summary>
+    public static Location Create(LocationId id, string name)
+    {
+        return new (id, name);
+    }
+
     public string Name { get; }    
 }
 

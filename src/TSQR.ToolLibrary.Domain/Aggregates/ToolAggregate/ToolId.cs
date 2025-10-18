@@ -1,4 +1,4 @@
-namespace TSQR.ToolLibrary.Domain;
+namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 
 /// <summary>
 /// Represents the unique identifier for a tool.
