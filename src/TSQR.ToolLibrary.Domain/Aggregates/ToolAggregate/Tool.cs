@@ -1,6 +1,3 @@
-using System.Reflection.Metadata.Ecma335;
-using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
-
 namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 
 /// <summary>
@@ -15,20 +12,28 @@ public class Tool : Entity<ToolId>
         ToolId id,
         string model,
         string description,
-        string manufacturer,
+        Manufacturer manufacturer,
         ToolType type,
         string? metadata = null) : base(id)
     {
-        Model = model ?? throw new ArgumentNullException(nameof(model));
-        Description = description ?? throw new ArgumentNullException(nameof(description));
+        Model = string.IsNullOrWhiteSpace(model) ?
+            throw new ArgumentException("Model is invalid.") : model;
+
+        Description = string.IsNullOrWhiteSpace(description) ?
+            throw new ArgumentException("Description is invalid.") : description;
+
         Manufacturer = manufacturer ?? throw new ArgumentNullException(nameof(manufacturer));
-        Type = type;
+
+        Type = type.Equals(ToolType.NotSet) 
+            ? throw new ArgumentException("Tool type cannot be Invalid.", nameof(type)) 
+            : type;
+
         Metadata = metadata;
     } 
 
     public string Model { get; }
     public string Description { get; }
-    public string Manufacturer { get; }
+    public Manufacturer Manufacturer { get; }
     public ToolType Type { get; }
     public string? Metadata { get; }
 
@@ -38,11 +43,11 @@ public class Tool : Entity<ToolId>
     public static Tool Create(
         string model,
         string description,
-        string manufacturer,
+        Manufacturer manufacturer,
         ToolType type,
         string? metadata = null)
     {
-        return new (new ToolId(default), model, description, manufacturer, type, metadata);
+        return new (new (default), model, description, manufacturer, type, metadata);
     }
     
     /// <summary>
@@ -52,12 +57,11 @@ public class Tool : Entity<ToolId>
         ToolId id,
         string model,
         string description,
-        string manufacturer,
-        string serialNumber,
+        Manufacturer manufacturer,
         ToolType type,
         string? metadata = null)
     {
         return new (id, model, description, manufacturer, type, metadata);
     }
-}
 
+}
