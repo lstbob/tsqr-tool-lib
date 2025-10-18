@@ -5,5 +5,6 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
 /// </summary>
 public class Loan(LoanId id) : Entity<LoanId>(id)
 {
+    
 }
 

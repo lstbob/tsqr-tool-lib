@@ -1,4 +1,4 @@
-namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
+namespace TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate;
 
 /// <summary>
 /// Represents a reservation of an inventory item in the tool library system.
