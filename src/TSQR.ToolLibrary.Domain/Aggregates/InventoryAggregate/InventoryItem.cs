@@ -1,3 +1,5 @@
+using TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate;
+
 namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
 
 /// <summary>
@@ -40,7 +42,7 @@ public class InventoryItem : Entity<InventoryItemId>
             .ValidateDefined(nameof(status))
             .ValidateNotDefault(nameof(status)); 
 
-        Condition = Condition
+        Condition = condition
             .ValidateDefined(nameof(condition))
             .ValidateNotDefault(nameof(condition)); 
 
