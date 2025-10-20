@@ -48,7 +48,7 @@ public class Loan : Entity<LoanId>
             LoanId id, 
             MemberId memberId,
             DateTime checkoutDate,
-            DateTime dueDate
+            DateTime dueDate,
             InventoryItemId itemId,
             LoanStatus status)
     {

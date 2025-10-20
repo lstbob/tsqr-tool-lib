@@ -124,6 +124,7 @@ public class InventoryItem : Entity<InventoryItemId>
         Status = ItemStatus.Lost;
         // TODO: Add Domain Event for reporting lost tool. Notifying original owner and admin.
         // CurrentHolder should pay a fine or replace the tool.
+        //        AddDomainEvent(new object());
     }
 
     /// <summary>
@@ -135,6 +136,7 @@ public class InventoryItem : Entity<InventoryItemId>
             throw new InvalidOperationException("Tool is not currently loaned out.");
 
         CurrentHolderId = null;
+
         Status = ItemStatus.Available;
     }
 
@@ -152,10 +154,12 @@ public class InventoryItem : Entity<InventoryItemId>
             throw new InvalidOperationException("Tool is reserved and cannot be borrowed.");
 
         CurrentHolderId = memberId;
+        
         Status = ItemStatus.Loaned;
+
         LastBorrowedDate = DateTime.UtcNow;
 
-        AddDomainEvent(new ItemLoanedEvent(Id, memberId, LastBorrowedDate.Value));
+        AddDomainEvent(new ItemLoanedDomainEvent(Id, memberId, LastBorrowedDate.Value));
     }
 
     /// <summary>
@@ -170,10 +174,6 @@ public class InventoryItem : Entity<InventoryItemId>
 
         if (reserveDate == default || reserveDate <= DateTime.UtcNow)
             throw new ArgumentNullException(nameof(reserveDate));
-
-        // TODO: Change when loan policy is introduced
-        if(reserveDate > DateTime.UtcNow.AddYears(1)) 
-            throw new InvalidOperationException("Tool cannot be reserved more than a year in advance.");
 
         ReservationDate = reserveDate;
     }

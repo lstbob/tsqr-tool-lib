@@ -27,7 +27,9 @@ public class Policy : Entity<PolicyId>
             .ValidateNotDefault(nameof(toolType)); 
 
         LocationId = locationId ?? throw new ArgumentNullException(nameof(locationId));
-        
+
+        Name = name.Validate(nameof(name));
+        Description = description.Validate(nameof(description));
         SetDetails(
             name,
             description,

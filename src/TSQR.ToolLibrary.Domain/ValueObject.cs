@@ -8,7 +8,7 @@ public abstract class ValueObject
     /// <summary>
     /// Compares two value objects for equality.
     /// </summary>
-    protected static bool EqualOperator(ValueObject left, ValueObject right)
+    protected static bool EqualOperator(ValueObject? left, ValueObject? right)
     {
         if (ReferenceEquals(left, null) ^ ReferenceEquals(right, null))
         {
@@ -20,7 +20,7 @@ public abstract class ValueObject
     /// <summary>
     /// Compares two value objects for inequality.
     /// </summary>
-    protected static bool NotEqualOperator(ValueObject left, ValueObject right)
+    protected static bool NotEqualOperator(ValueObject? left, ValueObject? right)
     {
         return !EqualOperator(left, right);
     }

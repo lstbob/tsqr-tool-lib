@@ -1,7 +1,7 @@
 namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 
 /// <summary>
-/// Represents a tool in the tool library system.
+/// Represents the domain entity for a Tool.
 /// </summary>
 public class Tool : Entity<ToolId>, IAggregateRoot
 {
@@ -18,7 +18,7 @@ public class Tool : Entity<ToolId>, IAggregateRoot
     {
         Model = model.Validate(nameof(model));
 
-        Description = model.Validate(nameof(description)); 
+        Description = description.Validate(nameof(description)); 
 
         Manufacturer = manufacturer ?? throw new ArgumentNullException(nameof(manufacturer));
 

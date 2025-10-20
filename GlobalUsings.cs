@@ -4,3 +4,4 @@ global using TSQR.ToolLibrary.Domain.Aggregates.ItemInventoryAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.LocationAggregate;
 global using TSQR.ToolLibrary.Domain.Events;
 global using MediatR;
+
