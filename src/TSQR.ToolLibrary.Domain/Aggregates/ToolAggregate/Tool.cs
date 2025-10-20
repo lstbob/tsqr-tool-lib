@@ -69,7 +69,7 @@ public class Tool : Entity<ToolId>, IAggregateRoot
             ToolType type,  string? metadata = null)
     {
         Model = model.Validate(nameof(model)); 
-        Description = model.Validate(nameof(description));
+        Description = description.Validate(nameof(description));
         Manufacturer = manufacturer ?? throw new ArgumentNullException(nameof(manufacturer));
         Type = type
             .ValidateDefined(nameof(type))
