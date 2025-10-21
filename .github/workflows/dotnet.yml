@@ -26,30 +26,18 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
-codeql:
+  codeql:
     name: CodeQL
     runs-on: ubuntu-latest
     permissions:
-      actions: read
-      contents: read
-      security-events: write
+    actions: read
+    contents: read
+    security-events: write
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
-
+        uses: actions/checkout@v4
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
-      with:
-        # Specify languages to analyze; adjust as needed
-        languages: javascript, python, go, java
+        uses: github/codeql-action/init@v2
+        with:
+        languages: C# 
 
-    - name: Build (if needed)
-      # Optional: add build steps appropriate for your repo so CodeQL can analyze compiled code
-      run: |
-        echo "Add your build commands here if required"
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
-      with:
-        # `output` can be set if you need a SARIF artifact; default is fine
-        #checkout_path: ${{ github.workspace }}
