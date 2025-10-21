@@ -117,7 +117,7 @@ public class InventoryItem : Entity<InventoryItemId>
     /// <summary>
     /// Marks the tool as lost.
     /// </summary>
-    public void MarkAsLost(MemberId reporter)
+    public void MarkAsLost()
     {
         if (Status.Equals(ItemStatus.Lost))
             throw new InvalidOperationException("Tool is already marked as lost.");
