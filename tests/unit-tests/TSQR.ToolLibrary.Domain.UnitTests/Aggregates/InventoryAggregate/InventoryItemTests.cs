@@ -98,7 +98,7 @@ public class InventoryItemTests
 
         var item = InventoryItem.Create(toolId, ownerId, acquisition, serial, condition);
 
-        item.MarkAsLost(reporter);
+        item.MarkAsLost();
 
         Assert.Equal(ItemStatus.Lost, item.Status);
         Assert.Null(item.CurrentHolderId);
