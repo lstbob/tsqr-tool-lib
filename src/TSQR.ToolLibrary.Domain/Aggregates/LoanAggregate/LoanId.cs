@@ -1,9 +1,9 @@
-namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
+namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
 
 /// <summary>
-/// Represents the unique identifier for a tool.
+/// Represents the unique identifier for a loan.
 /// </summary>
-public class ToolId(int value) : ValueObject
+public class LoanId(int value) : ValueObject
 {
     public int Value { get; } = value;
 
@@ -11,6 +11,5 @@ public class ToolId(int value) : ValueObject
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;
-    } 
+    }
 }
-

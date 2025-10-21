@@ -1,4 +1,4 @@
-namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryItemAggregate;
+namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
 
 /// <summary>
 /// Represents the status of an inventory item.

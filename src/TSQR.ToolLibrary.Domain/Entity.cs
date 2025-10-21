@@ -5,14 +5,14 @@ namespace TSQR.ToolLibrary.Domain;
 /// </summary>
 public abstract class Entity<TId>(TId id) where TId : notnull, ValueObject 
 {
-   private List<INotification> _domainEvents = [];
-   public TId Id  => id;
-   public IReadOnlyCollection<INotification> DomainEvents => _domainEvents.AsReadOnly();
+   private List<IDomainEvent> _domainEvents = [];
+   public TId Id  {get; } = id;
+   public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
    /// <summary>
    /// Adds a domain event to the entity.
    /// </summary>
-   public void AddDomainEvent(INotification eventItem)
+   public void AddDomainEvent(IDomainEvent eventItem)
    {
         _domainEvents ??= [];
         _domainEvents.Add(eventItem);
@@ -21,7 +21,7 @@ public abstract class Entity<TId>(TId id) where TId : notnull, ValueObject
    /// <summary>
    /// Removes a domain event from the entity.
    /// </summary>
-   public void RemoveDomainEvent(INotification eventItem)
+   public void RemoveDomainEvent(IDomainEvent eventItem)
    {
         _domainEvents?.Remove(eventItem);
    }    

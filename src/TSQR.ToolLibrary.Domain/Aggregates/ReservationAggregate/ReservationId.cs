@@ -1,4 +1,4 @@
-namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryItemAggregate;
+namespace TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate;
 
 /// <summary>
 /// Represents the unique identifier for a reservation.

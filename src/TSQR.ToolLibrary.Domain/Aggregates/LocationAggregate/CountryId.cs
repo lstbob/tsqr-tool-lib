@@ -1,9 +1,9 @@
-namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryItemAggregate;
+namespace TSQR.ToolLibrary.Domain.Aggregates.LocationAggregate;
 
 /// <summary>
-/// Represents the unique identifier for a loan.
+/// Represents the identifier for a country in the tool library system.
 /// </summary>
-public class LoanId(int value) : ValueObject
+public class CountryId(int value) : ValueObject
 {
     public int Value { get; } = value;
 
@@ -11,5 +11,5 @@ public class LoanId(int value) : ValueObject
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;
-    }
+    }    
 }

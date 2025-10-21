@@ -1,9 +1,11 @@
-namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryItemAggregate;
+using TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate;
+
+namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
 
 /// <summary>
 /// Represents an inventory item in the tool library system.
 /// </summary>
-public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
+public class InventoryItem : Entity<InventoryItemId>
 {
  
     /// <summary>
@@ -23,24 +25,26 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
             MemberId? reservationMemberId = null
             ) : base(id)
     {
-        ToolId = toolId ?? throw new ArgumentNullException(nameof(toolId));
-        OriginalOwnerId = originalOwnerId ?? throw new ArgumentNullException(nameof(originalOwnerId));
+        ToolId = toolId ?? 
+            throw new ArgumentNullException(nameof(toolId));
 
-        InitialAcquisitionDate = initialAcquisitionDate == default?
-             throw new ArgumentNullException(nameof(initialAcquisitionDate)) 
-             : initialAcquisitionDate;
+        OriginalOwnerId = originalOwnerId ?? 
+            throw new ArgumentNullException(nameof(originalOwnerId));
 
-        SerialNumber = string.IsNullOrWhiteSpace(serialNumber) 
-            ? throw new ArgumentNullException(nameof(serialNumber)) 
-            : serialNumber;
+        InitialAcquisitionDate = initialAcquisitionDate
+            .Validate(nameof(initialAcquisitionDate))
+            .ValidateNotInFuture(nameof(initialAcquisitionDate));
 
-        Status = status.Equals(ItemStatus.NotSet) 
-            ? throw new ArgumentException("Item status cannot be NotSet.", nameof(status)) 
-            : status;
+        SerialNumber = serialNumber
+            .Validate(serialNumber);
 
-        Condition = condition.Equals(Condition.NotSet) 
-            ? throw new ArgumentException("Item condition cannot be NotSet.", nameof(condition)) 
-            : condition;
+        Status = status
+            .ValidateDefined(nameof(status))
+            .ValidateNotDefault(nameof(status)); 
+
+        Condition = condition
+            .ValidateDefined(nameof(condition))
+            .ValidateNotDefault(nameof(condition)); 
 
         CurrentHolderId = currentHolderId;
         LastBorrowedDate = lastBorrowedDate;
@@ -58,6 +62,7 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
     public DateTime? LastBorrowedDate { get; private set; }
     public DateTime? ReservationDate { get; private set; }    
     public MemberId? ReservationMemberId {get; private set;}
+    public Loan? CurrentLoan { get; private set; }
 
     /// <summary>
     /// Factory method to create a new instance of the <see cref="InventoryItem"/> class
@@ -121,7 +126,7 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         Status = ItemStatus.Lost;
         // TODO: Add Domain Event for reporting lost tool. Notifying original owner and admin.
         // CurrentHolder should pay a fine or replace the tool.
-        // 
+        //        AddDomainEvent(new object());
     }
 
     /// <summary>
@@ -133,6 +138,7 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
             throw new InvalidOperationException("Tool is not currently loaned out.");
 
         CurrentHolderId = null;
+
         Status = ItemStatus.Available;
     }
 
@@ -150,10 +156,12 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
             throw new InvalidOperationException("Tool is reserved and cannot be borrowed.");
 
         CurrentHolderId = memberId;
+        
         Status = ItemStatus.Loaned;
+
         LastBorrowedDate = DateTime.UtcNow;
 
-        AddDomainEvent(new ItemLoanedEvent(Id, memberId, LastBorrowedDate.Value));
+        AddDomainEvent(new ItemLoanedDomainEvent(Id, memberId, LastBorrowedDate.Value));
     }
 
     /// <summary>
@@ -168,10 +176,6 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
 
         if (reserveDate == default || reserveDate <= DateTime.UtcNow)
             throw new ArgumentNullException(nameof(reserveDate));
-
-        // TODO: Change when loan policy is introduced
-        if(reserveDate > DateTime.UtcNow.AddYears(1)) 
-            throw new InvalidOperationException("Tool cannot be reserved more than a year in advance.");
 
         ReservationDate = reserveDate;
     }

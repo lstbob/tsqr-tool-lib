@@ -1,7 +1,7 @@
 namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 
 /// <summary>
-/// Represents a tool in the tool library system.
+/// Represents the domain entity for a Tool.
 /// </summary>
 public class Tool : Entity<ToolId>, IAggregateRoot
 {
@@ -16,17 +16,15 @@ public class Tool : Entity<ToolId>, IAggregateRoot
         ToolType type,
         string? metadata = null) : base(id)
     {
-        Model = string.IsNullOrWhiteSpace(model) ?
-            throw new ArgumentException("Model is invalid.") : model;
+        Model = model.Validate(nameof(model));
 
-        Description = string.IsNullOrWhiteSpace(description) ?
-            throw new ArgumentException("Description is invalid.") : description;
+        Description = description.Validate(nameof(description)); 
 
         Manufacturer = manufacturer ?? throw new ArgumentNullException(nameof(manufacturer));
 
-        Type = type.Equals(ToolType.NotSet) 
-            ? throw new ArgumentException("Tool type cannot be Invalid.", nameof(type)) 
-            : type;
+        Type = type
+            .ValidateDefined(nameof(type))
+            .ValidateNotDefault(nameof(type)); 
 
         Metadata = metadata;
     } 
@@ -70,18 +68,12 @@ public class Tool : Entity<ToolId>, IAggregateRoot
     public void UpdateToolDetails(string model, string description, Manufacturer manufacturer,
             ToolType type,  string? metadata = null)
     {
-        Model = string.IsNullOrWhiteSpace(model) ?
-            throw new ArgumentException("Model is invalid.") : model;
-
-        Description = string.IsNullOrWhiteSpace(description) ?
-            throw new ArgumentException("Description is invalid.") : description;
-
+        Model = model.Validate(nameof(model)); 
+        Description = description.Validate(nameof(description));
         Manufacturer = manufacturer ?? throw new ArgumentNullException(nameof(manufacturer));
-
-        Type = type.Equals(ToolType.NotSet) 
-            ? throw new ArgumentException("Tool type cannot be Invalid.", nameof(type)) 
-            : type;
-
+        Type = type
+            .ValidateDefined(nameof(type))
+            .ValidateNotDefault(nameof(type));    
         Metadata = metadata;
     }
 }
