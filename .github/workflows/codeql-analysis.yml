@@ -23,13 +23,7 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
-          # Specify languages to analyze; adjust as needed
-          languages: C#
-
-      - name: Build (if needed)
-        # Optional: add build steps appropriate for your repo so CodeQL can analyze compiled code
-        run: |
-          echo "Add your build commands here if required"
+          languages: csharp
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
