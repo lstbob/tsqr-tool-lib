@@ -23,7 +23,7 @@ jobs:
         uses: github/codeql-action/init@v2
         with:
           # Specify languages to analyze; adjust as needed
-          languages: javascript, python, go, java
+          languages: C#
 
       - name: Build (if needed)
         # Optional: add build steps appropriate for your repo so CodeQL can analyze compiled code
@@ -32,6 +32,3 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
-        with:
-          # `output` can be set if you need a SARIF artifact; default is fine
-          #checkout_path: ${{ github.workspace }}
