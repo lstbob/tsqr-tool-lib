@@ -1,5 +1,6 @@
 # Minimal CodeQL analysis workflow for GitHub Actions
 # Place this file on the repository's default branch (e.g., main) so branch protection can see it.
+name: CodeQL
 on:
   push:
     branches: [main, development]
