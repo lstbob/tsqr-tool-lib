@@ -3,7 +3,7 @@
 name: CodeQL
 on:
   push:
-    branches: [main, development]
+    branches: [main, develop]
   pull_request:
     # Analyze pull requests targeting the default branch
     types: [opened, synchronize, reopened, ready_for_review]
@@ -32,4 +32,4 @@ jobs:
           echo "Add your build commands here if required"
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
