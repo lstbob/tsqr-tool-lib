@@ -17,14 +17,14 @@ public class Member : Entity<MemberId>, IAggregateRoot
         DateTime? verificationDate,
         MembershipRecord? record = null) : base(id)
     {
-        FirstName = firstName.Validate(nameof(firstName));
+        FirstName = firstName;
         MiddleName = middleName;
-        LastName = lastName.Validate(nameof(lastName));
+        LastName = lastName;
         Age = age;
-        Address = address.Validate(nameof(address));
-        Email = email.Validate(nameof(email));
-        PhoneNumber = phoneNumber.Validate(nameof(phoneNumber));
-        Status = status.ValidateDefined(nameof(status)).ValidateNotDefault(nameof(status));
+        Address = address;
+        Email = email;
+        PhoneNumber = phoneNumber;
+        Status = status;
         IsVerified = isVerified;
         VerifiedByAdminId = verifiedByAdminId;
         VerificationDate = verificationDate;
@@ -44,7 +44,7 @@ public class Member : Entity<MemberId>, IAggregateRoot
     public DateTime? VerificationDate { get; private set; }
     public MembershipRecord? Record { get; private set; }
 
-    public static Member Create(
+    public static Result<Member> Create(
         string firstName,
         string middleName,
         string lastName,
@@ -55,15 +55,36 @@ public class Member : Entity<MemberId>, IAggregateRoot
         MemberStatus status,
         MembershipRecord? record = null)
     {
-        return new(
+        var firstNameResult = firstName.Validate(nameof(firstName));
+        if (firstNameResult.IsFailure) return firstNameResult.Error;
+
+        var lastNameResult = lastName.Validate(nameof(lastName));
+        if (lastNameResult.IsFailure) return lastNameResult.Error;
+
+        var addressResult = address.Validate(nameof(address));
+        if (addressResult.IsFailure) return addressResult.Error;
+
+        var emailResult = email.Validate(nameof(email));
+        if (emailResult.IsFailure) return emailResult.Error;
+
+        var phoneResult = phoneNumber.Validate(nameof(phoneNumber));
+        if (phoneResult.IsFailure) return phoneResult.Error;
+
+        var statusResult = status.ValidateDefined(nameof(status));
+        if (statusResult.IsFailure) return statusResult.Error;
+
+        var notDefaultResult = status.ValidateNotDefault(nameof(status));
+        if (notDefaultResult.IsFailure) return notDefaultResult.Error;
+
+        return new Member(
             new MemberId(default),
-            firstName,
+            firstNameResult.Value,
             middleName,
-            lastName,
+            lastNameResult.Value,
             age,
-            address,
-            email,
-            phoneNumber,
+            addressResult.Value,
+            emailResult.Value,
+            phoneResult.Value,
             status,
             false,
             null,
@@ -86,7 +107,7 @@ public class Member : Entity<MemberId>, IAggregateRoot
         DateTime? verificationDate,
         MembershipRecord? record = null)
     {
-        return new(
+        return new Member(
             id,
             firstName,
             middleName,
@@ -102,41 +123,46 @@ public class Member : Entity<MemberId>, IAggregateRoot
             record);
     }
 
-    public void Verify(MemberId adminId)
+    public Result Verify(MemberId adminId)
     {
         if (IsVerified)
-            throw new InvalidOperationException("Member is already verified.");
+            return new DomainError(nameof(IsVerified), "Member is already verified.");
+        if (adminId is null)
+            return new ValidationError(nameof(adminId), "Admin ID is required.");
 
-        ArgumentNullException.ThrowIfNull(adminId);
         IsVerified = true;
         VerifiedByAdminId = adminId;
         VerificationDate = DateTime.UtcNow;
         Status = MemberStatus.Active;
         AddDomainEvent(new MemberVerifiedEvent(Id, adminId, VerificationDate.Value));
+        return Result.Success();
     }
 
-    public void Suspend()
+    public Result Suspend()
     {
         if (Status == MemberStatus.Suspended)
-            throw new InvalidOperationException("Member is already suspended.");
+            return new DomainError(nameof(Status), "Member is already suspended.");
 
         Status = MemberStatus.Suspended;
+        return Result.Success();
     }
 
-    public void Ban()
+    public Result Ban()
     {
         if (Status == MemberStatus.Banned)
-            throw new InvalidOperationException("Member is already banned.");
+            return new DomainError(nameof(Status), "Member is already banned.");
 
         Status = MemberStatus.Banned;
+        return Result.Success();
     }
 
-    public void Reinstate()
+    public Result Reinstate()
     {
         if (Status != MemberStatus.Suspended && Status != MemberStatus.Banned)
-            throw new InvalidOperationException("Only suspended or banned members can be reinstated.");
+            return new DomainError(nameof(Status), "Only suspended or banned members can be reinstated.");
 
         Status = MemberStatus.Active;
+        return Result.Success();
     }
 
     public bool IsEligibleToBorrow()

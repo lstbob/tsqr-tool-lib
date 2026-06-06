@@ -10,7 +10,7 @@ public class Manufacturer : Entity<ManufcaturerId>
     /// </summary>
     private Manufacturer(ManufcaturerId id, string name) : base(id)
     {
-        Name = name.Validate(nameof(name));
+        Name = name;
     }
 
     public string Name { get; }

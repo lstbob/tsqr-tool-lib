@@ -1,16 +1,21 @@
 namespace TSQR.ToolLibrary.Application.Inventory.Commands;
 
-public record ReturnToolCommand(InventoryItemId ItemId, Condition ReturnedCondition) : IRequest;
+public record ReturnToolCommand(InventoryItemId ItemId, Condition ReturnedCondition) : IRequest<Result>;
 
 public class ReturnToolCommandHandler(IRepository<InventoryItem, InventoryItemId> inventoryRepository)
-    : IRequestHandler<ReturnToolCommand>
+    : IRequestHandler<ReturnToolCommand, Result>
 {
-    public async Task Handle(ReturnToolCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(ReturnToolCommand request, CancellationToken cancellationToken)
     {
-        var item = await inventoryRepository.GetByIdAsync(request.ItemId, cancellationToken)
-            ?? throw new InvalidOperationException("Inventory item not found.");
+        var item = await inventoryRepository.GetByIdAsync(request.ItemId, cancellationToken);
+        if (item is null)
+            return new NotFoundError(nameof(request.ItemId), "Inventory item not found.");
 
-        item.Return(request.ReturnedCondition);
+        var returnResult = item.Return(request.ReturnedCondition);
+        if (returnResult.IsFailure)
+            return returnResult.Error;
+
         await inventoryRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
+        return Result.Success();
     }
 }

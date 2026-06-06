@@ -10,7 +10,7 @@ public class Location : Entity<LocationId>
     /// </summary>
     private Location(LocationId id, string name) : base(id)
     {
-        Name = name.Validate(nameof(name));
+        Name = name;
     }
 
     /// <summary>
