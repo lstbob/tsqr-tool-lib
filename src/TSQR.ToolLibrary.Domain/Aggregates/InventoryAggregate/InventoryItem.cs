@@ -18,12 +18,12 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         TimeSpan totalUsageTime = default,
         bool isUnderRepair = false) : base(id)
     {
-        ToolId = toolId ?? throw new ArgumentNullException(nameof(toolId));
-        OriginalOwnerId = originalOwnerId ?? throw new ArgumentNullException(nameof(originalOwnerId));
-        InitialAcquisitionDate = initialAcquisitionDate.Validate(nameof(initialAcquisitionDate)).ValidateNotInFuture(nameof(initialAcquisitionDate));
-        SerialNumber = serialNumber.Validate(serialNumber);
-        Status = status.ValidateDefined(nameof(status)).ValidateNotDefault(nameof(status));
-        Condition = condition.ValidateDefined(nameof(condition)).ValidateNotDefault(nameof(condition));
+        ToolId = toolId;
+        OriginalOwnerId = originalOwnerId;
+        InitialAcquisitionDate = initialAcquisitionDate;
+        SerialNumber = serialNumber;
+        Status = status;
+        Condition = condition;
         CurrentHolderId = currentHolderId;
         LastBorrowedDate = lastBorrowedDate;
         ReservationDate = reservationDate;
@@ -47,19 +47,42 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
     public TimeSpan TotalUsageTime { get; private set; }
     public bool IsUnderRepair { get; private set; }
 
-    public static InventoryItem Create(
+    public static Result<InventoryItem> Create(
         ToolId toolId,
         MemberId originalOwnerId,
         DateTime initialAcquisitionDate,
         string serialNumber,
         Condition condition)
     {
-        return new(
+        if (toolId is null)
+            return new ValidationError(nameof(toolId), "Tool ID is required.");
+        if (originalOwnerId is null)
+            return new ValidationError(nameof(originalOwnerId), "Original owner ID is required.");
+
+        var acquisitionResult = initialAcquisitionDate.Validate(nameof(initialAcquisitionDate));
+        if (acquisitionResult.IsFailure) return acquisitionResult.Error;
+
+        var notFutureResult = initialAcquisitionDate.ValidateNotInFuture(nameof(initialAcquisitionDate));
+        if (notFutureResult.IsFailure) return notFutureResult.Error;
+
+        var serialResult = serialNumber.Validate(nameof(serialNumber));
+        if (serialResult.IsFailure) return serialResult.Error;
+
+        var statusResult = ItemStatus.Available.ValidateDefined(nameof(ItemStatus));
+        if (statusResult.IsFailure) return statusResult.Error;
+
+        var conditionResult = condition.ValidateDefined(nameof(condition));
+        if (conditionResult.IsFailure) return conditionResult.Error;
+
+        var conditionNotDefaultResult = condition.ValidateNotDefault(nameof(condition));
+        if (conditionNotDefaultResult.IsFailure) return conditionNotDefaultResult.Error;
+
+        return new InventoryItem(
             new InventoryItemId(default),
             toolId,
             originalOwnerId,
             initialAcquisitionDate,
-            serialNumber,
+            serialResult.Value,
             ItemStatus.Available,
             condition);
     }
@@ -80,7 +103,7 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         TimeSpan totalUsageTime = default,
         bool isUnderRepair = false)
     {
-        return new(
+        return new InventoryItem(
             id,
             toolId,
             originalOwnerId,
@@ -97,18 +120,19 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
             isUnderRepair);
     }
 
-    public void Loan(MemberId memberId)
+    public Result Loan(MemberId memberId)
     {
-        ArgumentNullException.ThrowIfNull(memberId);
+        if (memberId is null)
+            return new ValidationError(nameof(memberId), "Member ID is required.");
 
         if (!Status.Equals(ItemStatus.Available))
-            throw new InvalidOperationException("Tool is not available for borrowing.");
+            return new DomainError(nameof(Status), "Tool is not available for borrowing.");
 
         if (ReservationDate is not null || ReservationMemberId is not null)
-            throw new InvalidOperationException("Tool is reserved and cannot be borrowed.");
+            return new DomainError(nameof(Status), "Tool is reserved and cannot be borrowed.");
 
         if (IsUnderRepair)
-            throw new InvalidOperationException("Tool is under repair and cannot be borrowed.");
+            return new DomainError(nameof(IsUnderRepair), "Tool is under repair and cannot be borrowed.");
 
         CurrentHolderId = memberId;
         Status = ItemStatus.Loaned;
@@ -116,40 +140,49 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         LoanCount++;
 
         AddDomainEvent(new ItemLoanedDomainEvent(Id, memberId, LastBorrowedDate.Value));
+        return Result.Success();
     }
 
-    public void Return(Condition returnedCondition)
+    public Result Return(Condition returnedCondition)
     {
         if (!Status.Equals(ItemStatus.Loaned))
-            throw new InvalidOperationException("Tool is not currently loaned out.");
+            return new DomainError(nameof(Status), "Tool is not currently loaned out.");
 
-        returnedCondition.ValidateDefined(nameof(returnedCondition)).ValidateNotDefault(nameof(returnedCondition));
+        var conditionResult = returnedCondition.ValidateDefined(nameof(returnedCondition));
+        if (conditionResult.IsFailure) return conditionResult.Error;
+
+        var notDefaultResult = returnedCondition.ValidateNotDefault(nameof(returnedCondition));
+        if (notDefaultResult.IsFailure) return notDefaultResult.Error;
 
         if (LastBorrowedDate.HasValue)
             TotalUsageTime += DateTime.UtcNow - LastBorrowedDate.Value;
 
+        var previousHolderId = CurrentHolderId;
         CurrentHolderId = null;
         Status = ItemStatus.Available;
         Condition = returnedCondition;
 
-        AddDomainEvent(new ToolReturnedEvent(Id, CurrentHolderId ?? throw new InvalidOperationException("No current holder to return from."), returnedCondition));
+        AddDomainEvent(new ToolReturnedEvent(Id, previousHolderId!, returnedCondition));
+        return Result.Success();
     }
 
-    public void Reserve(DateTime reserveDate, MemberId member)
+    public Result Reserve(DateTime reserveDate, MemberId member)
     {
         if (ReservationDate is not null)
-            throw new InvalidOperationException("Tool is already reserved.");
+            return new DomainError(nameof(ReservationDate), "Tool is already reserved.");
 
-        ArgumentNullException.ThrowIfNull(member);
+        if (member is null)
+            return new ValidationError(nameof(member), "Member is required.");
 
         if (reserveDate == default || reserveDate <= DateTime.UtcNow)
-            throw new ArgumentNullException(nameof(reserveDate));
+            return new ValidationError(nameof(reserveDate), "Reservation date must be in the future.");
 
         if (reserveDate > DateTime.UtcNow.AddDays(28))
-            throw new InvalidOperationException("Tool cannot be reserved more than 28 days in advance.");
+            return new DomainError(nameof(reserveDate), "Tool cannot be reserved more than 28 days in advance.");
 
         ReservationDate = reserveDate;
         ReservationMemberId = member;
+        return Result.Success();
     }
 
     public void ClearReservation()
@@ -158,33 +191,40 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         ReservationMemberId = null;
     }
 
-    public void MarkAsLost(MemberId reporter)
+    public Result MarkAsLost(MemberId reporter)
     {
         if (Status.Equals(ItemStatus.Lost))
-            throw new InvalidOperationException("Tool is already marked as lost.");
+            return new DomainError(nameof(Status), "Tool is already marked as lost.");
 
         CurrentHolderId = null;
         Status = ItemStatus.Lost;
+        return Result.Success();
     }
 
-    public void MarkForRepair()
+    public Result MarkForRepair()
     {
         if (IsUnderRepair)
-            throw new InvalidOperationException("Tool is already marked for repair.");
+            return new DomainError(nameof(IsUnderRepair), "Tool is already marked for repair.");
 
         IsUnderRepair = true;
         Status = ItemStatus.UnderMaintenance;
+        return Result.Success();
     }
 
-    public void CompleteRepair(Condition newCondition)
+    public Result CompleteRepair(Condition newCondition)
     {
         if (!IsUnderRepair)
-            throw new InvalidOperationException("Tool is not under repair.");
+            return new DomainError(nameof(IsUnderRepair), "Tool is not under repair.");
 
-        newCondition.ValidateDefined(nameof(newCondition)).ValidateNotDefault(nameof(newCondition));
+        var conditionResult = newCondition.ValidateDefined(nameof(newCondition));
+        if (conditionResult.IsFailure) return conditionResult.Error;
+
+        var notDefaultResult = newCondition.ValidateNotDefault(nameof(newCondition));
+        if (notDefaultResult.IsFailure) return notDefaultResult.Error;
 
         IsUnderRepair = false;
         Condition = newCondition;
         Status = ItemStatus.Available;
+        return Result.Success();
     }
 }
