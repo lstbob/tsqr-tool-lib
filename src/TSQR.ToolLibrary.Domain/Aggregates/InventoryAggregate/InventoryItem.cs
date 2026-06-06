@@ -1,76 +1,58 @@
 namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
 
-/// <summary>
-/// Represents an inventory item in the tool library system.
-/// </summary>
-public class InventoryItem : Entity<InventoryItemId>
+public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
 {
- 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="InventoryItem"/> class.
-    /// </summary>
     private InventoryItem(
-            InventoryItemId id,
-            ToolId toolId,
-            MemberId originalOwnerId,
-            DateTime initialAcquisitionDate,
-            string serialNumber,
-            ItemStatus status,
-            Condition condition,
-            MemberId? currentHolderId = null,
-            DateTime? lastBorrowedDate = null,
-            DateTime? reservationDate = null,
-            MemberId? reservationMemberId = null
-            ) : base(id)
+        InventoryItemId id,
+        ToolId toolId,
+        MemberId originalOwnerId,
+        DateTime initialAcquisitionDate,
+        string serialNumber,
+        ItemStatus status,
+        Condition condition,
+        MemberId? currentHolderId = null,
+        DateTime? lastBorrowedDate = null,
+        DateTime? reservationDate = null,
+        MemberId? reservationMemberId = null,
+        int loanCount = 0,
+        TimeSpan totalUsageTime = default,
+        bool isUnderRepair = false) : base(id)
     {
-        ToolId = toolId ?? 
-            throw new ArgumentNullException(nameof(toolId));
-
-        OriginalOwnerId = originalOwnerId ?? 
-            throw new ArgumentNullException(nameof(originalOwnerId));
-
-        InitialAcquisitionDate = initialAcquisitionDate
-            .Validate(nameof(initialAcquisitionDate))
-            .ValidateNotInFuture(nameof(initialAcquisitionDate));
-
-        SerialNumber = serialNumber
-            .Validate(serialNumber);
-
-        Status = status
-            .ValidateDefined(nameof(status))
-            .ValidateNotDefault(nameof(status)); 
-
-        Condition = Condition
-            .ValidateDefined(nameof(condition))
-            .ValidateNotDefault(nameof(condition)); 
-
+        ToolId = toolId ?? throw new ArgumentNullException(nameof(toolId));
+        OriginalOwnerId = originalOwnerId ?? throw new ArgumentNullException(nameof(originalOwnerId));
+        InitialAcquisitionDate = initialAcquisitionDate.Validate(nameof(initialAcquisitionDate)).ValidateNotInFuture(nameof(initialAcquisitionDate));
+        SerialNumber = serialNumber.Validate(serialNumber);
+        Status = status.ValidateDefined(nameof(status)).ValidateNotDefault(nameof(status));
+        Condition = condition.ValidateDefined(nameof(condition)).ValidateNotDefault(nameof(condition));
         CurrentHolderId = currentHolderId;
         LastBorrowedDate = lastBorrowedDate;
         ReservationDate = reservationDate;
         ReservationMemberId = reservationMemberId;
+        LoanCount = loanCount;
+        TotalUsageTime = totalUsageTime;
+        IsUnderRepair = isUnderRepair;
     }
 
     public ToolId ToolId { get; }
     public MemberId OriginalOwnerId { get; }
     public DateTime InitialAcquisitionDate { get; }
-    public string SerialNumber {get; }
-    public ItemStatus Status { get;private set; }
+    public string SerialNumber { get; }
+    public ItemStatus Status { get; private set; }
     public Condition Condition { get; private set; }
     public MemberId? CurrentHolderId { get; private set; }
     public DateTime? LastBorrowedDate { get; private set; }
-    public DateTime? ReservationDate { get; private set; }    
-    public MemberId? ReservationMemberId {get; private set;}
-    public Loan? CurrentLoan { get; private set; }
+    public DateTime? ReservationDate { get; private set; }
+    public MemberId? ReservationMemberId { get; private set; }
+    public int LoanCount { get; private set; }
+    public TimeSpan TotalUsageTime { get; private set; }
+    public bool IsUnderRepair { get; private set; }
 
-    /// <summary>
-    /// Factory method to create a new instance of the <see cref="InventoryItem"/> class
-    /// </summary>
     public static InventoryItem Create(
-            ToolId toolId,
-            MemberId originalOwnerId,
-            DateTime initialAcquisitionDate,
-            string serialNumber,
-            Condition condition)
+        ToolId toolId,
+        MemberId originalOwnerId,
+        DateTime initialAcquisitionDate,
+        string serialNumber,
+        Condition condition)
     {
         return new(
             new InventoryItemId(default),
@@ -82,21 +64,21 @@ public class InventoryItem : Entity<InventoryItemId>
             condition);
     }
 
-    /// <summary>
-    /// Factory method to rehydrate an existing instance of the <see cref="InventoryItem"/> class.
-    /// </summary>
     public static InventoryItem Create(
-            InventoryItemId id,
-            ToolId toolId,
-            MemberId originalOwnerId,
-            DateTime initialAcquisitionDate,
-            string serialNumber,
-            ItemStatus status,
-            Condition condition,
-            MemberId currentHolderId, 
-            DateTime lastBorrowedDate,
-            DateTime reservationDate,
-            MemberId reservationMemberId)
+        InventoryItemId id,
+        ToolId toolId,
+        MemberId originalOwnerId,
+        DateTime initialAcquisitionDate,
+        string serialNumber,
+        ItemStatus status,
+        Condition condition,
+        MemberId? currentHolderId,
+        DateTime? lastBorrowedDate,
+        DateTime? reservationDate,
+        MemberId? reservationMemberId,
+        int loanCount = 0,
+        TimeSpan totalUsageTime = default,
+        bool isUnderRepair = false)
     {
         return new(
             id,
@@ -109,38 +91,12 @@ public class InventoryItem : Entity<InventoryItemId>
             currentHolderId,
             lastBorrowedDate,
             reservationDate,
-            reservationMemberId);
-    }
-    
-    /// <summary>
-    /// Marks the tool as lost.
-    /// </summary>
-    public void MarkAsLost(MemberId reporter)
-    {
-        if (Status.Equals(ItemStatus.Lost))
-            throw new InvalidOperationException("Tool is already marked as lost.");
-
-        CurrentHolderId = null;
-        Status = ItemStatus.Lost;
-        // TODO: Add Domain Event for reporting lost tool. Notifying original owner and admin.
-        // CurrentHolder should pay a fine or replace the tool.
+            reservationMemberId,
+            loanCount,
+            totalUsageTime,
+            isUnderRepair);
     }
 
-    /// <summary>
-    /// Returns the tool to the library.
-    /// </summary>
-    public void Return()
-    {
-        if (!Status.Equals(ItemStatus.Loaned))
-            throw new InvalidOperationException("Tool is not currently loaned out.");
-
-        CurrentHolderId = null;
-        Status = ItemStatus.Available;
-    }
-
-    /// <summary>
-    /// Loans the tool to a member.
-    /// </summary>
     public void Loan(MemberId memberId)
     {
         ArgumentNullException.ThrowIfNull(memberId);
@@ -148,22 +104,40 @@ public class InventoryItem : Entity<InventoryItemId>
         if (!Status.Equals(ItemStatus.Available))
             throw new InvalidOperationException("Tool is not available for borrowing.");
 
-        if(ReservationDate is not null || ReservationMemberId is not null)
+        if (ReservationDate is not null || ReservationMemberId is not null)
             throw new InvalidOperationException("Tool is reserved and cannot be borrowed.");
+
+        if (IsUnderRepair)
+            throw new InvalidOperationException("Tool is under repair and cannot be borrowed.");
 
         CurrentHolderId = memberId;
         Status = ItemStatus.Loaned;
         LastBorrowedDate = DateTime.UtcNow;
+        LoanCount++;
 
-        AddDomainEvent(new ItemLoanedEvent(Id, memberId, LastBorrowedDate.Value));
+        AddDomainEvent(new ItemLoanedDomainEvent(Id, memberId, LastBorrowedDate.Value));
     }
 
-    /// <summary>
-    /// Reserves the tool for a member on a specific date.
-    /// </summary>  
+    public void Return(Condition returnedCondition)
+    {
+        if (!Status.Equals(ItemStatus.Loaned))
+            throw new InvalidOperationException("Tool is not currently loaned out.");
+
+        returnedCondition.ValidateDefined(nameof(returnedCondition)).ValidateNotDefault(nameof(returnedCondition));
+
+        if (LastBorrowedDate.HasValue)
+            TotalUsageTime += DateTime.UtcNow - LastBorrowedDate.Value;
+
+        CurrentHolderId = null;
+        Status = ItemStatus.Available;
+        Condition = returnedCondition;
+
+        AddDomainEvent(new ToolReturnedEvent(Id, CurrentHolderId ?? throw new InvalidOperationException("No current holder to return from."), returnedCondition));
+    }
+
     public void Reserve(DateTime reserveDate, MemberId member)
     {
-        if(ReservationDate is not null)
+        if (ReservationDate is not null)
             throw new InvalidOperationException("Tool is already reserved.");
 
         ArgumentNullException.ThrowIfNull(member);
@@ -171,12 +145,46 @@ public class InventoryItem : Entity<InventoryItemId>
         if (reserveDate == default || reserveDate <= DateTime.UtcNow)
             throw new ArgumentNullException(nameof(reserveDate));
 
-        // TODO: Change when loan policy is introduced
-        if(reserveDate > DateTime.UtcNow.AddYears(1)) 
-            throw new InvalidOperationException("Tool cannot be reserved more than a year in advance.");
+        if (reserveDate > DateTime.UtcNow.AddDays(28))
+            throw new InvalidOperationException("Tool cannot be reserved more than 28 days in advance.");
 
         ReservationDate = reserveDate;
+        ReservationMemberId = member;
     }
 
-}
+    public void ClearReservation()
+    {
+        ReservationDate = null;
+        ReservationMemberId = null;
+    }
 
+    public void MarkAsLost(MemberId reporter)
+    {
+        if (Status.Equals(ItemStatus.Lost))
+            throw new InvalidOperationException("Tool is already marked as lost.");
+
+        CurrentHolderId = null;
+        Status = ItemStatus.Lost;
+    }
+
+    public void MarkForRepair()
+    {
+        if (IsUnderRepair)
+            throw new InvalidOperationException("Tool is already marked for repair.");
+
+        IsUnderRepair = true;
+        Status = ItemStatus.UnderMaintenance;
+    }
+
+    public void CompleteRepair(Condition newCondition)
+    {
+        if (!IsUnderRepair)
+            throw new InvalidOperationException("Tool is not under repair.");
+
+        newCondition.ValidateDefined(nameof(newCondition)).ValidateNotDefault(nameof(newCondition));
+
+        IsUnderRepair = false;
+        Condition = newCondition;
+        Status = ItemStatus.Available;
+    }
+}

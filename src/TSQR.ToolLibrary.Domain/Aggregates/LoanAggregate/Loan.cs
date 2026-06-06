@@ -1,36 +1,20 @@
 namespace TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate;
 
-/// <summary>
-/// Represents a loan of an inventory item in the tool library system.
-/// </summary>
-public class Loan : Entity<LoanId>
+public class Loan : Entity<LoanId>, IAggregateRoot
 {
     private Loan(
-            LoanId id,
-            MemberId memberId,
-            DateTime checkoutDate,
-            DateTime dueDate,
-            InventoryItemId itemId,
-            LoanStatus status
-            ) : base(id)
+        LoanId id,
+        MemberId memberId,
+        DateTime checkoutDate,
+        DateTime dueDate,
+        InventoryItemId itemId,
+        LoanStatus status) : base(id)
     {
         MemberId = memberId ?? throw new ArgumentNullException(nameof(memberId));
-
-        CheckoutDate = checkoutDate
-            .Validate(nameof(checkoutDate))
-            .ValidateNotInFuture(nameof(checkoutDate));
-
-        Status = status
-            .ValidateDefined(nameof(status))
-            .ValidateNotDefault(nameof(status));
-
-        DueDate = dueDate
-            .Validate(nameof(dueDate))
-            .ValidateNotInPast(nameof(dueDate));
-
-        ItemId = itemId;
-        Status = status;
-
+        CheckoutDate = checkoutDate.Validate(nameof(checkoutDate)).ValidateNotInFuture(nameof(checkoutDate));
+        DueDate = dueDate.Validate(nameof(dueDate)).ValidateNotInPast(nameof(dueDate));
+        ItemId = itemId ?? throw new ArgumentNullException(nameof(itemId));
+        Status = status.ValidateDefined(nameof(status)).ValidateNotDefault(nameof(status));
     }
 
     public MemberId MemberId { get; }
@@ -39,67 +23,50 @@ public class Loan : Entity<LoanId>
     public InventoryItemId ItemId { get; }
     public LoanStatus Status { get; private set; }
     public DateTime ReturnedDate { get; private set; }
-    public decimal FineAccrued {get; private set; }
-    
-    /// <summary>
-    /// Factory method to rehydrate an existing <see cref="Loan"/> instance with a new ID. 
-    /// </summary>
+    public decimal FineAccrued { get; private set; }
+
     public static Loan Create(
-            LoanId id, 
-            MemberId memberId,
-            DateTime checkoutDate,
-            DateTime dueDate
-            InventoryItemId itemId,
-            LoanStatus status)
+        LoanId id,
+        MemberId memberId,
+        DateTime checkoutDate,
+        DateTime dueDate,
+        InventoryItemId itemId,
+        LoanStatus status)
     {
-        return new(
-            id,
-            memberId,
-            checkoutDate,
-            dueDate,
-            itemId,
-            status);
+        return new(id, memberId, checkoutDate, dueDate, itemId, status);
     }
 
-    /// <summary>
-    /// Factory method to create a <see cref="Loan"/> instance. 
-    /// </summary>
     public static Loan Create(
-            MemberId memberId,
-            DateTime checkoutDate,
-            LoanStatus status,
-            DateTime dueDate,
-            InventoryItemId itemId)
+        MemberId memberId,
+        DateTime checkoutDate,
+        LoanStatus status,
+        DateTime dueDate,
+        InventoryItemId itemId)
     {
-        return new (
-                new LoanId(default),
-                memberId,
-                checkoutDate,
-                dueDate,
-                itemId,
-                status);
+        return new(new LoanId(default), memberId, checkoutDate, dueDate, itemId, status);
     }
 
-    /// <summary>
-    /// Responsible for ending a loan;
-    /// </summary>
-    public void EndLoan(DateTime expectedEndDate) 
+    public void EndLoan(DateTime expectedEndDate)
     {
-        _ = expectedEndDate
-            .Validate(nameof(expectedEndDate))
-            .ValidateNotInPast(nameof(expectedEndDate));
+        _ = expectedEndDate.Validate(nameof(expectedEndDate)).ValidateNotInPast(nameof(expectedEndDate));
 
-        if(expectedEndDate > DueDate )
+        if (expectedEndDate > DueDate)
         {
             Status = LoanStatus.Overdue;
             TimeSpan overdueTime = expectedEndDate - DueDate;
+            FineAccrued = CalculateFine(overdueTime);
             AddDomainEvent(new LoanOverdueDomainEvent(Id, ItemId, overdueTime));
-        } else
+        }
+        else
         {
             Status = LoanStatus.Returned;
             ReturnedDate = DateTime.UtcNow;
         }
     }
 
+    private decimal CalculateFine(TimeSpan overduePeriod)
+    {
+        var daysOverdue = (int)Math.Ceiling(overduePeriod.TotalDays);
+        return daysOverdue * 1.00m;
+    }
 }
-
