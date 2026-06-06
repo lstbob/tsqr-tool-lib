@@ -1,3 +1,4 @@
+global using TSQR.ToolLibrary.Domain;
 global using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
@@ -6,6 +7,4 @@ global using TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.MaintenanceAggregate;
 global using TSQR.ToolLibrary.Domain.Events;
-global using TSQR.ToolLibrary.Common.Extensions;
-
 global using MediatR;
