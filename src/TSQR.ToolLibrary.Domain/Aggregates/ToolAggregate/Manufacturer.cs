@@ -14,5 +14,10 @@ public class Manufacturer : Entity<ManufcaturerId>
     }
 
     public string Name { get; }
+
+    public static Manufacturer Create(ManufcaturerId id, string name)
+    {
+        return new(id, name);
+    }
 }
 

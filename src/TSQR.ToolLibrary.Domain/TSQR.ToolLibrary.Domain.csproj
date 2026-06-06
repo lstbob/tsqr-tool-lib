@@ -11,6 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>TSQR.ToolLibrary.Infrastructure</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\TSQR.ToolLibrary.Common\TSQR.ToolLibrary.Common.csproj" />
   </ItemGroup>
 </Project>
