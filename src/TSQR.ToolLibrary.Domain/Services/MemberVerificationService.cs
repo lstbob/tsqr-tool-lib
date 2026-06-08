@@ -2,16 +2,20 @@ namespace TSQR.ToolLibrary.Domain.Services;
 
 public class MemberVerificationService
 {
-    public bool IsEligibleToBorrow(Member member)
+    public Result<bool> IsEligibleToBorrow(Member member)
     {
-        ArgumentNullException.ThrowIfNull(member);
+        if (member is null)
+            return new ValidationError(nameof(member), "Member is required.");
+
         return member.IsVerified && member.Status == MemberStatus.Active;
     }
 
-    public bool CanVerifyMember(Member admin, Member targetMember)
+    public Result<bool> CanVerifyMember(Member admin, Member targetMember)
     {
-        ArgumentNullException.ThrowIfNull(admin);
-        ArgumentNullException.ThrowIfNull(targetMember);
+        if (admin is null)
+            return new ValidationError(nameof(admin), "Admin is required.");
+        if (targetMember is null)
+            return new ValidationError(nameof(targetMember), "Target member is required.");
 
         if (admin.Record?.MembershipType != MembershipType.Admin &&
             admin.Record?.MembershipType != MembershipType.LocationCoordinator)

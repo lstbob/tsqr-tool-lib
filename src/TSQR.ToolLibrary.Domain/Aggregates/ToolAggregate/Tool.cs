@@ -11,11 +11,11 @@ public class Tool : Entity<ToolId>, IAggregateRoot
         AmortizationRate amortizationRate,
         string? metadata = null) : base(id)
     {
-        Model = model.Validate(nameof(model));
-        Description = description.Validate(nameof(description));
-        Manufacturer = manufacturer ?? throw new ArgumentNullException(nameof(manufacturer));
-        Type = type.ValidateDefined(nameof(type)).ValidateNotDefault(nameof(type));
-        AmortizationRate = amortizationRate.ValidateDefined(nameof(amortizationRate)).ValidateNotDefault(nameof(amortizationRate));
+        Model = model;
+        Description = description;
+        Manufacturer = manufacturer;
+        Type = type;
+        AmortizationRate = amortizationRate;
         Metadata = metadata;
     }
 
@@ -29,7 +29,7 @@ public class Tool : Entity<ToolId>, IAggregateRoot
     private readonly Dictionary<LocationId, ScarcityLevel> _scarcityByLocation = [];
     public IReadOnlyDictionary<LocationId, ScarcityLevel> ScarcityByLocation => _scarcityByLocation.AsReadOnly();
 
-    public static Tool Create(
+    public static Result<Tool> Create(
         string model,
         string description,
         Manufacturer manufacturer,
@@ -37,7 +37,28 @@ public class Tool : Entity<ToolId>, IAggregateRoot
         AmortizationRate amortizationRate,
         string? metadata = null)
     {
-        return new(new ToolId(default), model, description, manufacturer, type, amortizationRate, metadata);
+        var modelResult = model.Validate(nameof(model));
+        if (modelResult.IsFailure) return modelResult.Error;
+
+        var descriptionResult = description.Validate(nameof(description));
+        if (descriptionResult.IsFailure) return descriptionResult.Error;
+
+        if (manufacturer is null)
+            return new ValidationError(nameof(manufacturer), "Manufacturer is required.");
+
+        var typeResult = type.ValidateDefined(nameof(type));
+        if (typeResult.IsFailure) return typeResult.Error;
+
+        var typeNotDefaultResult = type.ValidateNotDefault(nameof(type));
+        if (typeNotDefaultResult.IsFailure) return typeNotDefaultResult.Error;
+
+        var rateResult = amortizationRate.ValidateDefined(nameof(amortizationRate));
+        if (rateResult.IsFailure) return rateResult.Error;
+
+        var rateNotDefaultResult = amortizationRate.ValidateNotDefault(nameof(amortizationRate));
+        if (rateNotDefaultResult.IsFailure) return rateNotDefaultResult.Error;
+
+        return new Tool(new ToolId(default), modelResult.Value, descriptionResult.Value, manufacturer, type, amortizationRate, metadata);
     }
 
     public static Tool Create(
@@ -49,25 +70,56 @@ public class Tool : Entity<ToolId>, IAggregateRoot
         AmortizationRate amortizationRate,
         string? metadata = null)
     {
-        return new(id, model, description, manufacturer, type, amortizationRate, metadata);
+        return new Tool(id, model, description, manufacturer, type, amortizationRate, metadata);
     }
 
-    public void UpdateToolDetails(string model, string description, Manufacturer manufacturer,
+    public Result UpdateToolDetails(string model, string description, Manufacturer manufacturer,
             ToolType type, AmortizationRate amortizationRate, string? metadata = null)
     {
-        Model = model.Validate(nameof(model));
-        Description = description.Validate(nameof(description));
-        Manufacturer = manufacturer ?? throw new ArgumentNullException(nameof(manufacturer));
-        Type = type.ValidateDefined(nameof(type)).ValidateNotDefault(nameof(type));
-        AmortizationRate = amortizationRate.ValidateDefined(nameof(amortizationRate)).ValidateNotDefault(nameof(amortizationRate));
+        var modelResult = model.Validate(nameof(model));
+        if (modelResult.IsFailure) return modelResult.Error;
+
+        var descriptionResult = description.Validate(nameof(description));
+        if (descriptionResult.IsFailure) return descriptionResult.Error;
+
+        if (manufacturer is null)
+            return new ValidationError(nameof(manufacturer), "Manufacturer is required.");
+
+        var typeResult = type.ValidateDefined(nameof(type));
+        if (typeResult.IsFailure) return typeResult.Error;
+
+        var typeNotDefaultResult = type.ValidateNotDefault(nameof(type));
+        if (typeNotDefaultResult.IsFailure) return typeNotDefaultResult.Error;
+
+        var rateResult = amortizationRate.ValidateDefined(nameof(amortizationRate));
+        if (rateResult.IsFailure) return rateResult.Error;
+
+        var rateNotDefaultResult = amortizationRate.ValidateNotDefault(nameof(amortizationRate));
+        if (rateNotDefaultResult.IsFailure) return rateNotDefaultResult.Error;
+
+        Model = modelResult.Value;
+        Description = descriptionResult.Value;
+        Manufacturer = manufacturer;
+        Type = type;
+        AmortizationRate = amortizationRate;
         Metadata = metadata;
+
+        return Result.Success();
     }
 
-    public void SetScarcityLevel(LocationId locationId, ScarcityLevel level)
+    public Result SetScarcityLevel(LocationId locationId, ScarcityLevel level)
     {
-        ArgumentNullException.ThrowIfNull(locationId);
-        level.ValidateDefined(nameof(level)).ValidateNotDefault(nameof(level));
+        if (locationId is null)
+            return new ValidationError(nameof(locationId), "Location ID is required.");
+
+        var levelResult = level.ValidateDefined(nameof(level));
+        if (levelResult.IsFailure) return levelResult.Error;
+
+        var notDefaultResult = level.ValidateNotDefault(nameof(level));
+        if (notDefaultResult.IsFailure) return notDefaultResult.Error;
+
         _scarcityByLocation[locationId] = level;
+        return Result.Success();
     }
 
     public void RemoveScarcityLevel(LocationId locationId)

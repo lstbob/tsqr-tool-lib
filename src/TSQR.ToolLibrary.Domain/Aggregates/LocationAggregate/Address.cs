@@ -6,7 +6,7 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.LocationAggregate;
 /// </summary>
 public class Address(string value) : ValueObject
 {
-    public string Value  {get;} = value.Validate(nameof(value)); 
+    public string Value { get; } = value;
 
     /// <inheritdoc/>
     protected override IEnumerable<object> GetEqualityComponents()

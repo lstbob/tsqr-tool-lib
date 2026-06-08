@@ -10,7 +10,7 @@ public class Country : Entity<CountryId>
     /// </summary>
     private Country(CountryId id, string name) : base(id)
     {
-        Name = name.Validate(nameof(name));
+        Name = name;
     }
     
     /// <summary>

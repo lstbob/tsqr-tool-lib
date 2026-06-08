@@ -10,11 +10,11 @@ public class Loan : Entity<LoanId>, IAggregateRoot
         InventoryItemId itemId,
         LoanStatus status) : base(id)
     {
-        MemberId = memberId ?? throw new ArgumentNullException(nameof(memberId));
-        CheckoutDate = checkoutDate.Validate(nameof(checkoutDate)).ValidateNotInFuture(nameof(checkoutDate));
-        DueDate = dueDate.Validate(nameof(dueDate)).ValidateNotInPast(nameof(dueDate));
-        ItemId = itemId ?? throw new ArgumentNullException(nameof(itemId));
-        Status = status.ValidateDefined(nameof(status)).ValidateNotDefault(nameof(status));
+        MemberId = memberId;
+        CheckoutDate = checkoutDate;
+        DueDate = dueDate;
+        ItemId = itemId;
+        Status = status;
     }
 
     public MemberId MemberId { get; }
@@ -25,7 +25,7 @@ public class Loan : Entity<LoanId>, IAggregateRoot
     public DateTime ReturnedDate { get; private set; }
     public decimal FineAccrued { get; private set; }
 
-    public static Loan Create(
+    public static Result<Loan> Create(
         LoanId id,
         MemberId memberId,
         DateTime checkoutDate,
@@ -33,22 +33,57 @@ public class Loan : Entity<LoanId>, IAggregateRoot
         InventoryItemId itemId,
         LoanStatus status)
     {
-        return new(id, memberId, checkoutDate, dueDate, itemId, status);
+        if (memberId is null)
+            return new ValidationError(nameof(memberId), "Member ID is required.");
+        if (itemId is null)
+            return new ValidationError(nameof(itemId), "Item ID is required.");
+
+        var checkoutResult = checkoutDate.Validate(nameof(checkoutDate));
+        if (checkoutResult.IsFailure)
+            return checkoutResult.Error;
+
+        var notInFutureResult = checkoutDate.ValidateNotInFuture(nameof(checkoutDate));
+        if (notInFutureResult.IsFailure)
+            return notInFutureResult.Error;
+
+        var dueDateResult = dueDate.Validate(nameof(dueDate));
+        if (dueDateResult.IsFailure)
+            return dueDateResult.Error;
+
+        var notInPastResult = dueDate.ValidateNotInPast(nameof(dueDate));
+        if (notInPastResult.IsFailure)
+            return notInPastResult.Error;
+
+        var statusResult = status.ValidateDefined(nameof(status));
+        if (statusResult.IsFailure)
+            return statusResult.Error;
+
+        var notDefaultResult = status.ValidateNotDefault(nameof(status));
+        if (notDefaultResult.IsFailure)
+            return notDefaultResult.Error;
+
+        return new Loan(id, memberId, checkoutDate, dueDate, itemId, status);
     }
 
-    public static Loan Create(
+    public static Result<Loan> Create(
         MemberId memberId,
         DateTime checkoutDate,
         LoanStatus status,
         DateTime dueDate,
         InventoryItemId itemId)
     {
-        return new(new LoanId(default), memberId, checkoutDate, dueDate, itemId, status);
+        return Create(new LoanId(default), memberId, checkoutDate, dueDate, itemId, status);
     }
 
-    public void EndLoan(DateTime expectedEndDate)
+    public Result EndLoan(DateTime expectedEndDate)
     {
-        _ = expectedEndDate.Validate(nameof(expectedEndDate)).ValidateNotInPast(nameof(expectedEndDate));
+        var endDateResult = expectedEndDate.Validate(nameof(expectedEndDate));
+        if (endDateResult.IsFailure)
+            return endDateResult.Error;
+
+        var notInPastResult = expectedEndDate.ValidateNotInPast(nameof(expectedEndDate));
+        if (notInPastResult.IsFailure)
+            return notInPastResult.Error;
 
         if (expectedEndDate > DueDate)
         {
@@ -62,6 +97,8 @@ public class Loan : Entity<LoanId>, IAggregateRoot
             Status = LoanStatus.Returned;
             ReturnedDate = DateTime.UtcNow;
         }
+
+        return Result.Success();
     }
 
     private decimal CalculateFine(TimeSpan overduePeriod)

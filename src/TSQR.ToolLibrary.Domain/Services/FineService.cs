@@ -4,9 +4,10 @@ public class FineService
 {
     private const decimal DefaultLateFeePerDay = 1.00m;
 
-    public decimal CalculateFine(Loan loan, DateTime returnDate)
+    public Result<decimal> CalculateFine(Loan loan, DateTime returnDate)
     {
-        ArgumentNullException.ThrowIfNull(loan);
+        if (loan is null)
+            return new ValidationError(nameof(loan), "Loan is required.");
 
         if (returnDate <= loan.DueDate)
             return 0m;
@@ -15,12 +16,13 @@ public class FineService
         return daysOverdue * DefaultLateFeePerDay;
     }
 
-    public decimal CalculateFine(Loan loan, DateTime returnDate, decimal lateFeePerDay)
+    public Result<decimal> CalculateFine(Loan loan, DateTime returnDate, decimal lateFeePerDay)
     {
-        ArgumentNullException.ThrowIfNull(loan);
+        if (loan is null)
+            return new ValidationError(nameof(loan), "Loan is required.");
 
         if (lateFeePerDay < 0)
-            throw new ArgumentException("Late fee cannot be negative.", nameof(lateFeePerDay));
+            return new ValidationError(nameof(lateFeePerDay), "Late fee cannot be negative.");
 
         if (returnDate <= loan.DueDate)
             return 0m;

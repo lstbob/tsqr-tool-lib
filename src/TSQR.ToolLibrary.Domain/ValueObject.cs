@@ -76,7 +76,7 @@ public abstract class ValueObject
     /// </summary>
     public ValueObject GetCopy()
     {
-        return MemberwiseClone() as ValueObject;
+        return (MemberwiseClone() as ValueObject)!;
     }
 }
 
