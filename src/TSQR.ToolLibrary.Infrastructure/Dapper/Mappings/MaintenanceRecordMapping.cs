@@ -11,6 +11,27 @@ internal sealed record MaintenanceRecordRow(
     DateTime? CompletedDate,
     Condition? ResultingCondition);
 
+internal sealed record MaintenanceRecordInsertDto(
+    int ItemId,
+    int ReportedById,
+    DateTime ReportedDate,
+    string Description,
+    MaintenanceStatus Status,
+    int? CompletedById,
+    DateTime? CompletedDate,
+    Condition? ResultingCondition);
+
+internal sealed record MaintenanceRecordUpdateDto(
+    int Id,
+    int ItemId,
+    int ReportedById,
+    DateTime ReportedDate,
+    string Description,
+    MaintenanceStatus Status,
+    int? CompletedById,
+    DateTime? CompletedDate,
+    Condition? ResultingCondition);
+
 public sealed class MaintenanceRecordMapping : IEntityMapping<MaintenanceRecord>
 {
     public string TableName => "MaintenanceRecords";
@@ -20,7 +41,7 @@ public sealed class MaintenanceRecordMapping : IEntityMapping<MaintenanceRecord>
                 CompletedById, CompletedDate, ResultingCondition)
           VALUES (@ItemId, @ReportedById, @ReportedDate, @Description, @Status,
                 @CompletedById, @CompletedDate, @ResultingCondition);
-          SELECT CAST(SCOPE_IDENTITY() AS INT)";
+          RETURNING Id";
 
     public string UpdateSql =>
         @"UPDATE MaintenanceRecords
@@ -53,28 +74,24 @@ public sealed class MaintenanceRecordMapping : IEntityMapping<MaintenanceRecord>
             row.ResultingCondition);
     }
 
-    public object ToInsertParameters(MaintenanceRecord entity) => new
-    {
-        ItemId = entity.ItemId.Value,
-        ReportedById = entity.ReportedById.Value,
+    public object ToInsertParameters(MaintenanceRecord entity) => new MaintenanceRecordInsertDto(
+        entity.ItemId.Value,
+        entity.ReportedById.Value,
         entity.ReportedDate,
         entity.Description,
-        Status = entity.Status,
-        CompletedById = entity.CompletedById?.Value,
+        entity.Status,
+        entity.CompletedById?.Value,
         entity.CompletedDate,
-        ResultingCondition = entity.ResultingCondition
-    };
+        entity.ResultingCondition);
 
-    public object ToUpdateParameters(MaintenanceRecord entity) => new
-    {
-        Id = entity.Id.Value,
-        ItemId = entity.ItemId.Value,
-        ReportedById = entity.ReportedById.Value,
+    public object ToUpdateParameters(MaintenanceRecord entity) => new MaintenanceRecordUpdateDto(
+        entity.Id.Value,
+        entity.ItemId.Value,
+        entity.ReportedById.Value,
         entity.ReportedDate,
         entity.Description,
-        Status = entity.Status,
-        CompletedById = entity.CompletedById?.Value,
+        entity.Status,
+        entity.CompletedById?.Value,
         entity.CompletedDate,
-        ResultingCondition = entity.ResultingCondition
-    };
+        entity.ResultingCondition);
 }

@@ -12,6 +12,23 @@ internal sealed record ToolRow(
 
 internal sealed record ScarcityRow(LocationId LocationId, ScarcityLevel ScarcityLevel);
 
+internal sealed record ToolInsertDto(
+    string Model,
+    string Description,
+    int ManufacturerId,
+    ToolType ToolType,
+    AmortizationRate AmortizationRate,
+    string? Metadata);
+
+internal sealed record ToolUpdateDto(
+    int Id,
+    string Model,
+    string Description,
+    int ManufacturerId,
+    ToolType ToolType,
+    AmortizationRate AmortizationRate,
+    string? Metadata);
+
 public sealed class ToolMapping : IEntityMapping<Tool>
 {
     public string TableName => "Tools";
@@ -19,7 +36,7 @@ public sealed class ToolMapping : IEntityMapping<Tool>
     public string InsertSql =>
         @"INSERT INTO Tools (Model, Description, ManufacturerId, ToolType, AmortizationRate, Metadata)
           VALUES (@Model, @Description, @ManufacturerId, @ToolType, @AmortizationRate, @Metadata);
-          SELECT CAST(SCOPE_IDENTITY() AS INT)";
+          RETURNING Id";
 
     public string UpdateSql =>
         @"UPDATE Tools
@@ -59,24 +76,20 @@ public sealed class ToolMapping : IEntityMapping<Tool>
         return tool;
     }
 
-    public object ToInsertParameters(Tool entity) => new
-    {
+    public object ToInsertParameters(Tool entity) => new ToolInsertDto(
         entity.Model,
         entity.Description,
-        ManufacturerId = entity.Manufacturer.Id.Value,
-        ToolType = entity.Type,
-        AmortizationRate = entity.AmortizationRate,
-        entity.Metadata
-    };
+        entity.Manufacturer.Id.Value,
+        entity.Type,
+        entity.AmortizationRate,
+        entity.Metadata);
 
-    public object ToUpdateParameters(Tool entity) => new
-    {
-        Id = entity.Id.Value,
+    public object ToUpdateParameters(Tool entity) => new ToolUpdateDto(
+        entity.Id.Value,
         entity.Model,
         entity.Description,
-        ManufacturerId = entity.Manufacturer.Id.Value,
-        ToolType = entity.Type,
-        AmortizationRate = entity.AmortizationRate,
-        entity.Metadata
-    };
+        entity.Manufacturer.Id.Value,
+        entity.Type,
+        entity.AmortizationRate,
+        entity.Metadata);
 }

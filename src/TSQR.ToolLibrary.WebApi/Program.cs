@@ -9,12 +9,14 @@ using TSQR.ToolLibrary.Infrastructure.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Dapper;
 using TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
 using TSQR.ToolLibrary.Infrastructure.Dapper.Repositories;
+using TSQR.ToolLibrary.WebApi.Queries;
 
 TypeHandlerRegistrations.EnsureRegistered();
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.AddControllers();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -22,7 +24,10 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddScoped<IDatabaseUnitOfWork>(_ => new DapperUnitOfWork(connectionString));
 
 builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(RegisterToolCommand).Assembly));
+{
+    cfg.RegisterServicesFromAssembly(typeof(RegisterToolCommand).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(GetToolsQuery).Assembly);
+});
 
 builder.Services.AddSingleton<IEntityMapping<InventoryItem>, InventoryItemMapping>();
 builder.Services.AddSingleton<IEntityMapping<Member>, MemberMapping>();
@@ -34,7 +39,9 @@ builder.Services.AddScoped<IRepository<InventoryItem, InventoryItemId>, Reposito
 builder.Services.AddScoped<IRepository<Member, MemberId>, Repository<Member, MemberId>>();
 builder.Services.AddScoped<IRepository<Reservation, ReservationId>, Repository<Reservation, ReservationId>>();
 builder.Services.AddScoped<IRepository<MaintenanceRecord, MaintenanceRecordId>, Repository<MaintenanceRecord, MaintenanceRecordId>>();
-builder.Services.AddScoped<IRepository<Tool, ToolId>, ToolRepository>();
+builder.Services.AddScoped<IToolRepository, ToolRepository>();
+builder.Services.AddScoped<IManufacturerRepository, ManufacturerRepository>();
+builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
 
 var app = builder.Build();
 
@@ -44,5 +51,5 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.MapControllers();
 app.Run();

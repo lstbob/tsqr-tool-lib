@@ -1,6 +1,6 @@
 global using System.Data;
 global using Dapper;
-global using Microsoft.Data.SqlClient;
+global using Npgsql;
 global using TSQR.ToolLibrary.Domain;
 global using TSQR.ToolLibrary.Infrastructure.Abstractions;
 global using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
