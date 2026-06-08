@@ -10,6 +10,25 @@ internal sealed record ReservationRow(
     bool IsConfirmed,
     int QueuePosition);
 
+internal sealed record ReservationInsertDto(
+    int ItemId,
+    int MemberId,
+    DateTime ReservationDate,
+    DateTime ExpiryDate,
+    ReservationStatus Status,
+    bool IsConfirmed,
+    int QueuePosition);
+
+internal sealed record ReservationUpdateDto(
+    int Id,
+    int ItemId,
+    int MemberId,
+    DateTime ReservationDate,
+    DateTime ExpiryDate,
+    ReservationStatus Status,
+    bool IsConfirmed,
+    int QueuePosition);
+
 public sealed class ReservationMapping : IEntityMapping<Reservation>
 {
     public string TableName => "Reservations";
@@ -17,7 +36,7 @@ public sealed class ReservationMapping : IEntityMapping<Reservation>
     public string InsertSql =>
         @"INSERT INTO Reservations (ItemId, MemberId, ReservationDate, ExpiryDate, Status, IsConfirmed, QueuePosition)
           VALUES (@ItemId, @MemberId, @ReservationDate, @ExpiryDate, @Status, @IsConfirmed, @QueuePosition);
-          SELECT CAST(SCOPE_IDENTITY() AS INT)";
+          RETURNING Id";
 
     public string UpdateSql =>
         @"UPDATE Reservations
@@ -49,26 +68,22 @@ public sealed class ReservationMapping : IEntityMapping<Reservation>
             row.QueuePosition);
     }
 
-    public object ToInsertParameters(Reservation entity) => new
-    {
-        ItemId = entity.ItemId.Value,
-        MemberId = entity.MemberId.Value,
+    public object ToInsertParameters(Reservation entity) => new ReservationInsertDto(
+        entity.ItemId.Value,
+        entity.MemberId.Value,
         entity.ReservationDate,
         entity.ExpiryDate,
-        Status = entity.Status,
+        entity.Status,
         entity.IsConfirmed,
-        entity.QueuePosition
-    };
+        entity.QueuePosition);
 
-    public object ToUpdateParameters(Reservation entity) => new
-    {
-        Id = entity.Id.Value,
-        ItemId = entity.ItemId.Value,
-        MemberId = entity.MemberId.Value,
+    public object ToUpdateParameters(Reservation entity) => new ReservationUpdateDto(
+        entity.Id.Value,
+        entity.ItemId.Value,
+        entity.MemberId.Value,
         entity.ReservationDate,
         entity.ExpiryDate,
-        Status = entity.Status,
+        entity.Status,
         entity.IsConfirmed,
-        entity.QueuePosition
-    };
+        entity.QueuePosition);
 }

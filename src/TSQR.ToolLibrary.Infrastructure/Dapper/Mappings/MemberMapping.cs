@@ -17,6 +17,39 @@ internal sealed record MemberRow(
     DateTime? StartDate,
     DateTime? EndDate);
 
+internal sealed record MemberInsertDto(
+    string FirstName,
+    string MiddleName,
+    string LastName,
+    int Age,
+    string Address,
+    string Email,
+    string PhoneNumber,
+    MemberStatus Status,
+    bool IsVerified,
+    int? VerifiedByAdminId,
+    DateTime? VerificationDate,
+    MembershipType? MembershipType,
+    DateTime? StartDate,
+    DateTime? EndDate);
+
+internal sealed record MemberUpdateDto(
+    int Id,
+    string FirstName,
+    string MiddleName,
+    string LastName,
+    int Age,
+    string Address,
+    string Email,
+    string PhoneNumber,
+    MemberStatus Status,
+    bool IsVerified,
+    int? VerifiedByAdminId,
+    DateTime? VerificationDate,
+    MembershipType? MembershipType,
+    DateTime? StartDate,
+    DateTime? EndDate);
+
 public sealed class MemberMapping : IEntityMapping<Member>
 {
     public string TableName => "Members";
@@ -28,7 +61,7 @@ public sealed class MemberMapping : IEntityMapping<Member>
           VALUES (@FirstName, @MiddleName, @LastName, @Age, @Address, @Email, @PhoneNumber,
                 @Status, @IsVerified, @VerifiedByAdminId, @VerificationDate,
                 @MembershipType, @StartDate, @EndDate);
-          SELECT CAST(SCOPE_IDENTITY() AS INT)";
+          RETURNING Id";
 
     public string UpdateSql =>
         @"UPDATE Members
@@ -71,8 +104,7 @@ public sealed class MemberMapping : IEntityMapping<Member>
             record);
     }
 
-    public object ToInsertParameters(Member entity) => new
-    {
+    public object ToInsertParameters(Member entity) => new MemberInsertDto(
         entity.FirstName,
         entity.MiddleName,
         entity.LastName,
@@ -80,18 +112,16 @@ public sealed class MemberMapping : IEntityMapping<Member>
         entity.Address,
         entity.Email,
         entity.PhoneNumber,
-        Status = entity.Status,
+        entity.Status,
         entity.IsVerified,
-        VerifiedByAdminId = entity.VerifiedByAdminId?.Value,
+        entity.VerifiedByAdminId?.Value,
         entity.VerificationDate,
-        MembershipType = entity.Record?.MembershipType,
-        StartDate = entity.Record?.StartDate,
-        EndDate = entity.Record?.EndDate
-    };
+        entity.Record?.MembershipType,
+        entity.Record?.StartDate,
+        entity.Record?.EndDate);
 
-    public object ToUpdateParameters(Member entity) => new
-    {
-        Id = entity.Id.Value,
+    public object ToUpdateParameters(Member entity) => new MemberUpdateDto(
+        entity.Id.Value,
         entity.FirstName,
         entity.MiddleName,
         entity.LastName,
@@ -99,12 +129,11 @@ public sealed class MemberMapping : IEntityMapping<Member>
         entity.Address,
         entity.Email,
         entity.PhoneNumber,
-        Status = entity.Status,
+        entity.Status,
         entity.IsVerified,
-        VerifiedByAdminId = entity.VerifiedByAdminId?.Value,
+        entity.VerifiedByAdminId?.Value,
         entity.VerificationDate,
-        MembershipType = entity.Record?.MembershipType,
-        StartDate = entity.Record?.StartDate,
-        EndDate = entity.Record?.EndDate
-    };
+        entity.Record?.MembershipType,
+        entity.Record?.StartDate,
+        entity.Record?.EndDate);
 }

@@ -16,6 +16,37 @@ internal sealed record InventoryItemRow(
     long TotalUsageTimeTicks,
     bool IsUnderRepair);
 
+internal sealed record InventoryItemInsertDto(
+    int ToolId,
+    int OriginalOwnerId,
+    DateTime InitialAcquisitionDate,
+    string SerialNumber,
+    ItemStatus Status,
+    Condition Condition,
+    int? CurrentHolderId,
+    DateTime? LastBorrowedDate,
+    DateTime? ReservationDate,
+    int? ReservationMemberId,
+    int LoanCount,
+    long TotalUsageTimeTicks,
+    bool IsUnderRepair);
+
+internal sealed record InventoryItemUpdateDto(
+    int Id,
+    int ToolId,
+    int OriginalOwnerId,
+    DateTime InitialAcquisitionDate,
+    string SerialNumber,
+    ItemStatus Status,
+    Condition Condition,
+    int? CurrentHolderId,
+    DateTime? LastBorrowedDate,
+    DateTime? ReservationDate,
+    int? ReservationMemberId,
+    int LoanCount,
+    long TotalUsageTimeTicks,
+    bool IsUnderRepair);
+
 public sealed class InventoryItemMapping : IEntityMapping<InventoryItem>
 {
     public string TableName => "InventoryItems";
@@ -29,7 +60,7 @@ public sealed class InventoryItemMapping : IEntityMapping<InventoryItem>
                 @Status, @Condition, @CurrentHolderId, @LastBorrowedDate,
                 @ReservationDate, @ReservationMemberId, @LoanCount,
                 @TotalUsageTimeTicks, @IsUnderRepair);
-          SELECT CAST(SCOPE_IDENTITY() AS INT)";
+          RETURNING Id";
 
     public string UpdateSql =>
         @"UPDATE InventoryItems
@@ -75,38 +106,34 @@ public sealed class InventoryItemMapping : IEntityMapping<InventoryItem>
             row.IsUnderRepair);
     }
 
-    public object ToInsertParameters(InventoryItem entity) => new
-    {
-        ToolId = entity.ToolId.Value,
-        OriginalOwnerId = entity.OriginalOwnerId.Value,
+    public object ToInsertParameters(InventoryItem entity) => new InventoryItemInsertDto(
+        entity.ToolId.Value,
+        entity.OriginalOwnerId.Value,
         entity.InitialAcquisitionDate,
         entity.SerialNumber,
-        Status = entity.Status,
-        Condition = entity.Condition,
-        CurrentHolderId = entity.CurrentHolderId?.Value,
+        entity.Status,
+        entity.Condition,
+        entity.CurrentHolderId?.Value,
         entity.LastBorrowedDate,
         entity.ReservationDate,
-        ReservationMemberId = entity.ReservationMemberId?.Value,
+        entity.ReservationMemberId?.Value,
         entity.LoanCount,
-        TotalUsageTimeTicks = entity.TotalUsageTime.Ticks,
-        entity.IsUnderRepair
-    };
+        entity.TotalUsageTime.Ticks,
+        entity.IsUnderRepair);
 
-    public object ToUpdateParameters(InventoryItem entity) => new
-    {
-        Id = entity.Id.Value,
-        ToolId = entity.ToolId.Value,
-        OriginalOwnerId = entity.OriginalOwnerId.Value,
+    public object ToUpdateParameters(InventoryItem entity) => new InventoryItemUpdateDto(
+        entity.Id.Value,
+        entity.ToolId.Value,
+        entity.OriginalOwnerId.Value,
         entity.InitialAcquisitionDate,
         entity.SerialNumber,
-        Status = entity.Status,
-        Condition = entity.Condition,
-        CurrentHolderId = entity.CurrentHolderId?.Value,
+        entity.Status,
+        entity.Condition,
+        entity.CurrentHolderId?.Value,
         entity.LastBorrowedDate,
         entity.ReservationDate,
-        ReservationMemberId = entity.ReservationMemberId?.Value,
+        entity.ReservationMemberId?.Value,
         entity.LoanCount,
-        TotalUsageTimeTicks = entity.TotalUsageTime.Ticks,
-        entity.IsUnderRepair
-    };
+        entity.TotalUsageTime.Ticks,
+        entity.IsUnderRepair);
 }

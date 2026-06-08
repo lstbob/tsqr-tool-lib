@@ -4,10 +4,10 @@ namespace TSQR.ToolLibrary.Infrastructure.Dapper;
 
 internal sealed class DapperConnection : IDatabaseConnection
 {
-    private readonly SqlConnection _connection;
+    private readonly NpgsqlConnection _connection;
     private readonly IDbTransaction? _transaction;
 
-    public DapperConnection(SqlConnection connection, IDbTransaction? transaction)
+    public DapperConnection(NpgsqlConnection connection, IDbTransaction? transaction)
     {
         _connection = connection;
         _transaction = transaction;
