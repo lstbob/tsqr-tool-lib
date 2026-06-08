@@ -1,11 +1,12 @@
-using System.Data;
+using TSQR.ToolLibrary.Infrastructure.Abstractions;
 
 namespace TSQR.ToolLibrary.Infrastructure.Dapper;
 
-public class DapperUnitOfWork : IUnitOfWork, IDisposable
+public sealed class DapperUnitOfWork : IDatabaseUnitOfWork, IDisposable
 {
     private readonly SqlConnection _connection;
     private IDbTransaction? _transaction;
+    private DapperConnection? _connectionAdapter;
     private bool _disposed;
 
     public DapperUnitOfWork(string connectionString)
@@ -13,20 +14,22 @@ public class DapperUnitOfWork : IUnitOfWork, IDisposable
         _connection = new SqlConnection(connectionString);
     }
 
-    public SqlConnection Connection => _connection;
-    public IDbTransaction? Transaction => _transaction;
-
-    public void EnsureOpen()
+    public IDatabaseConnection Connection
     {
-        if (_connection.State != ConnectionState.Open)
-            _connection.Open();
+        get
+        {
+            EnsureTransaction();
+            return _connectionAdapter!;
+        }
     }
 
-    public void BeginTransaction()
+    private void EnsureTransaction()
     {
-        EnsureOpen();
-        if (_transaction is null)
-            _transaction = _connection.BeginTransaction();
+        if (_transaction is not null) return;
+        if (_connection.State != ConnectionState.Open)
+            _connection.Open();
+        _transaction = _connection.BeginTransaction();
+        _connectionAdapter = new DapperConnection(_connection, _transaction);
     }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -36,6 +39,7 @@ public class DapperUnitOfWork : IUnitOfWork, IDisposable
             _transaction.Commit();
             _transaction.Dispose();
             _transaction = null;
+            _connectionAdapter = new DapperConnection(_connection, null);
         }
         return Task.FromResult(0);
     }
