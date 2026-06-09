@@ -10,3 +10,4 @@ global using TSQR.ToolLibrary.Domain.Aggregates.LocationAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.MaintenanceAggregate;
+global using TSQR.ToolLibrary.Common.Results;

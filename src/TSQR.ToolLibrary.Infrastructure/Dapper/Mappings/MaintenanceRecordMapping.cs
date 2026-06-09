@@ -62,7 +62,7 @@ public sealed class MaintenanceRecordMapping : IEntityMapping<MaintenanceRecord>
 
         if (row is null) return null;
 
-        return MaintenanceRecord.Create(
+        var recordResult = MaintenanceRecord.Create(
             row.Id,
             row.ItemId,
             row.ReportedById,
@@ -72,6 +72,8 @@ public sealed class MaintenanceRecordMapping : IEntityMapping<MaintenanceRecord>
             row.CompletedById,
             row.CompletedDate,
             row.ResultingCondition);
+
+        return recordResult.IsSuccess ? recordResult.Value : null;
     }
 
     public object ToInsertParameters(MaintenanceRecord entity) => new MaintenanceRecordInsertDto(
