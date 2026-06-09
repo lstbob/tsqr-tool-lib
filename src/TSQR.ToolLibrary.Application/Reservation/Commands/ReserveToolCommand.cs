@@ -1,39 +1,42 @@
-using ReservationAgg = TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate;
+using ReservationAgg = TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate.Reservation;
 
 namespace TSQR.ToolLibrary.Application.Reservation.Commands;
 
 public record ReserveToolCommand(
     InventoryItemId ItemId,
     MemberId MemberId,
-    DateTime ReservationDate) : IRequest<ReservationId>;
+    DateTime ReservationDate);
 
 public class ReserveToolCommandHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
-    IRepository<ReservationAgg.Reservation, ReservationId> reservationRepository)
-    : IRequestHandler<ReserveToolCommand, ReservationId>
+    IRepository<ReservationAgg, ReservationId> reservationRepository,
+    IDomainEventDispatcher eventDispatcher)
+    : IInteractor<ReserveToolCommand, Result<ReservationId>>
 {
-    public async Task<ReservationId> Handle(ReserveToolCommand request, CancellationToken cancellationToken)
+    public async Task<Result<ReservationId>> ExecuteAsync(ReserveToolCommand command, CancellationToken cancellationToken)
     {
-        var item = await inventoryRepository.GetByIdAsync(request.ItemId, cancellationToken)
-            ?? throw new InvalidOperationException("Inventory item not found.");
+        var item = await inventoryRepository.GetByIdAsync(command.ItemId, cancellationToken);
+        if (item is null)
+            return new NotFoundError(nameof(command.ItemId), "Inventory item not found.");
 
-        var maxReservationDate = DateTime.UtcNow.AddDays(28);
-        var expiryDate = request.ReservationDate.AddDays(14);
+        var reserveResult = item.Reserve(command.ReservationDate, command.MemberId);
+        if (reserveResult.IsFailure)
+            return reserveResult.Error;
 
-        if (request.ReservationDate > maxReservationDate)
-            throw new InvalidOperationException("Reservations can only be made up to 28 days in advance.");
+        var reservationResult = ReservationAgg.Create(
+            command.ItemId,
+            command.MemberId,
+            command.ReservationDate);
 
-        item.Reserve(request.ReservationDate, request.MemberId);
+        if (reservationResult.IsFailure)
+            return reservationResult.Error;
 
-        var reservation = ReservationAgg.Reservation.Create(
-            request.ItemId,
-            request.MemberId,
-            request.ReservationDate,
-            expiryDate,
-            1);
-
+        var reservation = reservationResult.Value;
         await reservationRepository.AddAsync(reservation, cancellationToken);
         await reservationRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
+
+        await eventDispatcher.DispatchAsync(reservation.DomainEvents, cancellationToken);
+        reservation.ClearDomainEvents();
 
         return reservation.Id;
     }

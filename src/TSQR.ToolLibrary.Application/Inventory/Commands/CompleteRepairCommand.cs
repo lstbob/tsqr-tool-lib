@@ -1,24 +1,39 @@
 namespace TSQR.ToolLibrary.Application.Inventory.Commands;
 
-public record CompleteRepairCommand(MaintenanceRecordId RecordId, InventoryItemId ItemId, MemberId CompletedById, Condition NewCondition) : IRequest;
+public record CompleteRepairCommand(MaintenanceRecordId RecordId, InventoryItemId ItemId, MemberId CompletedById, Condition NewCondition);
 
 public class CompleteRepairCommandHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
-    IRepository<MaintenanceRecord, MaintenanceRecordId> maintenanceRepository)
-    : IRequestHandler<CompleteRepairCommand>
+    IRepository<MaintenanceRecord, MaintenanceRecordId> maintenanceRepository,
+    IDomainEventDispatcher eventDispatcher)
+    : IInteractor<CompleteRepairCommand, Result>
 {
-    public async Task Handle(CompleteRepairCommand request, CancellationToken cancellationToken)
+    public async Task<Result> ExecuteAsync(CompleteRepairCommand command, CancellationToken cancellationToken)
     {
-        var item = await inventoryRepository.GetByIdAsync(request.ItemId, cancellationToken)
-            ?? throw new InvalidOperationException("Inventory item not found.");
+        var item = await inventoryRepository.GetByIdAsync(command.ItemId, cancellationToken);
+        if (item is null)
+            return new NotFoundError(nameof(command.ItemId), "Inventory item not found.");
 
-        var record = await maintenanceRepository.GetByIdAsync(request.RecordId, cancellationToken)
-            ?? throw new InvalidOperationException("Maintenance record not found.");
+        var record = await maintenanceRepository.GetByIdAsync(command.RecordId, cancellationToken);
+        if (record is null)
+            return new NotFoundError(nameof(command.RecordId), "Maintenance record not found.");
 
-        record.StartWork();
-        record.Complete(request.CompletedById, request.NewCondition);
-        item.CompleteRepair(request.NewCondition);
+        var startResult = record.StartWork();
+        if (startResult.IsFailure) return startResult.Error;
+
+        var completeResult = record.Complete(command.CompletedById, command.NewCondition);
+        if (completeResult.IsFailure) return completeResult.Error;
+
+        var repairResult = item.CompleteRepair(command.NewCondition);
+        if (repairResult.IsFailure) return repairResult.Error;
 
         await maintenanceRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
+
+        await eventDispatcher.DispatchAsync(record.DomainEvents, cancellationToken);
+        await eventDispatcher.DispatchAsync(item.DomainEvents, cancellationToken);
+        record.ClearDomainEvents();
+        item.ClearDomainEvents();
+
+        return Result.Success();
     }
 }

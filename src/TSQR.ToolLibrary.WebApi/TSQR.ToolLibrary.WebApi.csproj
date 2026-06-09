@@ -7,7 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MediatR" Version="13.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TSQR.ToolLibrary.Application\TSQR.ToolLibrary.Application.csproj" />
+    <ProjectReference Include="..\TSQR.ToolLibrary.Infrastructure\TSQR.ToolLibrary.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

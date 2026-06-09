@@ -7,5 +7,5 @@ global using TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.MaintenanceAggregate;
 global using TSQR.ToolLibrary.Domain.Events;
 global using TSQR.ToolLibrary.Common.Extensions;
-
-global using MediatR;
+global using TSQR.ToolLibrary.Common.Results;
+global using TSQR.ToolLibrary.Common.Errors;

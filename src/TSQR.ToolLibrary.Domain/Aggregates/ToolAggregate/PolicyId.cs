@@ -8,7 +8,7 @@ public class PolicyId(int value) : ValueObject
     /// <summary>
     /// Gets the value of the policy identifier.
     /// </summary>
-    public int Value {get; } = value.ValidatePositive(nameof(value)); 
+    public int Value { get; } = value;
 
     /// <inheritdoc/>
     protected override IEnumerable<object> GetEqualityComponents()

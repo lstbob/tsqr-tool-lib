@@ -1,18 +1,29 @@
-using MemberAgg = TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
+using MemberAgg = TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate.Member;
 
 namespace TSQR.ToolLibrary.Application.Member.Commands;
 
-public record VerifyMemberCommand(MemberId MemberId, MemberId VerifiedByAdminId) : IRequest;
+public record VerifyMemberCommand(MemberId MemberId, MemberId VerifiedByAdminId);
 
-public class VerifyMemberCommandHandler(IRepository<MemberAgg.Member, MemberId> memberRepository)
-    : IRequestHandler<VerifyMemberCommand>
+public class VerifyMemberCommandHandler(
+    IRepository<MemberAgg, MemberId> memberRepository,
+    IDomainEventDispatcher eventDispatcher)
+    : IInteractor<VerifyMemberCommand, Result>
 {
-    public async Task Handle(VerifyMemberCommand request, CancellationToken cancellationToken)
+    public async Task<Result> ExecuteAsync(VerifyMemberCommand command, CancellationToken cancellationToken)
     {
-        var member = await memberRepository.GetByIdAsync(request.MemberId, cancellationToken)
-            ?? throw new InvalidOperationException("Member not found.");
+        var member = await memberRepository.GetByIdAsync(command.MemberId, cancellationToken);
+        if (member is null)
+            return new NotFoundError(nameof(command.MemberId), "Member not found.");
 
-        member.Verify(request.VerifiedByAdminId);
+        var verifyResult = member.Verify(command.VerifiedByAdminId);
+        if (verifyResult.IsFailure)
+            return verifyResult.Error;
+
         await memberRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
+
+        await eventDispatcher.DispatchAsync(member.DomainEvents, cancellationToken);
+        member.ClearDomainEvents();
+
+        return Result.Success();
     }
 }

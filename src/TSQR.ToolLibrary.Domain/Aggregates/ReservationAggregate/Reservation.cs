@@ -12,11 +12,11 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
         bool isConfirmed,
         int queuePosition) : base(id)
     {
-        ItemId = itemId ?? throw new ArgumentNullException(nameof(itemId));
-        MemberId = memberId ?? throw new ArgumentNullException(nameof(memberId));
+        ItemId = itemId;
+        MemberId = memberId;
         ReservationDate = reservationDate;
         ExpiryDate = expiryDate;
-        Status = status.ValidateDefined(nameof(status)).ValidateNotDefault(nameof(status));
+        Status = status;
         IsConfirmed = isConfirmed;
         QueuePosition = queuePosition;
     }
@@ -29,14 +29,23 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
     public bool IsConfirmed { get; private set; }
     public int QueuePosition { get; private set; }
 
-    public static Reservation Create(
+    public static Result<Reservation> Create(
         InventoryItemId itemId,
         MemberId memberId,
         DateTime reservationDate,
         DateTime expiryDate,
         int queuePosition)
     {
-        return new(
+        if (itemId is null)
+            return new ValidationError(nameof(itemId), "Item ID is required.");
+        if (memberId is null)
+            return new ValidationError(nameof(memberId), "Member ID is required.");
+        if (reservationDate == default)
+            return new ValidationError(nameof(reservationDate), "Reservation date is required.");
+        if (expiryDate == default)
+            return new ValidationError(nameof(expiryDate), "Expiry date is required.");
+
+        return new Reservation(
             new ReservationId(default),
             itemId,
             memberId,
@@ -45,6 +54,15 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
             ReservationStatus.Pending,
             false,
             queuePosition);
+    }
+
+    public static Result<Reservation> Create(
+        InventoryItemId itemId,
+        MemberId memberId,
+        DateTime reservationDate)
+    {
+        var expiryDate = reservationDate.AddDays(14);
+        return Create(itemId, memberId, reservationDate, expiryDate, 1);
     }
 
     public static Reservation Create(
@@ -57,7 +75,7 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
         bool isConfirmed,
         int queuePosition)
     {
-        return new(
+        return new Reservation(
             id,
             itemId,
             memberId,
@@ -68,45 +86,54 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
             queuePosition);
     }
 
-    public void ConfirmPickup()
+    public Result ConfirmPickup()
     {
         if (Status != ReservationStatus.Pending)
-            throw new InvalidOperationException("Only pending reservations can be confirmed.");
+            return new DomainError(nameof(Status), "Only pending reservations can be confirmed.");
 
         IsConfirmed = true;
         Status = ReservationStatus.Confirmed;
 
         AddDomainEvent(new ReservationConfirmedEvent(Id, ItemId, MemberId));
+        return Result.Success();
     }
 
-    public void Activate()
+    public Result Activate()
     {
         if (Status != ReservationStatus.Confirmed)
-            throw new InvalidOperationException("Only confirmed reservations can be activated.");
+            return new DomainError(nameof(Status), "Only confirmed reservations can be activated.");
 
         Status = ReservationStatus.Active;
+        return Result.Success();
     }
 
-    public void Cancel()
+    public Result Cancel()
     {
         if (Status == ReservationStatus.Cancelled || Status == ReservationStatus.Completed)
-            throw new InvalidOperationException("Reservation is already cancelled or completed.");
+            return new DomainError(nameof(Status), "Reservation is already cancelled or completed.");
 
         Status = ReservationStatus.Cancelled;
 
         AddDomainEvent(new ReservationCancelledEvent(Id, ItemId, MemberId));
+        return Result.Success();
     }
 
-    public void Complete()
+    public Result Complete()
     {
         if (Status != ReservationStatus.Active)
-            throw new InvalidOperationException("Only active reservations can be completed.");
+            return new DomainError(nameof(Status), "Only active reservations can be completed.");
 
         Status = ReservationStatus.Completed;
+        return Result.Success();
     }
 
     public void MoveDownInQueue()
     {
         QueuePosition++;
+    }
+
+    public void NotifyNextInLine(string reason)
+    {
+        AddDomainEvent(new NextInLineNotificationEvent(Id, ItemId, MemberId, reason));
     }
 }

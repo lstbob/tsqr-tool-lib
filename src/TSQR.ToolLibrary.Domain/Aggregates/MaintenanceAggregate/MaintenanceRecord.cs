@@ -13,11 +13,11 @@ public class MaintenanceRecord : Entity<MaintenanceRecordId>, IAggregateRoot
         DateTime? completedDate = null,
         Condition? resultingCondition = null) : base(id)
     {
-        ItemId = itemId ?? throw new ArgumentNullException(nameof(itemId));
-        ReportedById = reportedById ?? throw new ArgumentNullException(nameof(reportedById));
+        ItemId = itemId;
+        ReportedById = reportedById;
         ReportedDate = reportedDate;
-        Description = description.Validate(nameof(description));
-        Status = status.ValidateDefined(nameof(status)).ValidateNotDefault(nameof(status));
+        Description = description;
+        Status = status;
         CompletedById = completedById;
         CompletedDate = completedDate;
         ResultingCondition = resultingCondition;
@@ -32,21 +32,30 @@ public class MaintenanceRecord : Entity<MaintenanceRecordId>, IAggregateRoot
     public DateTime? CompletedDate { get; private set; }
     public Condition? ResultingCondition { get; private set; }
 
-    public static MaintenanceRecord Create(
+    public static Result<MaintenanceRecord> Create(
         InventoryItemId itemId,
         MemberId reportedById,
         string description)
     {
-        return new(
+        if (itemId is null)
+            return new ValidationError(nameof(itemId), "Item ID is required.");
+        if (reportedById is null)
+            return new ValidationError(nameof(reportedById), "Reported by ID is required.");
+
+        var descriptionResult = description.Validate(nameof(description));
+        if (descriptionResult.IsFailure)
+            return descriptionResult.Error;
+
+        return new MaintenanceRecord(
             new MaintenanceRecordId(default),
             itemId,
             reportedById,
             DateTime.UtcNow,
-            description,
+            descriptionResult.Value,
             MaintenanceStatus.Reported);
     }
 
-    public static MaintenanceRecord Create(
+    public static Result<MaintenanceRecord> Create(
         MaintenanceRecordId id,
         InventoryItemId itemId,
         MemberId reportedById,
@@ -57,33 +66,50 @@ public class MaintenanceRecord : Entity<MaintenanceRecordId>, IAggregateRoot
         DateTime? completedDate,
         Condition? resultingCondition)
     {
-        return new(
+        if (itemId is null)
+            return new ValidationError(nameof(itemId), "Item ID is required.");
+        if (reportedById is null)
+            return new ValidationError(nameof(reportedById), "Reported by ID is required.");
+
+        var descriptionResult = description.Validate(nameof(description));
+        if (descriptionResult.IsFailure)
+            return descriptionResult.Error;
+
+        return new MaintenanceRecord(
             id,
             itemId,
             reportedById,
             reportedDate,
-            description,
+            descriptionResult.Value,
             status,
             completedById,
             completedDate,
             resultingCondition);
     }
 
-    public void StartWork()
+    public Result StartWork()
     {
         if (Status != MaintenanceStatus.Reported)
-            throw new InvalidOperationException("Only reported maintenance can be started.");
+            return new DomainError(nameof(Status), "Only reported maintenance can be started.");
 
         Status = MaintenanceStatus.InProgress;
+        return Result.Success();
     }
 
-    public void Complete(MemberId completedById, Condition resultingCondition)
+    public Result Complete(MemberId completedById, Condition resultingCondition)
     {
         if (Status != MaintenanceStatus.InProgress)
-            throw new InvalidOperationException("Only in-progress maintenance can be completed.");
+            return new DomainError(nameof(Status), "Only in-progress maintenance can be completed.");
+        if (completedById is null)
+            return new ValidationError(nameof(completedById), "Completed by ID is required.");
 
-        ArgumentNullException.ThrowIfNull(completedById);
-        resultingCondition.ValidateDefined(nameof(resultingCondition)).ValidateNotDefault(nameof(resultingCondition));
+        var conditionResult = resultingCondition.ValidateDefined(nameof(resultingCondition));
+        if (conditionResult.IsFailure)
+            return conditionResult.Error;
+
+        var notDefaultResult = resultingCondition.ValidateNotDefault(nameof(resultingCondition));
+        if (notDefaultResult.IsFailure)
+            return notDefaultResult.Error;
 
         Status = MaintenanceStatus.Completed;
         CompletedById = completedById;
@@ -91,5 +117,6 @@ public class MaintenanceRecord : Entity<MaintenanceRecordId>, IAggregateRoot
         ResultingCondition = resultingCondition;
 
         AddDomainEvent(new ToolRepairedEvent(ItemId, completedById, resultingCondition));
+        return Result.Success();
     }
 }
