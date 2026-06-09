@@ -15,7 +15,9 @@ public class Member : Entity<MemberId>, IAggregateRoot
         bool isVerified,
         MemberId? verifiedByAdminId,
         DateTime? verificationDate,
-        MembershipRecord? record = null) : base(id)
+        MembershipRecord? record = null,
+        Identification? identification = null,
+        AccessRequestStatus accessRequestStatus = AccessRequestStatus.NotSet) : base(id)
     {
         FirstName = firstName;
         MiddleName = middleName;
@@ -29,6 +31,8 @@ public class Member : Entity<MemberId>, IAggregateRoot
         VerifiedByAdminId = verifiedByAdminId;
         VerificationDate = verificationDate;
         Record = record;
+        Identification = identification;
+        AccessRequestStatus = accessRequestStatus;
     }
 
     public string FirstName { get; }
@@ -43,6 +47,8 @@ public class Member : Entity<MemberId>, IAggregateRoot
     public MemberId? VerifiedByAdminId { get; private set; }
     public DateTime? VerificationDate { get; private set; }
     public MembershipRecord? Record { get; private set; }
+    public Identification? Identification { get; private set; }
+    public AccessRequestStatus AccessRequestStatus { get; private set; }
 
     public static Result<Member> Create(
         string firstName,
@@ -105,7 +111,9 @@ public class Member : Entity<MemberId>, IAggregateRoot
         bool isVerified,
         MemberId? verifiedByAdminId,
         DateTime? verificationDate,
-        MembershipRecord? record = null)
+        MembershipRecord? record = null,
+        Identification? identification = null,
+        AccessRequestStatus accessRequestStatus = AccessRequestStatus.NotSet)
     {
         return new Member(
             id,
@@ -120,7 +128,46 @@ public class Member : Entity<MemberId>, IAggregateRoot
             isVerified,
             verifiedByAdminId,
             verificationDate,
-            record);
+            record,
+            identification,
+            accessRequestStatus);
+    }
+
+    public Result RequestAccess(Identification identification)
+    {
+        if (identification is null)
+            return new ValidationError(nameof(identification), "Identification is required.");
+
+        if (AccessRequestStatus == AccessRequestStatus.Pending)
+            return new DomainError(nameof(AccessRequestStatus), "Access request is already pending.");
+
+        if (AccessRequestStatus == AccessRequestStatus.Approved)
+            return new DomainError(nameof(AccessRequestStatus), "Access has already been approved.");
+
+        Identification = identification;
+        AccessRequestStatus = AccessRequestStatus.Pending;
+        return Result.Success();
+    }
+
+    public Result ApproveAccess(MemberId adminId)
+    {
+        if (AccessRequestStatus != AccessRequestStatus.Pending)
+            return new DomainError(nameof(AccessRequestStatus), "No pending access request to approve.");
+
+        if (adminId is null)
+            return new ValidationError(nameof(adminId), "Admin ID is required.");
+
+        AccessRequestStatus = AccessRequestStatus.Approved;
+        return Verify(adminId);
+    }
+
+    public Result DenyAccess()
+    {
+        if (AccessRequestStatus != AccessRequestStatus.Pending)
+            return new DomainError(nameof(AccessRequestStatus), "No pending access request to deny.");
+
+        AccessRequestStatus = AccessRequestStatus.Denied;
+        return Result.Success();
     }
 
     public Result Verify(MemberId adminId)
