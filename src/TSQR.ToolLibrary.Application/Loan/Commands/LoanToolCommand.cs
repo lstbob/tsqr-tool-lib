@@ -25,9 +25,7 @@ public class LoanToolCommandHandler(
         if (item is null)
             return new NotFoundError(nameof(command.ItemId), "Inventory item not found.");
 
-        var dueDate = DateTime.UtcNow.AddDays(7);
-
-        var loanResult = LoanAgg.Create(command.MemberId, DateTime.UtcNow, LoanStatus.Active, dueDate, command.ItemId);
+        var loanResult = LoanAgg.Create(command.MemberId, command.ItemId);
         if (loanResult.IsFailure)
             return loanResult.Error;
 

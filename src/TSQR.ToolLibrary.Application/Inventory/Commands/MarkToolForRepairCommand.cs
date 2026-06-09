@@ -14,7 +14,7 @@ public class MarkToolForRepairCommandHandler(
         if (item is null)
             return new NotFoundError(nameof(command.ItemId), "Inventory item not found.");
 
-        var markResult = item.MarkForRepair();
+        var markResult = item.MarkForRepair(command.ReportedById, command.Description);
         if (markResult.IsFailure)
             return markResult.Error;
 
@@ -23,9 +23,6 @@ public class MarkToolForRepairCommandHandler(
             return recordResult.Error;
 
         await maintenanceRepository.AddAsync(recordResult.Value, cancellationToken);
-
-        item.AddDomainEvent(new ToolMarkedForRepairEvent(command.ItemId, command.ReportedById, command.Description));
-
         await maintenanceRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         await eventDispatcher.DispatchAsync(item.DomainEvents, cancellationToken);

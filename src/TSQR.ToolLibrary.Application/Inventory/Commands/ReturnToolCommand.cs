@@ -4,7 +4,6 @@ public record ReturnToolCommand(InventoryItemId ItemId, Condition ReturnedCondit
 
 public class ReturnToolCommandHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
-    IReservationRepository reservationRepository,
     IDomainEventDispatcher eventDispatcher)
     : IInteractor<ReturnToolCommand, Result>
 {
@@ -18,25 +17,10 @@ public class ReturnToolCommandHandler(
         if (returnResult.IsFailure)
             return returnResult.Error;
 
-        var allReservations = await reservationRepository.GetByItemIdAsync(command.ItemId, cancellationToken);
-        var queueService = new ReservationQueueService();
-        var nextInLine = queueService.GetNextInLine(allReservations);
-
-        if (nextInLine is not null)
-        {
-            nextInLine.AddDomainEvent(new NextInLineNotificationEvent(
-                nextInLine.Id, nextInLine.ItemId, nextInLine.MemberId, "Tool has been returned and is now available."));
-        }
-
         await inventoryRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
 
-        var allEvents = new List<IDomainEvent>();
-        allEvents.AddRange(item.DomainEvents);
-        if (nextInLine is not null)
-            allEvents.AddRange(nextInLine.DomainEvents);
-        await eventDispatcher.DispatchAsync(allEvents, cancellationToken);
+        await eventDispatcher.DispatchAsync(item.DomainEvents, cancellationToken);
         item.ClearDomainEvents();
-        nextInLine?.ClearDomainEvents();
 
         return Result.Success();
     }

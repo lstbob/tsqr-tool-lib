@@ -56,6 +56,15 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
             queuePosition);
     }
 
+    public static Result<Reservation> Create(
+        InventoryItemId itemId,
+        MemberId memberId,
+        DateTime reservationDate)
+    {
+        var expiryDate = reservationDate.AddDays(14);
+        return Create(itemId, memberId, reservationDate, expiryDate, 1);
+    }
+
     public static Reservation Create(
         ReservationId id,
         InventoryItemId itemId,
@@ -121,5 +130,10 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
     public void MoveDownInQueue()
     {
         QueuePosition++;
+    }
+
+    public void NotifyNextInLine(string reason)
+    {
+        AddDomainEvent(new NextInLineNotificationEvent(Id, ItemId, MemberId, reason));
     }
 }

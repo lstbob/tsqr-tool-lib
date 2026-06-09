@@ -2,11 +2,10 @@ using LoanAgg = TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate.Loan;
 
 namespace TSQR.ToolLibrary.Application.Loan.Commands;
 
-public record MarkLoanAsNotReturnedCommand(LoanId LoanId, InventoryItemId ItemId);
+public record MarkLoanAsNotReturnedCommand(LoanId LoanId);
 
 public class MarkLoanAsNotReturnedCommandHandler(
     IRepository<LoanAgg, LoanId> loanRepository,
-    IRepository<InventoryItem, InventoryItemId> inventoryRepository,
     IDomainEventDispatcher eventDispatcher)
     : IInteractor<MarkLoanAsNotReturnedCommand, Result>
 {
@@ -16,28 +15,14 @@ public class MarkLoanAsNotReturnedCommandHandler(
         if (loan is null)
             return new NotFoundError(nameof(command.LoanId), "Loan not found.");
 
-        if (loan.Status != LoanStatus.Active)
-            return new DomainError(nameof(loan.Status), "Only active loans can be marked as not returned.");
-
         var endResult = loan.EndLoan(DateTime.UtcNow);
         if (endResult.IsFailure)
             return endResult.Error;
 
-        var item = await inventoryRepository.GetByIdAsync(command.ItemId, cancellationToken);
-        if (item is not null)
-        {
-            item.AddDomainEvent(new LoanOverdueDomainEvent(loan.Id, command.ItemId, DateTime.UtcNow - loan.DueDate));
-        }
-
         await loanRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
 
-        var allEvents = new List<IDomainEvent>();
-        allEvents.AddRange(loan.DomainEvents);
-        if (item is not null)
-            allEvents.AddRange(item.DomainEvents);
-        await eventDispatcher.DispatchAsync(allEvents, cancellationToken);
+        await eventDispatcher.DispatchAsync(loan.DomainEvents, cancellationToken);
         loan.ClearDomainEvents();
-        item?.ClearDomainEvents();
 
         return Result.Success();
     }
