@@ -3,10 +3,22 @@ namespace TSQR.ToolLibrary.Domain;
 /// <summary>
 /// Represents an entity in the domain-driven design context.
 /// </summary>
-public abstract class Entity<TId>(TId id) where TId : notnull, ValueObject 
+public abstract class Entity<TId> where TId : notnull, ValueObject 
 {
+   private TId _id;
    private List<IDomainEvent> _domainEvents = [];
-   public TId Id  {get; } = id;
+
+   protected Entity(TId id)
+   {
+       _id = id;
+   }
+
+   public TId Id => _id;
+
+   internal void SetAssignedId(TId id)
+   {
+       _id = id;
+   }
    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
    public void AddDomainEvent(IDomainEvent eventItem)

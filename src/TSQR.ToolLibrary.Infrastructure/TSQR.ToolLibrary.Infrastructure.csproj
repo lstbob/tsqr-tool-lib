@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.35" />
+    <PackageReference Include="Npgsql" Version="9.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\TSQR.ToolLibrary.Domain\TSQR.ToolLibrary.Domain.csproj" />
     <ProjectReference Include="..\TSQR.ToolLibrary.Application\TSQR.ToolLibrary.Application.csproj" />
   </ItemGroup>
