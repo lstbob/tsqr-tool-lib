@@ -19,5 +19,13 @@ public sealed class ManufacturerRepository : IManufacturerRepository
         return rows.Select(r => Manufacturer.Create(new ManufcaturerId(r.Id), r.Name)).ToList();
     }
 
+    public async Task<Manufacturer?> GetByIdAsync(ManufcaturerId id, CancellationToken cancellationToken = default)
+    {
+        var row = await _uow.Connection.QuerySingleOrDefaultAsync<ManufacturerRow>(
+            "SELECT Id, Name FROM Manufacturers WHERE Id = @Id", new { Id = id.Value });
+
+        return row is null ? null : Manufacturer.Create(new ManufcaturerId(row.Id), row.Name);
+    }
+
     private sealed record ManufacturerRow(int Id, string Name);
 }
