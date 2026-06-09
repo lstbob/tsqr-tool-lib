@@ -1,4 +1,3 @@
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 using TSQR.ToolLibrary.WebApi.Queries;
@@ -9,16 +8,16 @@ namespace TSQR.ToolLibrary.WebApi.Controllers;
 [Route("api/dashboard")]
 public sealed class DashboardController : ControllerBase
 {
-    private readonly IMediator _mediator;
+    private readonly IInteractor<GetDashboardStatsQuery, DashboardStats> _getStats;
 
-    public DashboardController(IMediator mediator)
+    public DashboardController(IInteractor<GetDashboardStatsQuery, DashboardStats> getStats)
     {
-        _mediator = mediator;
+        _getStats = getStats;
     }
 
     [HttpGet("stats")]
     public async Task<DashboardStats> GetStats()
     {
-        return await _mediator.Send(new GetDashboardStatsQuery());
+        return await _getStats.ExecuteAsync(new GetDashboardStatsQuery());
     }
 }

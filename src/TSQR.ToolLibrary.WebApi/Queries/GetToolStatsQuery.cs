@@ -1,14 +1,13 @@
-using MediatR;
 using TSQR.ToolLibrary.Domain;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 
 namespace TSQR.ToolLibrary.WebApi.Queries;
 
-public record GetToolStatsQuery : IRequest<ToolStatsResult>;
+public record GetToolStatsQuery;
 
 public record ToolStatsResult(List<ToolStatsItem> ByType, List<ToolStatsItem> ByScarcity);
 
-public sealed class GetToolStatsHandler : IRequestHandler<GetToolStatsQuery, ToolStatsResult>
+public sealed class GetToolStatsHandler : IInteractor<GetToolStatsQuery, ToolStatsResult>
 {
     private readonly IToolRepository _toolRepo;
 
@@ -17,7 +16,7 @@ public sealed class GetToolStatsHandler : IRequestHandler<GetToolStatsQuery, Too
         _toolRepo = toolRepo;
     }
 
-    public async Task<ToolStatsResult> Handle(GetToolStatsQuery request, CancellationToken ct)
+    public async Task<ToolStatsResult> ExecuteAsync(GetToolStatsQuery request, CancellationToken ct)
     {
         var stats = await _toolRepo.GetStatsAsync(ct);
 
