@@ -13,6 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TSQR.ToolLibrary.Common\TSQR.ToolLibrary.Common.csproj" />
+    <ProjectReference Include="..\..\..\tsqr-common\src\TSQR.Common\TSQR.Common.csproj" />
   </ItemGroup>
 </Project>
