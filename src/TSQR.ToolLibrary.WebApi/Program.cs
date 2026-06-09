@@ -4,6 +4,7 @@ using TSQR.ToolLibrary.Application.Member.Commands;
 using TSQR.ToolLibrary.Application.Reservation.Commands;
 using TSQR.ToolLibrary.Application.Inventory.Commands;
 using TSQR.ToolLibrary.Application.Loan.Commands;
+using TSQR.ToolLibrary.Application.Events;
 using TSQR.ToolLibrary.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,9 @@ builder.Services.AddScoped<IInteractor<MarkToolForRepairCommand, Result>, MarkTo
 builder.Services.AddScoped<IInteractor<CompleteRepairCommand, Result>, CompleteRepairCommandHandler>();
 builder.Services.AddScoped<IInteractor<LoanToolCommand, Result>, LoanToolCommandHandler>();
 builder.Services.AddScoped<IInteractor<MarkLoanAsNotReturnedCommand, Result>, MarkLoanAsNotReturnedCommandHandler>();
+
+builder.Services.AddScoped<IDomainEventHandler<ReservationCancelledEvent>, ReservationCancelledEventHandler>();
+builder.Services.AddScoped<IDomainEventHandler<ToolReturnedEvent>, ToolReturnedEventHandler>();
 
 var app = builder.Build();
 

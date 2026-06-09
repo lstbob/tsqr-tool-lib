@@ -34,7 +34,6 @@ public class RegisterToolCommandHandler(
 
         var tool = toolResult.Value;
         await toolRepository.AddAsync(tool, cancellationToken);
-        await toolRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         var inventoryResult = InventoryItem.Create(
             tool.Id,
@@ -47,9 +46,11 @@ public class RegisterToolCommandHandler(
             return inventoryResult.Error;
 
         await inventoryRepository.AddAsync(inventoryResult.Value, cancellationToken);
-        await inventoryRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         tool.AddDomainEvent(new ToolRegisteredEvent(tool.Id, command.OwnerId, command.Model, command.Type));
+
+        await inventoryRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
+
         await eventDispatcher.DispatchAsync(tool.DomainEvents, cancellationToken);
         tool.ClearDomainEvents();
 

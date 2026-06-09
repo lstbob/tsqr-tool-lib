@@ -209,13 +209,22 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         return Result.Success();
     }
 
-    public Result MarkForRepair()
+    public Result MarkForRepair(MemberId reportedById, string description)
     {
         if (IsUnderRepair)
             return new DomainError(nameof(IsUnderRepair), "Tool is already marked for repair.");
 
+        if (reportedById is null)
+            return new ValidationError(nameof(reportedById), "Reported by ID is required.");
+
+        var descriptionResult = description.Validate(nameof(description));
+        if (descriptionResult.IsFailure)
+            return descriptionResult.Error;
+
         IsUnderRepair = true;
         Status = ItemStatus.UnderMaintenance;
+
+        AddDomainEvent(new ToolMarkedForRepairEvent(Id, reportedById, descriptionResult.Value));
         return Result.Success();
     }
 

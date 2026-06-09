@@ -5,7 +5,7 @@ namespace TSQR.ToolLibrary.Application.Reservation.Commands;
 public record CancelReservationCommand(ReservationId ReservationId);
 
 public class CancelReservationCommandHandler(
-    IReservationRepository reservationRepository,
+    IRepository<ReservationAgg, ReservationId> reservationRepository,
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
     IDomainEventDispatcher eventDispatcher)
     : IInteractor<CancelReservationCommand, Result>
@@ -22,27 +22,12 @@ public class CancelReservationCommandHandler(
         if (cancelResult.IsFailure)
             return cancelResult.Error;
 
-        var allReservations = await reservationRepository.GetByItemIdAsync(reservation.ItemId, cancellationToken);
-        var queueService = new ReservationQueueService();
-        var nextInLine = queueService.GetNextInLine(allReservations);
-
-        if (nextInLine is not null)
-        {
-            nextInLine.AddDomainEvent(new NextInLineNotificationEvent(
-                nextInLine.Id, nextInLine.ItemId, nextInLine.MemberId, "Reservation was cancelled by the previous member."));
-        }
-
         item?.ClearReservation();
 
         await reservationRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
 
-        var allEvents = new List<IDomainEvent>();
-        allEvents.AddRange(reservation.DomainEvents);
-        if (nextInLine is not null)
-            allEvents.AddRange(nextInLine.DomainEvents);
-        await eventDispatcher.DispatchAsync(allEvents, cancellationToken);
+        await eventDispatcher.DispatchAsync(reservation.DomainEvents, cancellationToken);
         reservation.ClearDomainEvents();
-        nextInLine?.ClearDomainEvents();
 
         return Result.Success();
     }

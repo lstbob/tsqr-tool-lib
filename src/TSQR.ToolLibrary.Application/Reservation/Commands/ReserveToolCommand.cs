@@ -19,12 +19,6 @@ public class ReserveToolCommandHandler(
         if (item is null)
             return new NotFoundError(nameof(command.ItemId), "Inventory item not found.");
 
-        var maxReservationDate = DateTime.UtcNow.AddDays(28);
-        var expiryDate = command.ReservationDate.AddDays(14);
-
-        if (command.ReservationDate > maxReservationDate)
-            return new DomainError(nameof(command.ReservationDate), "Reservations can only be made up to 28 days in advance.");
-
         var reserveResult = item.Reserve(command.ReservationDate, command.MemberId);
         if (reserveResult.IsFailure)
             return reserveResult.Error;
@@ -32,9 +26,7 @@ public class ReserveToolCommandHandler(
         var reservationResult = ReservationAgg.Create(
             command.ItemId,
             command.MemberId,
-            command.ReservationDate,
-            expiryDate,
-            1);
+            command.ReservationDate);
 
         if (reservationResult.IsFailure)
             return reservationResult.Error;
