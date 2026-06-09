@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TSQR.ToolLibrary.Domain\TSQR.ToolLibrary.Domain.csproj" />
+    <ProjectReference Include="..\TSQR.ToolLibrary.Application\TSQR.ToolLibrary.Application.csproj" />
   </ItemGroup>
 
 </Project>

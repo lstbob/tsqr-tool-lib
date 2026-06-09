@@ -125,19 +125,23 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         if (memberId is null)
             return new ValidationError(nameof(memberId), "Member ID is required.");
 
-        if (!Status.Equals(ItemStatus.Available))
-            return new DomainError(nameof(Status), "Tool is not available for borrowing.");
-
-        if (ReservationDate is not null || ReservationMemberId is not null)
-            return new DomainError(nameof(Status), "Tool is reserved and cannot be borrowed.");
-
         if (IsUnderRepair)
             return new DomainError(nameof(IsUnderRepair), "Tool is under repair and cannot be borrowed.");
+
+        if (Status == ItemStatus.Loaned)
+            return new DomainError(nameof(Status), "Tool is already loaned out.");
+
+        if (Status == ItemStatus.Lost)
+            return new DomainError(nameof(Status), "Tool is lost and cannot be borrowed.");
+
+        if (ReservationMemberId is not null && ReservationMemberId != memberId)
+            return new DomainError(nameof(ReservationMemberId), "Tool is reserved by another member.");
 
         CurrentHolderId = memberId;
         Status = ItemStatus.Loaned;
         LastBorrowedDate = DateTime.UtcNow;
         LoanCount++;
+        ClearReservation();
 
         AddDomainEvent(new ItemLoanedDomainEvent(Id, memberId, LastBorrowedDate.Value));
         return Result.Success();
@@ -174,6 +178,9 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         if (member is null)
             return new ValidationError(nameof(member), "Member is required.");
 
+        if (Status != ItemStatus.Available)
+            return new DomainError(nameof(Status), "Only available tools can be reserved.");
+
         if (reserveDate == default || reserveDate <= DateTime.UtcNow)
             return new ValidationError(nameof(reserveDate), "Reservation date must be in the future.");
 
@@ -182,6 +189,7 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
 
         ReservationDate = reserveDate;
         ReservationMemberId = member;
+        Status = ItemStatus.Reserved;
         return Result.Success();
     }
 
@@ -201,13 +209,22 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         return Result.Success();
     }
 
-    public Result MarkForRepair()
+    public Result MarkForRepair(MemberId reportedById, string description)
     {
         if (IsUnderRepair)
             return new DomainError(nameof(IsUnderRepair), "Tool is already marked for repair.");
 
+        if (reportedById is null)
+            return new ValidationError(nameof(reportedById), "Reported by ID is required.");
+
+        var descriptionResult = description.Validate(nameof(description));
+        if (descriptionResult.IsFailure)
+            return descriptionResult.Error;
+
         IsUnderRepair = true;
         Status = ItemStatus.UnderMaintenance;
+
+        AddDomainEvent(new ToolMarkedForRepairEvent(Id, reportedById, descriptionResult.Value));
         return Result.Success();
     }
 
