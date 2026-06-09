@@ -1,4 +1,4 @@
-using ToolAgg = TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
+using ToolAgg = TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate.Tool;
 
 namespace TSQR.ToolLibrary.Application.Tool.Commands;
 
@@ -11,44 +11,48 @@ public record RegisterToolCommand(
     MemberId OwnerId,
     string SerialNumber,
     Condition InitialCondition,
-    string? Metadata = null) : IRequest<Result<ToolId>>;
+    string? Metadata = null);
 
 public class RegisterToolCommandHandler(
-    IRepository<ToolAgg.Tool, ToolId> toolRepository,
-    IRepository<InventoryItem, InventoryItemId> inventoryRepository)
-    : IRequestHandler<RegisterToolCommand, Result<ToolId>>
+    IRepository<ToolAgg, ToolId> toolRepository,
+    IRepository<InventoryItem, InventoryItemId> inventoryRepository,
+    IDomainEventDispatcher eventDispatcher)
+    : IInteractor<RegisterToolCommand, Result<ToolId>>
 {
-    public async Task<Result<ToolId>> Handle(RegisterToolCommand request, CancellationToken cancellationToken)
+    public async Task<Result<ToolId>> ExecuteAsync(RegisterToolCommand command, CancellationToken cancellationToken)
     {
-        var toolResult = ToolAgg.Tool.Create(
-            request.Model,
-            request.Description,
-            request.Manufacturer,
-            request.Type,
-            request.AmortizationRate,
-            request.Metadata);
+        var toolResult = ToolAgg.Create(
+            command.Model,
+            command.Description,
+            command.Manufacturer,
+            command.Type,
+            command.AmortizationRate,
+            command.Metadata);
 
         if (toolResult.IsFailure)
             return toolResult.Error;
 
         var tool = toolResult.Value;
         await toolRepository.AddAsync(tool, cancellationToken);
-        await toolRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         var inventoryResult = InventoryItem.Create(
             tool.Id,
-            request.OwnerId,
+            command.OwnerId,
             DateTime.UtcNow,
-            request.SerialNumber,
-            request.InitialCondition);
+            command.SerialNumber,
+            command.InitialCondition);
 
         if (inventoryResult.IsFailure)
             return inventoryResult.Error;
 
         await inventoryRepository.AddAsync(inventoryResult.Value, cancellationToken);
+
+        tool.AddDomainEvent(new ToolRegisteredEvent(tool.Id, command.OwnerId, command.Model, command.Type));
+
         await inventoryRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
 
-        tool.AddDomainEvent(new ToolRegisteredEvent(tool.Id, request.OwnerId, request.Model, request.Type));
+        await eventDispatcher.DispatchAsync(tool.DomainEvents, cancellationToken);
+        tool.ClearDomainEvents();
 
         return tool.Id;
     }

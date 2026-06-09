@@ -75,8 +75,20 @@ public class Loan : Entity<LoanId>, IAggregateRoot
         return Create(new LoanId(default), memberId, checkoutDate, dueDate, itemId, status);
     }
 
+    public static Result<Loan> Create(
+        MemberId memberId,
+        InventoryItemId itemId)
+    {
+        var checkoutDate = DateTime.UtcNow;
+        var dueDate = checkoutDate.AddDays(7);
+        return Create(new LoanId(default), memberId, checkoutDate, dueDate, itemId, LoanStatus.Active);
+    }
+
     public Result EndLoan(DateTime expectedEndDate)
     {
+        if (Status != LoanStatus.Active)
+            return new DomainError(nameof(Status), "Only active loans can be ended.");
+
         var endDateResult = expectedEndDate.Validate(nameof(expectedEndDate));
         if (endDateResult.IsFailure)
             return endDateResult.Error;
