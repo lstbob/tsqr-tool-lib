@@ -1,4 +1,3 @@
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 using TSQR.ToolLibrary.WebApi.Queries;
@@ -9,16 +8,16 @@ namespace TSQR.ToolLibrary.WebApi.Controllers;
 [Route("api/manufacturers")]
 public sealed class ManufacturersController : ControllerBase
 {
-    private readonly IMediator _mediator;
+    private readonly IInteractor<GetManufacturersQuery, List<ManufacturerDto>> _getManufacturers;
 
-    public ManufacturersController(IMediator mediator)
+    public ManufacturersController(IInteractor<GetManufacturersQuery, List<ManufacturerDto>> getManufacturers)
     {
-        _mediator = mediator;
+        _getManufacturers = getManufacturers;
     }
 
     [HttpGet]
     public async Task<List<ManufacturerDto>> GetAll()
     {
-        return await _mediator.Send(new GetManufacturersQuery());
+        return await _getManufacturers.ExecuteAsync(new GetManufacturersQuery());
     }
 }

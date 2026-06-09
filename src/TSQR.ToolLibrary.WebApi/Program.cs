@@ -14,7 +14,6 @@ using TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
 using TSQR.ToolLibrary.Infrastructure.Dapper.Repositories;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 using TSQR.ToolLibrary.WebApi.Queries;
-
 TypeHandlerRegistrations.EnsureRegistered();
 
 var builder = WebApplication.CreateBuilder(args);
@@ -65,11 +64,6 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddScoped<IDatabaseUnitOfWork>(_ => new DapperUnitOfWork(connectionString));
 
-builder.Services.AddMediatR(cfg =>
-{
-    cfg.RegisterServicesFromAssembly(typeof(GetToolsQuery).Assembly);
-});
-
 builder.Services.AddSingleton<IEntityMapping<InventoryItem>, InventoryItemMapping>();
 builder.Services.AddSingleton<IEntityMapping<Member>, MemberMapping>();
 builder.Services.AddSingleton<IEntityMapping<Reservation>, ReservationMapping>();
@@ -86,6 +80,12 @@ builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
 
 builder.Services.AddScoped<IReservationRepository, DapperReservationRepository>();
 builder.Services.AddApplicationFeatures();
+
+builder.Services.AddScoped<IInteractor<GetToolsQuery, PagedResult<ToolListItem>>, GetToolsHandler>();
+builder.Services.AddScoped<IInteractor<GetToolByIdQuery, ToolDetail?>, GetToolByIdHandler>();
+builder.Services.AddScoped<IInteractor<GetToolStatsQuery, ToolStatsResult>, GetToolStatsHandler>();
+builder.Services.AddScoped<IInteractor<GetDashboardStatsQuery, DashboardStats>, GetDashboardStatsHandler>();
+builder.Services.AddScoped<IInteractor<GetManufacturersQuery, List<ManufacturerDto>>, GetManufacturersHandler>();
 
 var app = builder.Build();
 

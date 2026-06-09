@@ -1,14 +1,12 @@
-using MediatR;
 using TSQR.ToolLibrary.Domain;
 using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 
 namespace TSQR.ToolLibrary.WebApi.Queries;
 
-public record GetToolsQuery(string? Q, int? Type, int? ManufacturerId, int Page, int PageSize)
-    : IRequest<PagedResult<ToolListItem>>;
+public record GetToolsQuery(string? Q, int? Type, int? ManufacturerId, int Page, int PageSize);
 
-public sealed class GetToolsHandler : IRequestHandler<GetToolsQuery, PagedResult<ToolListItem>>
+public sealed class GetToolsHandler : IInteractor<GetToolsQuery, PagedResult<ToolListItem>>
 {
     private readonly IToolRepository _toolRepo;
     private readonly IManufacturerRepository _manufacturerRepo;
@@ -19,7 +17,7 @@ public sealed class GetToolsHandler : IRequestHandler<GetToolsQuery, PagedResult
         _manufacturerRepo = manufacturerRepo;
     }
 
-    public async Task<PagedResult<ToolListItem>> Handle(GetToolsQuery request, CancellationToken ct)
+    public async Task<PagedResult<ToolListItem>> ExecuteAsync(GetToolsQuery request, CancellationToken ct)
     {
         var allTools = await _toolRepo.GetAllAsync(ct);
 

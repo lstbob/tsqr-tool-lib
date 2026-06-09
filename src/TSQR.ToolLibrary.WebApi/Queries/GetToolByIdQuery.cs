@@ -1,13 +1,12 @@
-using MediatR;
 using TSQR.ToolLibrary.Domain;
 using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 
 namespace TSQR.ToolLibrary.WebApi.Queries;
 
-public record GetToolByIdQuery(int Id) : IRequest<ToolDetail?>;
+public record GetToolByIdQuery(int Id);
 
-public sealed class GetToolByIdHandler : IRequestHandler<GetToolByIdQuery, ToolDetail?>
+public sealed class GetToolByIdHandler : IInteractor<GetToolByIdQuery, ToolDetail?>
 {
     private readonly IToolRepository _toolRepo;
 
@@ -16,7 +15,7 @@ public sealed class GetToolByIdHandler : IRequestHandler<GetToolByIdQuery, ToolD
         _toolRepo = toolRepo;
     }
 
-    public async Task<ToolDetail?> Handle(GetToolByIdQuery request, CancellationToken ct)
+    public async Task<ToolDetail?> ExecuteAsync(GetToolByIdQuery request, CancellationToken ct)
     {
         var tool = await _toolRepo.GetByIdAsync(new ToolId(request.Id), ct);
         if (tool is null) return null;

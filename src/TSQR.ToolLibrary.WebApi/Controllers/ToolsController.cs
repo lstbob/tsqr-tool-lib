@@ -1,4 +1,3 @@
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 using TSQR.ToolLibrary.WebApi.Queries;
@@ -9,11 +8,18 @@ namespace TSQR.ToolLibrary.WebApi.Controllers;
 [Route("api/tools")]
 public sealed class ToolsController : ControllerBase
 {
-    private readonly IMediator _mediator;
+    private readonly IInteractor<GetToolsQuery, PagedResult<ToolListItem>> _getTools;
+    private readonly IInteractor<GetToolByIdQuery, ToolDetail?> _getToolById;
+    private readonly IInteractor<GetToolStatsQuery, ToolStatsResult> _getToolStats;
 
-    public ToolsController(IMediator mediator)
+    public ToolsController(
+        IInteractor<GetToolsQuery, PagedResult<ToolListItem>> getTools,
+        IInteractor<GetToolByIdQuery, ToolDetail?> getToolById,
+        IInteractor<GetToolStatsQuery, ToolStatsResult> getToolStats)
     {
-        _mediator = mediator;
+        _getTools = getTools;
+        _getToolById = getToolById;
+        _getToolStats = getToolStats;
     }
 
     [HttpGet]
@@ -24,13 +30,13 @@ public sealed class ToolsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        return await _mediator.Send(new GetToolsQuery(q, type, manufacturerId, page, pageSize));
+        return await _getTools.ExecuteAsync(new GetToolsQuery(q, type, manufacturerId, page, pageSize));
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<ToolDetail>> GetTool(int id)
     {
-        var result = await _mediator.Send(new GetToolByIdQuery(id));
+        var result = await _getToolById.ExecuteAsync(new GetToolByIdQuery(id));
         if (result is null) return NotFound();
         return result;
     }
@@ -38,6 +44,6 @@ public sealed class ToolsController : ControllerBase
     [HttpGet("stats")]
     public async Task<ToolStatsResult> GetStats()
     {
-        return await _mediator.Send(new GetToolStatsQuery());
+        return await _getToolStats.ExecuteAsync(new GetToolStatsQuery());
     }
 }
