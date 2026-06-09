@@ -7,12 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\TSQR.ToolLibrary.Domain\TSQR.ToolLibrary.Domain.csproj" />
-    <ProjectReference Include="..\TSQR.ToolLibrary.Common\TSQR.ToolLibrary.Common.csproj" />
+    <ProjectReference Include="..\TSQR.ToolLibrary.Application\TSQR.ToolLibrary.Application.csproj" />
   </ItemGroup>
 
 </Project>
