@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 using TSQR.ToolLibrary.WebApi.Queries;
@@ -5,6 +6,7 @@ using TSQR.ToolLibrary.WebApi.Queries;
 namespace TSQR.ToolLibrary.WebApi.Controllers;
 
 [ApiController]
+[AllowAnonymous] // public read-only manufacturer list (consumed unauthenticated by the UI)
 [Route("api/manufacturers")]
 public sealed class ManufacturersController : ControllerBase
 {

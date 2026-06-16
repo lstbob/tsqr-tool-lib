@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 using TSQR.ToolLibrary.WebApi.Queries;
@@ -5,6 +7,7 @@ using TSQR.ToolLibrary.WebApi.Queries;
 namespace TSQR.ToolLibrary.WebApi.Controllers;
 
 [ApiController]
+[AllowAnonymous] // public read-only tool catalog (consumed unauthenticated by the UI)
 [Route("api/tools")]
 public sealed class ToolsController : ControllerBase
 {
@@ -27,8 +30,8 @@ public sealed class ToolsController : ControllerBase
         [FromQuery] string? q,
         [FromQuery] int? type,
         [FromQuery] int? manufacturerId,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery][Range(1, int.MaxValue)] int page = 1,
+        [FromQuery][Range(1, 100)] int pageSize = 20)
     {
         return await _getTools.ExecuteAsync(new GetToolsQuery(q, type, manufacturerId, page, pageSize));
     }

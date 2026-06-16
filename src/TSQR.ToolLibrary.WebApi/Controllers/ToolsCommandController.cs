@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TSQR.ToolLibrary.Application.Tool.Commands;
 using TSQR.ToolLibrary.Application.Inventory.Commands;
@@ -7,6 +8,7 @@ using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 namespace TSQR.ToolLibrary.WebApi.Controllers;
 
 [ApiController]
+[Authorize] // state-changing tool operations require an authenticated caller
 [Route("api/tools")]
 public sealed class ToolsCommandController : ControllerBase
 {

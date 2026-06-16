@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using TSQR.ToolLibrary.Application;
@@ -41,7 +42,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+// Deny by default: every endpoint requires an authenticated caller unless it
+// is explicitly marked [AllowAnonymous] (the public read/catalog endpoints).
+// Previously no endpoint enforced authorization, so the entire API — including
+// state-changing commands — was anonymous.
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(options =>

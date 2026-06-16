@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TSQR.ToolLibrary.Application.Loan.Commands;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
@@ -5,6 +6,7 @@ using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 namespace TSQR.ToolLibrary.WebApi.Controllers;
 
 [ApiController]
+[Authorize] // state-changing loan operations require an authenticated caller
 [Route("api/loans")]
 public sealed class LoansCommandController : ControllerBase
 {

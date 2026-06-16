@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TSQR.ToolLibrary.Application.Reservation.Commands;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
@@ -5,6 +6,7 @@ using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 namespace TSQR.ToolLibrary.WebApi.Controllers;
 
 [ApiController]
+[Authorize] // state-changing reservation operations require an authenticated caller
 [Route("api/reservations")]
 public sealed class ReservationsCommandController : ControllerBase
 {

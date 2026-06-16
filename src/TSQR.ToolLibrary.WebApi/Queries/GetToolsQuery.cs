@@ -38,9 +38,14 @@ public sealed class GetToolsHandler : IInteractor<GetToolsQuery, PagedResult<Too
         var list = filtered.ToList();
         var totalCount = list.Count;
 
+        // Defensive clamp: never let unvalidated paging params produce a
+        // negative Skip (throws) or an integer overflow in (page-1)*pageSize.
+        var page = Math.Max(1, request.Page);
+        var pageSize = Math.Clamp(request.PageSize, 1, 100);
+
         var paged = list
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToList();
 
         var items = paged.Select(t => new ToolListItem(
@@ -54,7 +59,7 @@ public sealed class GetToolsHandler : IInteractor<GetToolsQuery, PagedResult<Too
             t.Manufacturer.Id.Value,
             t.Manufacturer.Name)).ToList();
 
-        return new PagedResult<ToolListItem>(items, totalCount, request.Page, request.PageSize);
+        return new PagedResult<ToolListItem>(items, totalCount, page, pageSize);
     }
 
     private static string AmortizationRateName(int rate) => rate switch
