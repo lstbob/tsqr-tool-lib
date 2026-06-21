@@ -6,7 +6,7 @@ public record BanMemberCommand(MemberId MemberId);
 
 public class BanMemberCommandHandler(
     IRepository<MemberAgg, MemberId> memberRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<BanMemberCommand, Result>
 {
     public async Task<Result> ExecuteAsync(BanMemberCommand command, CancellationToken cancellationToken)
@@ -19,10 +19,8 @@ public class BanMemberCommandHandler(
         if (banResult.IsFailure)
             return banResult.Error;
 
-        await memberRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(member.DomainEvents, cancellationToken);
-        member.ClearDomainEvents();
+        memberRepository.Update(member);
+        await orchestrator.SaveEntitiesAsync(member, cancellationToken);
 
         return Result.Success();
     }

@@ -32,10 +32,10 @@ internal sealed class MaintenanceRecordIdHandler : SqlMapper.TypeHandler<Mainten
     public override void SetValue(IDbDataParameter parameter, MaintenanceRecordId? value) => parameter.Value = value?.Value;
 }
 
-internal sealed class ManufcaturerIdHandler : SqlMapper.TypeHandler<ManufcaturerId>
+internal sealed class ManufacturerIdHandler : SqlMapper.TypeHandler<ManufacturerId>
 {
-    public override ManufcaturerId Parse(object value) => new((int)value);
-    public override void SetValue(IDbDataParameter parameter, ManufcaturerId? value) => parameter.Value = value?.Value;
+    public override ManufacturerId Parse(object value) => new((int)value);
+    public override void SetValue(IDbDataParameter parameter, ManufacturerId? value) => parameter.Value = value?.Value;
 }
 
 internal sealed class LocationIdHandler : SqlMapper.TypeHandler<LocationId>
@@ -60,7 +60,7 @@ public static class TypeHandlerRegistrations
             SqlMapper.AddTypeHandler(new InventoryItemIdHandler());
             SqlMapper.AddTypeHandler(new ReservationIdHandler());
             SqlMapper.AddTypeHandler(new MaintenanceRecordIdHandler());
-            SqlMapper.AddTypeHandler(new ManufcaturerIdHandler());
+            SqlMapper.AddTypeHandler(new ManufacturerIdHandler());
             SqlMapper.AddTypeHandler(new LocationIdHandler());
             _registered = true;
         }

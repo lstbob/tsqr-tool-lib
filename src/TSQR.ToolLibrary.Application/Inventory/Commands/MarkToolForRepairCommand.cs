@@ -5,7 +5,7 @@ public record MarkToolForRepairCommand(InventoryItemId ItemId, MemberId Reported
 public class MarkToolForRepairCommandHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
     IRepository<MaintenanceRecord, MaintenanceRecordId> maintenanceRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<MarkToolForRepairCommand, Result>
 {
     public async Task<Result> ExecuteAsync(MarkToolForRepairCommand command, CancellationToken cancellationToken)
@@ -22,11 +22,11 @@ public class MarkToolForRepairCommandHandler(
         if (recordResult.IsFailure)
             return recordResult.Error;
 
-        await maintenanceRepository.AddAsync(recordResult.Value, cancellationToken);
-        await maintenanceRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
+        var record = recordResult.Value;
+        await maintenanceRepository.AddAsync(record, cancellationToken);
+        inventoryRepository.Update(item);
 
-        await eventDispatcher.DispatchAsync(item.DomainEvents, cancellationToken);
-        item.ClearDomainEvents();
+        await orchestrator.SaveEntitiesAsync([item, record], cancellationToken);
 
         return Result.Success();
     }

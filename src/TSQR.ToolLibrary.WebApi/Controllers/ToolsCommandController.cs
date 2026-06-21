@@ -53,7 +53,7 @@ public sealed class ToolsCommandController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ToolId>> Register(RegisterToolRequest request, CancellationToken ct)
     {
-        var manufacturer = await _manufacturerRepository.GetByIdAsync(new ManufcaturerId(request.ManufacturerId), ct);
+        var manufacturer = await _manufacturerRepository.GetByIdAsync(new ManufacturerId(request.ManufacturerId), ct);
         if (manufacturer is null)
             return NotFound(new ErrorResponse("ManufacturerNotFound", "Manufacturer not found."));
 
@@ -81,7 +81,7 @@ public sealed class ToolsCommandController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> UpdateDetails(UpdateToolDetailsRequest request, CancellationToken ct)
     {
-        var manufacturer = await _manufacturerRepository.GetByIdAsync(new ManufcaturerId(request.ManufacturerId), ct);
+        var manufacturer = await _manufacturerRepository.GetByIdAsync(new ManufacturerId(request.ManufacturerId), ct);
         if (manufacturer is null)
             return NotFound(new ErrorResponse("ManufacturerNotFound", "Manufacturer not found."));
 

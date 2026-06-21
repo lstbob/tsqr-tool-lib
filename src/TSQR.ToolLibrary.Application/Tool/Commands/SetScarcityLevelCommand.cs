@@ -6,7 +6,7 @@ public record SetScarcityLevelCommand(ToolId ToolId, LocationId LocationId, Scar
 
 public class SetScarcityLevelCommandHandler(
     IRepository<ToolAgg, ToolId> toolRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<SetScarcityLevelCommand, Result>
 {
     public async Task<Result> ExecuteAsync(SetScarcityLevelCommand command, CancellationToken cancellationToken)
@@ -19,10 +19,8 @@ public class SetScarcityLevelCommandHandler(
         if (setResult.IsFailure)
             return setResult.Error;
 
-        await toolRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(tool.DomainEvents, cancellationToken);
-        tool.ClearDomainEvents();
+        toolRepository.Update(tool);
+        await orchestrator.SaveEntitiesAsync(tool, cancellationToken);
 
         return Result.Success();
     }

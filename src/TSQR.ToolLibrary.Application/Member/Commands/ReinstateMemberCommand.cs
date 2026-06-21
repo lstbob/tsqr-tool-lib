@@ -6,7 +6,7 @@ public record ReinstateMemberCommand(MemberId MemberId);
 
 public class ReinstateMemberCommandHandler(
     IRepository<MemberAgg, MemberId> memberRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<ReinstateMemberCommand, Result>
 {
     public async Task<Result> ExecuteAsync(ReinstateMemberCommand command, CancellationToken cancellationToken)
@@ -19,10 +19,8 @@ public class ReinstateMemberCommandHandler(
         if (reinstateResult.IsFailure)
             return reinstateResult.Error;
 
-        await memberRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(member.DomainEvents, cancellationToken);
-        member.ClearDomainEvents();
+        memberRepository.Update(member);
+        await orchestrator.SaveEntitiesAsync(member, cancellationToken);
 
         return Result.Success();
     }

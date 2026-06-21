@@ -6,7 +6,7 @@ public record RemoveScarcityLevelCommand(ToolId ToolId, LocationId LocationId);
 
 public class RemoveScarcityLevelCommandHandler(
     IRepository<ToolAgg, ToolId> toolRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<RemoveScarcityLevelCommand, Result>
 {
     public async Task<Result> ExecuteAsync(RemoveScarcityLevelCommand command, CancellationToken cancellationToken)
@@ -16,11 +16,8 @@ public class RemoveScarcityLevelCommandHandler(
             return new NotFoundError(nameof(command.ToolId), "Tool not found.");
 
         tool.RemoveScarcityLevel(command.LocationId);
-
-        await toolRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(tool.DomainEvents, cancellationToken);
-        tool.ClearDomainEvents();
+        toolRepository.Update(tool);
+        await orchestrator.SaveEntitiesAsync(tool, cancellationToken);
 
         return Result.Success();
     }

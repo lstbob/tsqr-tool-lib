@@ -2,7 +2,7 @@ global using System.Data;
 global using Dapper;
 global using Npgsql;
 global using TSQR.ToolLibrary.Domain;
-global using TSQR.ToolLibrary.Infrastructure.Abstractions;
+global using TSQR.ToolLibrary.Infrastructure.Dapper;
 global using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;

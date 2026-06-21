@@ -9,11 +9,12 @@ using TSQR.ToolLibrary.Domain.Aggregates.MaintenanceAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
-using TSQR.ToolLibrary.Infrastructure.Abstractions;
+using TSQR.ToolLibrary.Domain;
 using TSQR.ToolLibrary.Infrastructure.Dapper;
 using TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
 using TSQR.ToolLibrary.Infrastructure.Dapper.Repositories;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
+using TSQR.ToolLibrary.WebApi.Middleware;
 using TSQR.ToolLibrary.WebApi.Queries;
 TypeHandlerRegistrations.EnsureRegistered();
 
@@ -72,18 +73,22 @@ builder.Services.AddControllers()
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-builder.Services.AddScoped<IDatabaseUnitOfWork>(_ => new DapperUnitOfWork(connectionString));
+builder.Services.AddScoped<ISqlUnitOfWork>(_ => new DapperUnitOfWork(connectionString));
+// The application layer depends only on IUnitOfWork (from the Domain). Register
+// the same Dapper adapter against IUnitOfWork so DomainEventOrchestrator can
+// resolve it without ever referencing a SQL/Dapper type.
+builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ISqlUnitOfWork>());
 
-builder.Services.AddSingleton<IEntityMapping<InventoryItem>, InventoryItemMapping>();
-builder.Services.AddSingleton<IEntityMapping<Member>, MemberMapping>();
-builder.Services.AddSingleton<IEntityMapping<Reservation>, ReservationMapping>();
-builder.Services.AddSingleton<IEntityMapping<MaintenanceRecord>, MaintenanceRecordMapping>();
-builder.Services.AddSingleton<IEntityMapping<Tool>, ToolMapping>();
+builder.Services.AddSingleton<ISqlEntityMapping<InventoryItem>, InventoryItemMapping>();
+builder.Services.AddSingleton<ISqlEntityMapping<Member>, MemberMapping>();
+builder.Services.AddSingleton<ISqlEntityMapping<Reservation>, ReservationMapping>();
+builder.Services.AddSingleton<ISqlEntityMapping<MaintenanceRecord>, MaintenanceRecordMapping>();
+builder.Services.AddSingleton<ISqlEntityMapping<Tool>, ToolMapping>();
 
-builder.Services.AddScoped<IRepository<InventoryItem, InventoryItemId>, Repository<InventoryItem, InventoryItemId>>();
-builder.Services.AddScoped<IRepository<Member, MemberId>, Repository<Member, MemberId>>();
-builder.Services.AddScoped<IRepository<Reservation, ReservationId>, Repository<Reservation, ReservationId>>();
-builder.Services.AddScoped<IRepository<MaintenanceRecord, MaintenanceRecordId>, Repository<MaintenanceRecord, MaintenanceRecordId>>();
+builder.Services.AddScoped<IRepository<InventoryItem, InventoryItemId>, SqlRepository<InventoryItem, InventoryItemId>>();
+builder.Services.AddScoped<IRepository<Member, MemberId>, SqlRepository<Member, MemberId>>();
+builder.Services.AddScoped<IRepository<Reservation, ReservationId>, SqlRepository<Reservation, ReservationId>>();
+builder.Services.AddScoped<IRepository<MaintenanceRecord, MaintenanceRecordId>, SqlRepository<MaintenanceRecord, MaintenanceRecordId>>();
 builder.Services.AddScoped<IToolRepository, ToolRepository>();
 builder.Services.AddScoped<IManufacturerRepository, ManufacturerRepository>();
 builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
@@ -101,8 +106,15 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.MapOpenApi();
 }
+
+// Global exception handler logs unhandled exceptions and returns a structured
+// 500 ErrorResponse. In Development, UseDeveloperExceptionPage above takes
+// precedence (the middleware's `when (!_env.IsDevelopment())` filter lets the
+// developer page render instead).
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

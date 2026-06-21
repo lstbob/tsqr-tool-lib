@@ -6,7 +6,7 @@ public record DenyMemberAccessCommand(MemberId MemberId);
 
 public class DenyMemberAccessCommandHandler(
     IRepository<MemberAgg, MemberId> memberRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<DenyMemberAccessCommand, Result>
 {
     public async Task<Result> ExecuteAsync(DenyMemberAccessCommand command, CancellationToken cancellationToken)
@@ -19,10 +19,8 @@ public class DenyMemberAccessCommandHandler(
         if (denyResult.IsFailure)
             return denyResult.Error;
 
-        await memberRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(member.DomainEvents, cancellationToken);
-        member.ClearDomainEvents();
+        memberRepository.Update(member);
+        await orchestrator.SaveEntitiesAsync(member, cancellationToken);
 
         return Result.Success();
     }

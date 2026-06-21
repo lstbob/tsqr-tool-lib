@@ -2,9 +2,9 @@ using TSQR.ToolLibrary.Domain;
 
 namespace TSQR.ToolLibrary.Infrastructure.Dapper.Repositories;
 
-public sealed class ToolRepository : Repository<Tool, ToolId>, IToolRepository
+public sealed class ToolRepository : SqlRepository<Tool, ToolId>, IToolRepository
 {
-    public ToolRepository(IDatabaseUnitOfWork uow, IEntityMapping<Tool> mapping) : base(uow, mapping)
+    public ToolRepository(ISqlUnitOfWork uow, ISqlEntityMapping<Tool> mapping) : base(uow, mapping)
     {
     }
 
@@ -21,7 +21,7 @@ public sealed class ToolRepository : Repository<Tool, ToolId>, IToolRepository
             new ToolId(r.Id),
             r.Model,
             r.Description,
-            Manufacturer.Create(new ManufcaturerId(r.ManufacturerId), r.ManufacturerName),
+            Manufacturer.Create(new ManufacturerId(r.ManufacturerId), r.ManufacturerName),
             (ToolType)r.ToolType,
             (AmortizationRate)r.AmortizationRate,
             r.Metadata)).ToList();

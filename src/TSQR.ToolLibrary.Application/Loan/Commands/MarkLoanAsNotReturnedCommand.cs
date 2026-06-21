@@ -6,7 +6,7 @@ public record MarkLoanAsNotReturnedCommand(LoanId LoanId);
 
 public class MarkLoanAsNotReturnedCommandHandler(
     IRepository<LoanAgg, LoanId> loanRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<MarkLoanAsNotReturnedCommand, Result>
 {
     public async Task<Result> ExecuteAsync(MarkLoanAsNotReturnedCommand command, CancellationToken cancellationToken)
@@ -19,10 +19,8 @@ public class MarkLoanAsNotReturnedCommandHandler(
         if (endResult.IsFailure)
             return endResult.Error;
 
-        await loanRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(loan.DomainEvents, cancellationToken);
-        loan.ClearDomainEvents();
+        loanRepository.Update(loan);
+        await orchestrator.SaveEntitiesAsync(loan, cancellationToken);
 
         return Result.Success();
     }

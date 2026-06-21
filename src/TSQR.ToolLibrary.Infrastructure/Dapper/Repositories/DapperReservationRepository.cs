@@ -3,9 +3,9 @@ using TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
 
 namespace TSQR.ToolLibrary.Infrastructure.Dapper.Repositories;
 
-public sealed class DapperReservationRepository : Repository<Reservation, ReservationId>, IReservationRepository
+public sealed class DapperReservationRepository : SqlRepository<Reservation, ReservationId>, IReservationRepository
 {
-    public DapperReservationRepository(IDatabaseUnitOfWork uow, IEntityMapping<Reservation> mapping) : base(uow, mapping)
+    public DapperReservationRepository(ISqlUnitOfWork uow, ISqlEntityMapping<Reservation> mapping) : base(uow, mapping)
     {
     }
 

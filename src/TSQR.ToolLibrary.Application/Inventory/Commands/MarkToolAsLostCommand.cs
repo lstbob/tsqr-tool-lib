@@ -4,7 +4,7 @@ public record MarkToolAsLostCommand(InventoryItemId ItemId, MemberId ReporterId)
 
 public class MarkToolAsLostCommandHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<MarkToolAsLostCommand, Result>
 {
     public async Task<Result> ExecuteAsync(MarkToolAsLostCommand command, CancellationToken cancellationToken)
@@ -17,10 +17,8 @@ public class MarkToolAsLostCommandHandler(
         if (lostResult.IsFailure)
             return lostResult.Error;
 
-        await inventoryRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(item.DomainEvents, cancellationToken);
-        item.ClearDomainEvents();
+        inventoryRepository.Update(item);
+        await orchestrator.SaveEntitiesAsync(item, cancellationToken);
 
         return Result.Success();
     }

@@ -6,7 +6,7 @@ public record ActivateReservationCommand(ReservationId ReservationId);
 
 public class ActivateReservationCommandHandler(
     IRepository<ReservationAgg, ReservationId> reservationRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<ActivateReservationCommand, Result>
 {
     public async Task<Result> ExecuteAsync(ActivateReservationCommand command, CancellationToken cancellationToken)
@@ -19,10 +19,8 @@ public class ActivateReservationCommandHandler(
         if (activateResult.IsFailure)
             return activateResult.Error;
 
-        await reservationRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(reservation.DomainEvents, cancellationToken);
-        reservation.ClearDomainEvents();
+        reservationRepository.Update(reservation);
+        await orchestrator.SaveEntitiesAsync(reservation, cancellationToken);
 
         return Result.Success();
     }

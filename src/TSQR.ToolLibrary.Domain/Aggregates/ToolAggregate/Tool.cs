@@ -73,6 +73,33 @@ public class Tool : Entity<ToolId>, IAggregateRoot
         return new Tool(id, model, description, manufacturer, type, amortizationRate, metadata);
     }
 
+    /// <summary>
+    /// Factory for registering a new tool with a member. Performs the same validation
+    /// as <see cref="Create(string, string, Manufacturer, ToolType, AmortizationRate, string?)"/>
+    /// and additionally raises <see cref="ToolRegisteredEvent"/> so the application layer
+    /// does not raise domain events itself.
+    /// </summary>
+    public static Result<Tool> Register(
+        MemberId ownerId,
+        string model,
+        string description,
+        Manufacturer manufacturer,
+        ToolType type,
+        AmortizationRate amortizationRate,
+        string? metadata = null)
+    {
+        if (ownerId is null)
+            return new ValidationError(nameof(ownerId), "Owner ID is required.");
+
+        var createResult = Create(model, description, manufacturer, type, amortizationRate, metadata);
+        if (createResult.IsFailure)
+            return createResult.Error;
+
+        var tool = createResult.Value;
+        tool.AddDomainEvent(new ToolRegisteredEvent(tool.Id, ownerId, model, type));
+        return tool;
+    }
+
     public Result UpdateToolDetails(string model, string description, Manufacturer manufacturer,
             ToolType type, AmortizationRate amortizationRate, string? metadata = null)
     {

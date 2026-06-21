@@ -6,7 +6,7 @@ public record SuspendMemberCommand(MemberId MemberId);
 
 public class SuspendMemberCommandHandler(
     IRepository<MemberAgg, MemberId> memberRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<SuspendMemberCommand, Result>
 {
     public async Task<Result> ExecuteAsync(SuspendMemberCommand command, CancellationToken cancellationToken)
@@ -19,10 +19,8 @@ public class SuspendMemberCommandHandler(
         if (suspendResult.IsFailure)
             return suspendResult.Error;
 
-        await memberRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(member.DomainEvents, cancellationToken);
-        member.ClearDomainEvents();
+        memberRepository.Update(member);
+        await orchestrator.SaveEntitiesAsync(member, cancellationToken);
 
         return Result.Success();
     }

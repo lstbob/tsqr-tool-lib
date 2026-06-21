@@ -60,6 +60,7 @@ public static class DependencyInjection
 
     public static IServiceCollection AddDomainEventFeatures(this IServiceCollection services)
     {
+        services.AddScoped<DomainEventOrchestrator>();
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.AddScoped<IDomainEventHandler<ReservationCancelledEvent>, ReservationCancelledEventHandler>();
         services.AddScoped<IDomainEventHandler<ToolReturnedEvent>, ToolReturnedEventHandler>();

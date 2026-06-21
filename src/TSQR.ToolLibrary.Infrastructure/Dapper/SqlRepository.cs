@@ -1,22 +1,29 @@
 using TSQR.ToolLibrary.Domain;
 
-namespace TSQR.ToolLibrary.Infrastructure.Abstractions;
+namespace TSQR.ToolLibrary.Infrastructure.Dapper;
 
-public class Repository<TEntity, TId> : IRepository<TEntity, TId>
+/// <summary>
+/// Generic Dapper-backed repository base. Lives in <c>Infrastructure.Dapper</c>
+/// because it is shaped by Dapper's <see cref="ISqlUnitOfWork"/> /
+/// <see cref="ISqlEntityMapping{TEntity}"/> contracts. A NoSQL or document
+/// adapter would implement <c>IRepository&lt;T,TId&gt;</c> directly with its
+/// own base class - never by deriving from this one.
+/// </summary>
+public class SqlRepository<TEntity, TId> : IRepository<TEntity, TId>
     where TEntity : Entity<TId>, IAggregateRoot
     where TId : ValueObject
 {
-    private readonly IDatabaseUnitOfWork _uow;
-    private readonly IEntityMapping<TEntity> _mapping;
+    private readonly ISqlUnitOfWork _uow;
+    private readonly ISqlEntityMapping<TEntity> _mapping;
 
-    public Repository(IDatabaseUnitOfWork uow, IEntityMapping<TEntity> mapping)
+    public SqlRepository(ISqlUnitOfWork uow, ISqlEntityMapping<TEntity> mapping)
     {
         _uow = uow;
         _mapping = mapping;
     }
 
     public IUnitOfWork UnitOfWork => _uow;
-    protected IDatabaseConnection Database => _uow.Connection;
+    protected ISqlConnection Database => _uow.Connection;
 
     public virtual async Task<TEntity?> GetByIdAsync(TId id, CancellationToken cancellationToken = default)
     {

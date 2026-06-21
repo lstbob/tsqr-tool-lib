@@ -148,7 +148,7 @@ These came out of the analysis and are worth confirming in code:
 6. **No loan renewal** — `Policy.MaxRenewalCount` exists but `Loan` has no `Renew()`.
 7. **Policies unenforced** — `Policy` (max loan/reservation days) isn't consulted by any handler.
 8. **No tests** — unit tests were removed; there is currently no safety net.
-9. **Minor naming bugs** — `ManufcaturerId` (typo), `MaxLoanRerservationDays` (typo); a possible
+9. **Minor naming bugs** — `ManufacturerId` (typo), `MaxLoanRerservationDays` (typo); a possible
    `null` `CurrentHolderId` path around `ToolReturnedEvent` — confirm in code.
 
 ## 8. Bottom line for a developer

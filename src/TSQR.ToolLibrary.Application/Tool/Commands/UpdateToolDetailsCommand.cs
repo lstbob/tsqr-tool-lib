@@ -13,7 +13,7 @@ public record UpdateToolDetailsCommand(
 
 public class UpdateToolDetailsCommandHandler(
     IRepository<ToolAgg, ToolId> toolRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<UpdateToolDetailsCommand, Result>
 {
     public async Task<Result> ExecuteAsync(UpdateToolDetailsCommand command, CancellationToken cancellationToken)
@@ -33,10 +33,8 @@ public class UpdateToolDetailsCommandHandler(
         if (updateResult.IsFailure)
             return updateResult.Error;
 
-        await toolRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(tool.DomainEvents, cancellationToken);
-        tool.ClearDomainEvents();
+        toolRepository.Update(tool);
+        await orchestrator.SaveEntitiesAsync(tool, cancellationToken);
 
         return Result.Success();
     }

@@ -16,12 +16,15 @@ public record RegisterToolCommand(
 public class RegisterToolCommandHandler(
     IRepository<ToolAgg, ToolId> toolRepository,
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<RegisterToolCommand, Result<ToolId>>
 {
     public async Task<Result<ToolId>> ExecuteAsync(RegisterToolCommand command, CancellationToken cancellationToken)
     {
-        var toolResult = ToolAgg.Create(
+        // Tool.Register raises ToolRegisteredEvent inside the aggregate factory,
+        // so the application layer does not raise domain events itself.
+        var toolResult = ToolAgg.Register(
+            command.OwnerId,
             command.Model,
             command.Description,
             command.Manufacturer,
@@ -46,13 +49,7 @@ public class RegisterToolCommandHandler(
             return inventoryResult.Error;
 
         await inventoryRepository.AddAsync(inventoryResult.Value, cancellationToken);
-
-        tool.AddDomainEvent(new ToolRegisteredEvent(tool.Id, command.OwnerId, command.Model, command.Type));
-
-        await inventoryRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(tool.DomainEvents, cancellationToken);
-        tool.ClearDomainEvents();
+        await orchestrator.SaveEntitiesAsync([tool, inventoryResult.Value], cancellationToken);
 
         return tool.Id;
     }

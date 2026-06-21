@@ -15,7 +15,7 @@ public record RegisterMemberCommand(
 
 public class RegisterMemberCommandHandler(
     IRepository<MemberAgg, MemberId> memberRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<RegisterMemberCommand, Result<MemberId>>
 {
     public async Task<Result<MemberId>> ExecuteAsync(RegisterMemberCommand command, CancellationToken cancellationToken)
@@ -36,10 +36,7 @@ public class RegisterMemberCommandHandler(
 
         var member = memberResult.Value;
         await memberRepository.AddAsync(member, cancellationToken);
-        await memberRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(member.DomainEvents, cancellationToken);
-        member.ClearDomainEvents();
+        await orchestrator.SaveEntitiesAsync(member, cancellationToken);
 
         return member.Id;
     }

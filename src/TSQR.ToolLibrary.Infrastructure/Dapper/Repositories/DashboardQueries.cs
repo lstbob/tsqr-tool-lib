@@ -4,9 +4,9 @@ namespace TSQR.ToolLibrary.Infrastructure.Dapper.Repositories;
 
 public sealed class DashboardQueries : IDashboardQueries
 {
-    private readonly IDatabaseUnitOfWork _uow;
+    private readonly ISqlUnitOfWork _uow;
 
-    public DashboardQueries(IDatabaseUnitOfWork uow)
+    public DashboardQueries(ISqlUnitOfWork uow)
     {
         _uow = uow;
     }

@@ -1,8 +1,6 @@
-using TSQR.ToolLibrary.Infrastructure.Abstractions;
-
 namespace TSQR.ToolLibrary.Infrastructure.Dapper;
 
-internal sealed class DapperConnection : IDatabaseConnection
+internal sealed class DapperConnection : ISqlConnection
 {
     private readonly NpgsqlConnection _connection;
     private readonly IDbTransaction? _transaction;
