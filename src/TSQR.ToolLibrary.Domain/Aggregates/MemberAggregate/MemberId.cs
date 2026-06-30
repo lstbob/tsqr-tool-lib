@@ -14,6 +14,6 @@ public class MemberId(int value) : ValueObject
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;
-    } 
+    }
 }
 

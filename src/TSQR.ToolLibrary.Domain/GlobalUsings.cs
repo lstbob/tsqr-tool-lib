@@ -1,11 +1,10 @@
-global using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
-global using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
-global using TSQR.ToolLibrary.Domain.Aggregates.LocationAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate;
+global using TSQR.ToolLibrary.Domain.Aggregates.LocationAggregate;
+global using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate;
-global using TSQR.ToolLibrary.Domain.Aggregates.MaintenanceAggregate;
+global using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 global using TSQR.ToolLibrary.Domain.Events;
+global using TSQR.Common.Errors;
 global using TSQR.Common.Extensions;
 global using TSQR.Common.Results;
-global using TSQR.Common.Errors;

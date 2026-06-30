@@ -4,18 +4,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using TSQR.ToolLibrary.Application;
-using TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
-using TSQR.ToolLibrary.Domain.Aggregates.MaintenanceAggregate;
-using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
-using TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate;
-using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
-using TSQR.ToolLibrary.Domain;
 using TSQR.ToolLibrary.Infrastructure.Dapper;
 using TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
 using TSQR.ToolLibrary.Infrastructure.Dapper.Repositories;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 using TSQR.ToolLibrary.WebApi.Middleware;
 using TSQR.ToolLibrary.WebApi.Queries;
+
 TypeHandlerRegistrations.EnsureRegistered();
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,7 +22,8 @@ var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("JWT Key n
 var jwtIssuer = jwtSection["Issuer"] ?? "tsqr-identity";
 var jwtAudience = jwtSection["Audience"] ?? "tsqr-services";
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder
+    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -39,7 +35,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
         };
     });
 
@@ -49,18 +45,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // state-changing commands — was anonymous.
 builder.Services.AddAuthorization(options =>
 {
-    options.FallbackPolicy = new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .Build();
+    options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
 });
 
-builder.Services.AddControllers()
+builder
+    .Services.AddControllers()
     .ConfigureApiBehaviorOptions(options =>
     {
         options.InvalidModelStateResponseFactory = ctx =>
         {
-            var firstError = ctx.ModelState
-                .FirstOrDefault(kvp => kvp.Value?.Errors.Count > 0);
+            var firstError = ctx.ModelState.FirstOrDefault(kvp => kvp.Value?.Errors.Count > 0);
 
             var error = firstError.Value?.Errors.FirstOrDefault();
             var code = firstError.Key;
@@ -70,10 +64,12 @@ builder.Services.AddControllers()
         };
     });
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+var connectionString =
+    builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddScoped<ISqlUnitOfWork>(_ => new DapperUnitOfWork(connectionString));
+
 // The application layer depends only on IUnitOfWork (from the Domain). Register
 // the same Dapper adapter against IUnitOfWork so DomainEventOrchestrator can
 // resolve it without ever referencing a SQL/Dapper type.
@@ -85,10 +81,19 @@ builder.Services.AddSingleton<ISqlEntityMapping<Reservation>, ReservationMapping
 builder.Services.AddSingleton<ISqlEntityMapping<MaintenanceRecord>, MaintenanceRecordMapping>();
 builder.Services.AddSingleton<ISqlEntityMapping<Tool>, ToolMapping>();
 
-builder.Services.AddScoped<IRepository<InventoryItem, InventoryItemId>, SqlRepository<InventoryItem, InventoryItemId>>();
+builder.Services.AddScoped<
+    IRepository<InventoryItem, InventoryItemId>,
+    SqlRepository<InventoryItem, InventoryItemId>
+>();
 builder.Services.AddScoped<IRepository<Member, MemberId>, SqlRepository<Member, MemberId>>();
-builder.Services.AddScoped<IRepository<Reservation, ReservationId>, SqlRepository<Reservation, ReservationId>>();
-builder.Services.AddScoped<IRepository<MaintenanceRecord, MaintenanceRecordId>, SqlRepository<MaintenanceRecord, MaintenanceRecordId>>();
+builder.Services.AddScoped<
+    IRepository<Reservation, ReservationId>,
+    SqlRepository<Reservation, ReservationId>
+>();
+builder.Services.AddScoped<
+    IRepository<MaintenanceRecord, MaintenanceRecordId>,
+    SqlRepository<MaintenanceRecord, MaintenanceRecordId>
+>();
 builder.Services.AddScoped<IToolRepository, ToolRepository>();
 builder.Services.AddScoped<IManufacturerRepository, ManufacturerRepository>();
 builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
@@ -96,11 +101,20 @@ builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
 builder.Services.AddScoped<IReservationRepository, DapperReservationRepository>();
 builder.Services.AddApplicationFeatures();
 
-builder.Services.AddScoped<IInteractor<GetToolsQuery, PagedResult<ToolListItem>>, GetToolsHandler>();
+builder.Services.AddScoped<
+    IInteractor<GetToolsQuery, PagedResult<ToolListItem>>,
+    GetToolsHandler
+>();
 builder.Services.AddScoped<IInteractor<GetToolByIdQuery, ToolDetail?>, GetToolByIdHandler>();
 builder.Services.AddScoped<IInteractor<GetToolStatsQuery, ToolStatsResult>, GetToolStatsHandler>();
-builder.Services.AddScoped<IInteractor<GetDashboardStatsQuery, DashboardStats>, GetDashboardStatsHandler>();
-builder.Services.AddScoped<IInteractor<GetManufacturersQuery, List<ManufacturerDto>>, GetManufacturersHandler>();
+builder.Services.AddScoped<
+    IInteractor<GetDashboardStatsQuery, DashboardStats>,
+    GetDashboardStatsHandler
+>();
+builder.Services.AddScoped<
+    IInteractor<GetManufacturersQuery, List<ManufacturerDto>>,
+    GetManufacturersHandler
+>();
 
 var app = builder.Build();
 

@@ -8,12 +8,12 @@ public class ManufacturerId(int value) : ValueObject
     /// <summary>
     /// Gets the value of the manufacturer identifier.
     /// </summary>
-    public int Value {get; } = value;
+    public int Value { get; } = value;
 
     /// <inheritdoc/>
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;
-    } 
+    }
 }
 

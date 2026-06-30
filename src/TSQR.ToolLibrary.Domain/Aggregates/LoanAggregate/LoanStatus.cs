@@ -28,6 +28,6 @@ public enum LoanStatus
     /// <summary>
     /// The loan has been canceled.
     /// </summary>
-    Canceled 
+    Canceled
 }
 

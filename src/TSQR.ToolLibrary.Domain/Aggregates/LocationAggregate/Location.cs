@@ -18,9 +18,9 @@ public class Location : Entity<LocationId>
     /// </summary>
     public static Location Create(LocationId id, string name)
     {
-        return new (id, name);
+        return new(id, name);
     }
 
-    public string Name { get; }    
+    public string Name { get; }
 }
 

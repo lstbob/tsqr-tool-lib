@@ -1,6 +1,6 @@
 namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 
-public enum ToolType 
+public enum ToolType
 {
     /// <summary>
     /// Represents an invalid or unset tool type.
@@ -31,10 +31,10 @@ public enum ToolType
     /// Represents a specialty tool. E.g., pressure washer, welder, concrete mixer.
     /// </summary>
     SpecialtyTool,
-    
+
     /// <summary>
     /// Represents other types of tools not categorized above.
     /// </summary>
-    Other 
+    Other
 }
 

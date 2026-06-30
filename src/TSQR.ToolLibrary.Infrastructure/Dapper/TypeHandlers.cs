@@ -1,47 +1,60 @@
-using System.Data;
-
 namespace TSQR.ToolLibrary.Infrastructure.Dapper;
 
 internal sealed class ToolIdHandler : SqlMapper.TypeHandler<ToolId>
 {
     public override ToolId Parse(object value) => new((int)value);
-    public override void SetValue(IDbDataParameter parameter, ToolId? value) => parameter.Value = value?.Value;
+
+    public override void SetValue(IDbDataParameter parameter, ToolId? value) =>
+        parameter.Value = value?.Value;
 }
 
 internal sealed class MemberIdHandler : SqlMapper.TypeHandler<MemberId>
 {
-    public override MemberId Parse(object value) => value is DBNull ? null! : new MemberId((int)value);
-    public override void SetValue(IDbDataParameter parameter, MemberId? value) => parameter.Value = value?.Value ?? (object)DBNull.Value;
+    public override MemberId Parse(object value) =>
+        value is DBNull ? null! : new MemberId((int)value);
+
+    public override void SetValue(IDbDataParameter parameter, MemberId? value) =>
+        parameter.Value = value?.Value ?? (object)DBNull.Value;
 }
 
 internal sealed class InventoryItemIdHandler : SqlMapper.TypeHandler<InventoryItemId>
 {
     public override InventoryItemId Parse(object value) => new((int)value);
-    public override void SetValue(IDbDataParameter parameter, InventoryItemId? value) => parameter.Value = value?.Value;
+
+    public override void SetValue(IDbDataParameter parameter, InventoryItemId? value) =>
+        parameter.Value = value?.Value;
 }
 
 internal sealed class ReservationIdHandler : SqlMapper.TypeHandler<ReservationId>
 {
     public override ReservationId Parse(object value) => new((int)value);
-    public override void SetValue(IDbDataParameter parameter, ReservationId? value) => parameter.Value = value?.Value;
+
+    public override void SetValue(IDbDataParameter parameter, ReservationId? value) =>
+        parameter.Value = value?.Value;
 }
 
 internal sealed class MaintenanceRecordIdHandler : SqlMapper.TypeHandler<MaintenanceRecordId>
 {
     public override MaintenanceRecordId Parse(object value) => new((int)value);
-    public override void SetValue(IDbDataParameter parameter, MaintenanceRecordId? value) => parameter.Value = value?.Value;
+
+    public override void SetValue(IDbDataParameter parameter, MaintenanceRecordId? value) =>
+        parameter.Value = value?.Value;
 }
 
 internal sealed class ManufacturerIdHandler : SqlMapper.TypeHandler<ManufacturerId>
 {
     public override ManufacturerId Parse(object value) => new((int)value);
-    public override void SetValue(IDbDataParameter parameter, ManufacturerId? value) => parameter.Value = value?.Value;
+
+    public override void SetValue(IDbDataParameter parameter, ManufacturerId? value) =>
+        parameter.Value = value?.Value;
 }
 
 internal sealed class LocationIdHandler : SqlMapper.TypeHandler<LocationId>
 {
     public override LocationId Parse(object value) => new((int)value);
-    public override void SetValue(IDbDataParameter parameter, LocationId? value) => parameter.Value = value?.Value;
+
+    public override void SetValue(IDbDataParameter parameter, LocationId? value) =>
+        parameter.Value = value?.Value;
 }
 
 public static class TypeHandlerRegistrations
@@ -51,10 +64,12 @@ public static class TypeHandlerRegistrations
 
     public static void EnsureRegistered()
     {
-        if (_registered) return;
+        if (_registered)
+            return;
         lock (Lock)
         {
-            if (_registered) return;
+            if (_registered)
+                return;
             SqlMapper.AddTypeHandler(new ToolIdHandler());
             SqlMapper.AddTypeHandler(new MemberIdHandler());
             SqlMapper.AddTypeHandler(new InventoryItemIdHandler());

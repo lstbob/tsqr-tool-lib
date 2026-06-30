@@ -1,9 +1,7 @@
 using TSQR.ToolLibrary.Application;
-using TSQR.ToolLibrary.Domain;
 using TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
-using TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 using TSQR.ToolLibrary.Domain.Events;
 
@@ -23,14 +21,34 @@ public class DomainEventOrchestratorTests
     private static (Member member, Member admin) MakeMemberAndAdmin()
     {
         var member = Member.Create(
-            new MemberId(1), "Alice", "", "Smith", 30, "1 Main St",
-            "alice@example.com", "555-0100", MemberStatus.Active,
-            isVerified: false, verifiedByAdminId: null, verificationDate: null);
+            new MemberId(1),
+            "Alice",
+            "",
+            "Smith",
+            30,
+            "1 Main St",
+            "alice@example.com",
+            "555-0100",
+            MemberStatus.Active,
+            isVerified: false,
+            verifiedByAdminId: null,
+            verificationDate: null
+        );
 
         var admin = Member.Create(
-            new MemberId(2), "Bob", "", "Admin", 40, "2 Main St",
-            "bob@example.com", "555-0200", MemberStatus.Active,
-            isVerified: false, verifiedByAdminId: null, verificationDate: null);
+            new MemberId(2),
+            "Bob",
+            "",
+            "Admin",
+            40,
+            "2 Main St",
+            "bob@example.com",
+            "555-0200",
+            MemberStatus.Active,
+            isVerified: false,
+            verifiedByAdminId: null,
+            verificationDate: null
+        );
 
         return (member, admin);
     }
@@ -69,8 +87,9 @@ public class DomainEventOrchestratorTests
         var uow = new RecordingUnitOfWork();
         var orchestrator = new DomainEventOrchestrator(uow, dispatcher);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => orchestrator.SaveEntitiesAsync(aggregate, CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            orchestrator.SaveEntitiesAsync(aggregate, CancellationToken.None)
+        );
 
         Assert.Equal("handler boom", ex.Message);
 
@@ -92,8 +111,9 @@ public class DomainEventOrchestratorTests
         var uow = new ThrowingUnitOfWork(new InvalidOperationException("commit boom"));
         var orchestrator = new DomainEventOrchestrator(uow, dispatcher);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => orchestrator.SaveEntitiesAsync(aggregate, CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            orchestrator.SaveEntitiesAsync(aggregate, CancellationToken.None)
+        );
 
         Assert.Equal("commit boom", ex.Message);
 
@@ -118,7 +138,11 @@ public class DomainEventOrchestratorTests
             "SN-001",
             ItemStatus.Available,
             Condition.New,
-            currentHolderId: null, lastBorrowedDate: null, reservationDate: null, reservationMemberId: null);
+            currentHolderId: null,
+            lastBorrowedDate: null,
+            reservationDate: null,
+            reservationMemberId: null
+        );
         Assert.True(item.Loan(new MemberId(2)).IsSuccess);
         Assert.Single(item.DomainEvents);
 
@@ -144,6 +168,7 @@ public class DomainEventOrchestratorTests
     private sealed class RecordingUnitOfWork : IUnitOfWork
     {
         public int SaveChangesAsyncCallCount { get; private set; }
+
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             SaveChangesAsyncCallCount++;
@@ -151,33 +176,33 @@ public class DomainEventOrchestratorTests
         }
     }
 
-    private sealed class ThrowingUnitOfWork : IUnitOfWork
+    private sealed class ThrowingUnitOfWork(Exception ex) : IUnitOfWork
     {
-        private readonly Exception _ex;
-        public ThrowingUnitOfWork(Exception ex) => _ex = ex;
-        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-            => throw _ex;
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+            throw ex;
     }
 
-    private sealed class RecordingDispatcher : IDomainEventDispatcher
+    private sealed class RecordingDispatcher(List<IDomainEvent> recorded) : IDomainEventDispatcher
     {
-        private readonly List<IDomainEvent> _recorded;
         public int DispatchCallCount { get; private set; }
-        public RecordingDispatcher(List<IDomainEvent> recorded) => _recorded = recorded;
 
-        public Task DispatchAsync(IReadOnlyCollection<IDomainEvent> domainEvents, CancellationToken cancellationToken = default)
+        public Task DispatchAsync(
+            IReadOnlyCollection<IDomainEvent> domainEvents,
+            CancellationToken cancellationToken = default
+        )
         {
             DispatchCallCount++;
-            _recorded.AddRange(domainEvents);
+            recorded.AddRange(domainEvents);
             return Task.CompletedTask;
         }
     }
 
-    private sealed class ThrowingDispatcher : IDomainEventDispatcher
+    private sealed class ThrowingDispatcher(Exception ex) : IDomainEventDispatcher
     {
-        private readonly Exception _ex;
-        public ThrowingDispatcher(Exception ex) => _ex = ex;
-        public Task DispatchAsync(IReadOnlyCollection<IDomainEvent> domainEvents, CancellationToken cancellationToken = default)
-            => throw _ex;
+        public Task DispatchAsync(
+            IReadOnlyCollection<IDomainEvent> domainEvents,
+            CancellationToken cancellationToken = default
+        ) => throw ex;
     }
 }
+

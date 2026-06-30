@@ -1,5 +1,3 @@
-using TSQR.ToolLibrary.Domain;
-
 namespace TSQR.ToolLibrary.Infrastructure.Dapper;
 
 /// <summary>
@@ -12,3 +10,4 @@ public interface ISqlUnitOfWork : IUnitOfWork
 {
     ISqlConnection Connection { get; }
 }
+

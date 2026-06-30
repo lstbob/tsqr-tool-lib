@@ -13,6 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="/home/lbobc/dev/tsqr-common/src/TSQR.Common/TSQR.Common.csproj" />
+    <PackageReference Include="TSQR.Common" Version="1.0.0" />
   </ItemGroup>
 </Project>

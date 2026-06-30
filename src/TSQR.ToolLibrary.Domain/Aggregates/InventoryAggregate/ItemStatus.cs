@@ -6,10 +6,10 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
 public enum ItemStatus
 {
     NotSet = 0,
-    Available ,
+    Available,
     Reserved,
     Loaned,
     UnderMaintenance,
-    Lost 
+    Lost
 }
 

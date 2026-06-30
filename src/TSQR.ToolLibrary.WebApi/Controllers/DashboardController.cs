@@ -8,14 +8,11 @@ namespace TSQR.ToolLibrary.WebApi.Controllers;
 [ApiController]
 [AllowAnonymous] // public read-only dashboard stats (consumed unauthenticated by the UI home page)
 [Route("api/dashboard")]
-public sealed class DashboardController : ControllerBase
+public sealed class DashboardController(
+    IInteractor<GetDashboardStatsQuery, DashboardStats> getStats
+) : ControllerBase
 {
-    private readonly IInteractor<GetDashboardStatsQuery, DashboardStats> _getStats;
-
-    public DashboardController(IInteractor<GetDashboardStatsQuery, DashboardStats> getStats)
-    {
-        _getStats = getStats;
-    }
+    private readonly IInteractor<GetDashboardStatsQuery, DashboardStats> _getStats = getStats;
 
     [HttpGet("stats")]
     public async Task<DashboardStats> GetStats()

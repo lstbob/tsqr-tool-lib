@@ -1,20 +1,13 @@
-using System.Diagnostics;
 using System.Net.Sockets;
-using Npgsql;
 
 namespace TSQR.ToolLibrary.Infrastructure.Dapper;
 
-public sealed class DapperUnitOfWork : ISqlUnitOfWork, IDisposable
+public sealed class DapperUnitOfWork(string connectionString) : ISqlUnitOfWork, IDisposable
 {
-    private readonly NpgsqlConnection _connection;
+    private readonly NpgsqlConnection _connection = new NpgsqlConnection(connectionString);
     private IDbTransaction? _transaction;
     private DapperConnection? _connectionAdapter;
     private bool _disposed;
-
-    public DapperUnitOfWork(string connectionString)
-    {
-        _connection = new NpgsqlConnection(connectionString);
-    }
 
     public ISqlConnection Connection
     {

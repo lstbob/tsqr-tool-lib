@@ -41,15 +41,10 @@ public abstract class Entity
 /// Base class for domain entities identified by a strongly-typed value-object id.
 /// </summary>
 /// <typeparam name="TId">The value-object identifier type.</typeparam>
-public abstract class Entity<TId> : Entity
+public abstract class Entity<TId>(TId id) : Entity
     where TId : notnull, ValueObject
 {
-    private TId _id;
-
-    protected Entity(TId id)
-    {
-        _id = id;
-    }
+    private TId _id = id;
 
     public TId Id => _id;
 
@@ -117,3 +112,4 @@ public abstract class Entity<TId> : Entity
         return !Equals(left, right);
     }
 }
+

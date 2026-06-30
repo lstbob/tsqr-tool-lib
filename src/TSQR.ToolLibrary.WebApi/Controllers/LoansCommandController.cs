@@ -8,25 +8,22 @@ namespace TSQR.ToolLibrary.WebApi.Controllers;
 [ApiController]
 [Authorize] // state-changing loan operations require an authenticated caller
 [Route("api/loans")]
-public sealed class LoansCommandController : ControllerBase
+public sealed class LoansCommandController(
+    IInteractor<MarkLoanAsNotReturnedCommand, Result> markNotReturned
+) : ControllerBase
 {
-    private readonly IInteractor<MarkLoanAsNotReturnedCommand, Result> _markNotReturned;
-
-    public LoansCommandController(IInteractor<MarkLoanAsNotReturnedCommand, Result> markNotReturned)
-    {
-        _markNotReturned = markNotReturned;
-    }
-
     [HttpPost("mark-not-returned")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> MarkNotReturned(MarkLoanAsNotReturnedRequest request, CancellationToken ct)
+    public async Task<ActionResult> MarkNotReturned(
+        MarkLoanAsNotReturnedRequest request,
+        CancellationToken ct
+    )
     {
-        var command = new MarkLoanAsNotReturnedCommand(
-            new LoanId(request.LoanId));
+        var command = new MarkLoanAsNotReturnedCommand(new LoanId(request.LoanId));
 
-        var result = await _markNotReturned.ExecuteAsync(command, ct);
+        var result = await markNotReturned.ExecuteAsync(command, ct);
         if (result.IsSuccess)
             return Ok();
 

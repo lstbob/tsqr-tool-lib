@@ -1,5 +1,3 @@
-using TSQR.ToolLibrary.Domain;
-
 namespace TSQR.ToolLibrary.Infrastructure.Dapper;
 
 /// <summary>
@@ -9,45 +7,46 @@ namespace TSQR.ToolLibrary.Infrastructure.Dapper;
 /// adapter would implement <c>IRepository&lt;T,TId&gt;</c> directly with its
 /// own base class - never by deriving from this one.
 /// </summary>
-public class SqlRepository<TEntity, TId> : IRepository<TEntity, TId>
+public class SqlRepository<TEntity, TId>(ISqlUnitOfWork uow, ISqlEntityMapping<TEntity> mapping)
+    : IRepository<TEntity, TId>
     where TEntity : Entity<TId>, IAggregateRoot
     where TId : ValueObject
 {
-    private readonly ISqlUnitOfWork _uow;
-    private readonly ISqlEntityMapping<TEntity> _mapping;
+    public IUnitOfWork UnitOfWork => uow;
+    protected ISqlConnection Database => uow.Connection;
 
-    public SqlRepository(ISqlUnitOfWork uow, ISqlEntityMapping<TEntity> mapping)
+    public virtual async Task<TEntity?> GetByIdAsync(
+        TId id,
+        CancellationToken cancellationToken = default
+    )
     {
-        _uow = uow;
-        _mapping = mapping;
+        return await mapping.GetByIdAsync(uow.Connection, id);
     }
 
-    public IUnitOfWork UnitOfWork => _uow;
-    protected ISqlConnection Database => _uow.Connection;
-
-    public virtual async Task<TEntity?> GetByIdAsync(TId id, CancellationToken cancellationToken = default)
+    public virtual async Task AddAsync(
+        TEntity entity,
+        CancellationToken cancellationToken = default
+    )
     {
-        return await _mapping.GetByIdAsync(_uow.Connection, id);
-    }
-
-    public virtual async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
-    {
-        var db = _uow.Connection;
+        var db = uow.Connection;
         var id = await db.ExecuteScalarAsync<int>(
-            _mapping.InsertSql, _mapping.ToInsertParameters(entity));
+            mapping.InsertSql,
+            mapping.ToInsertParameters(entity)
+        );
 
         entity.SetAssignedId((TId)Activator.CreateInstance(typeof(TId), [id])!);
     }
 
     public virtual void Update(TEntity entity)
     {
-        var db = _uow.Connection;
-        db.Execute(_mapping.UpdateSql, _mapping.ToUpdateParameters(entity));
+        var db = uow.Connection;
+        db.Execute(mapping.UpdateSql, mapping.ToUpdateParameters(entity));
     }
 
     public virtual void Delete(TEntity entity)
     {
-        var db = _uow.Connection;
-        db.Execute(_mapping.DeleteSql, new { Id = entity.Id });
+        var db = uow.Connection;
+        db.Execute(mapping.DeleteSql, new { Id = entity.Id });
     }
 }
+

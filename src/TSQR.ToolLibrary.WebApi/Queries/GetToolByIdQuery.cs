@@ -1,23 +1,14 @@
-using TSQR.ToolLibrary.Domain;
-using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 
 namespace TSQR.ToolLibrary.WebApi.Queries;
 
 public record GetToolByIdQuery(int Id);
 
-public sealed class GetToolByIdHandler : IInteractor<GetToolByIdQuery, ToolDetail?>
+public sealed class GetToolByIdHandler(IToolRepository toolRepo) : IInteractor<GetToolByIdQuery, ToolDetail?>
 {
-    private readonly IToolRepository _toolRepo;
-
-    public GetToolByIdHandler(IToolRepository toolRepo)
-    {
-        _toolRepo = toolRepo;
-    }
-
     public async Task<ToolDetail?> ExecuteAsync(GetToolByIdQuery request, CancellationToken ct)
     {
-        var tool = await _toolRepo.GetByIdAsync(new ToolId(request.Id), ct);
+        var tool = await toolRepo.GetByIdAsync(new ToolId(request.Id), ct);
         if (tool is null) return null;
 
         var scarcity = tool.ScarcityByLocation.Select(kvp => new ScarcityDto(
@@ -42,12 +33,19 @@ public sealed class GetToolByIdHandler : IInteractor<GetToolByIdQuery, ToolDetai
 
     private static string AmortizationRateName(int rate) => rate switch
     {
-        1 => "Low", 2 => "Medium", 3 => "High", _ => "Unknown"
+        1 => "Low",
+        2 => "Medium",
+        3 => "High",
+        _ => "Unknown"
     };
 
     private static string ScarcityLevelName(int level) => level switch
     {
-        1 => "Low", 2 => "Medium", 3 => "High", 4 => "Critical", _ => "Unknown"
+        1 => "Low",
+        2 => "Medium",
+        3 => "High",
+        4 => "Critical",
+        _ => "Unknown"
     };
 
     private static string LocationName(int locationId) => locationId switch

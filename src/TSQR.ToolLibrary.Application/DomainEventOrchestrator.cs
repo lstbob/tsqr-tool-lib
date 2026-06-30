@@ -1,5 +1,3 @@
-using TSQR.ToolLibrary.Domain;
-
 namespace TSQR.ToolLibrary.Application;
 
 /// <summary>
@@ -17,17 +15,11 @@ namespace TSQR.ToolLibrary.Application;
 /// Dapper &lt;-&gt; EF Core) does not require any change here - the adapter
 /// only has to implement <see cref="IUnitOfWork"/>.
 /// </remarks>
-public sealed class DomainEventOrchestrator
+public sealed class DomainEventOrchestrator(
+    IUnitOfWork unitOfWork,
+    IDomainEventDispatcher dispatcher
+)
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IDomainEventDispatcher _dispatcher;
-
-    public DomainEventOrchestrator(IUnitOfWork unitOfWork, IDomainEventDispatcher dispatcher)
-    {
-        _unitOfWork = unitOfWork;
-        _dispatcher = dispatcher;
-    }
-
     /// <summary>
     /// Dispatches the domain events collected on <paramref name="trackedAggregates"/>
     /// to their handlers, then commits the underlying database transaction. On
@@ -35,17 +27,20 @@ public sealed class DomainEventOrchestrator
     /// the commit throws, nothing is cleared - the caller may inspect the
     /// aggregates' <see cref="Entity.DomainEvents"/> for retry / reporting.
     /// </summary>
-    public async Task SaveEntitiesAsync(IReadOnlyCollection<Entity> trackedAggregates, CancellationToken cancellationToken = default)
+    public async Task SaveEntitiesAsync(
+        IReadOnlyCollection<Entity> trackedAggregates,
+        CancellationToken cancellationToken = default
+    )
     {
         var allEvents = trackedAggregates.SelectMany(a => a.DomainEvents).ToList();
 
         if (allEvents.Count > 0)
-            await _dispatcher.DispatchAsync(allEvents, cancellationToken);
+            await dispatcher.DispatchAsync(allEvents, cancellationToken);
 
         // Commit happens AFTER dispatch. A handler throw propagates here and
         // the underlying IUnitOfWork rolls back on dispose, so no aggregate
         // state - original or side-effect - is persisted. Atomic.
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Only reached on success. Clearing events on every tracked aggregate
         // means a follow-up retry won't re-dispatch already-handled events.
@@ -54,6 +49,9 @@ public sealed class DomainEventOrchestrator
     }
 
     /// <summary>Convenience overload for the common single-aggregate command.</summary>
-    public Task SaveEntitiesAsync(Entity trackedAggregate, CancellationToken cancellationToken = default)
-        => SaveEntitiesAsync([trackedAggregate], cancellationToken);
+    public Task SaveEntitiesAsync(
+        Entity trackedAggregate,
+        CancellationToken cancellationToken = default
+    ) => SaveEntitiesAsync([trackedAggregate], cancellationToken);
 }
+

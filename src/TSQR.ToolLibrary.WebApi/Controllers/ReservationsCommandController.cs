@@ -8,38 +8,34 @@ namespace TSQR.ToolLibrary.WebApi.Controllers;
 [ApiController]
 [Authorize] // state-changing reservation operations require an authenticated caller
 [Route("api/reservations")]
-public sealed class ReservationsCommandController : ControllerBase
+public sealed class ReservationsCommandController(
+    IInteractor<ReserveToolCommand, Result<ReservationId>> reserve,
+    IInteractor<ActivateReservationCommand, Result> activate,
+    IInteractor<CancelReservationCommand, Result> cancel,
+    IInteractor<ConfirmPickupCommand, Result> confirmPickup,
+    IInteractor<CompleteReservationCommand, Result> complete
+) : ControllerBase
 {
-    private readonly IInteractor<ReserveToolCommand, Result<ReservationId>> _reserve;
-    private readonly IInteractor<ActivateReservationCommand, Result> _activate;
-    private readonly IInteractor<CancelReservationCommand, Result> _cancel;
-    private readonly IInteractor<ConfirmPickupCommand, Result> _confirmPickup;
-    private readonly IInteractor<CompleteReservationCommand, Result> _complete;
-
-    public ReservationsCommandController(
-        IInteractor<ReserveToolCommand, Result<ReservationId>> reserve,
-        IInteractor<ActivateReservationCommand, Result> activate,
-        IInteractor<CancelReservationCommand, Result> cancel,
-        IInteractor<ConfirmPickupCommand, Result> confirmPickup,
-        IInteractor<CompleteReservationCommand, Result> complete)
-    {
-        _reserve = reserve;
-        _activate = activate;
-        _cancel = cancel;
-        _confirmPickup = confirmPickup;
-        _complete = complete;
-    }
+    private readonly IInteractor<ReserveToolCommand, Result<ReservationId>> _reserve = reserve;
+    private readonly IInteractor<ActivateReservationCommand, Result> _activate = activate;
+    private readonly IInteractor<CancelReservationCommand, Result> _cancel = cancel;
+    private readonly IInteractor<ConfirmPickupCommand, Result> _confirmPickup = confirmPickup;
+    private readonly IInteractor<CompleteReservationCommand, Result> _complete = complete;
 
     [HttpPost("create")]
     [ProducesResponseType(typeof(ReservationId), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ReservationId>> Create(ReserveToolRequest request, CancellationToken ct)
+    public async Task<ActionResult<ReservationId>> Create(
+        ReserveToolRequest request,
+        CancellationToken ct
+    )
     {
         var command = new ReserveToolCommand(
             new InventoryItemId(request.ItemId),
             new MemberId(request.MemberId),
-            request.ReservationDate);
+            request.ReservationDate
+        );
 
         var result = await _reserve.ExecuteAsync(command, ct);
         if (result.IsSuccess)
@@ -52,7 +48,10 @@ public sealed class ReservationsCommandController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> Activate(ActivateReservationRequest request, CancellationToken ct)
+    public async Task<ActionResult> Activate(
+        ActivateReservationRequest request,
+        CancellationToken ct
+    )
     {
         var command = new ActivateReservationCommand(new ReservationId(request.ReservationId));
 
@@ -82,7 +81,10 @@ public sealed class ReservationsCommandController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> ConfirmPickup(ConfirmPickupRequest request, CancellationToken ct)
+    public async Task<ActionResult> ConfirmPickup(
+        ConfirmPickupRequest request,
+        CancellationToken ct
+    )
     {
         var command = new ConfirmPickupCommand(new ReservationId(request.ReservationId));
 
@@ -97,7 +99,10 @@ public sealed class ReservationsCommandController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> Complete(CompleteReservationRequest request, CancellationToken ct)
+    public async Task<ActionResult> Complete(
+        CompleteReservationRequest request,
+        CancellationToken ct
+    )
     {
         var command = new CompleteReservationCommand(new ReservationId(request.ReservationId));
 
