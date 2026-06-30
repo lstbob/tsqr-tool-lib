@@ -9,7 +9,7 @@ public class LoanToolCommandHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
     IRepository<MemberAgg, MemberId> memberRepository,
     IRepository<LoanAgg, LoanId> loanRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<LoanToolCommand, Result>
 {
     public async Task<Result> ExecuteAsync(LoanToolCommand command, CancellationToken cancellationToken)
@@ -36,14 +36,8 @@ public class LoanToolCommandHandler(
         if (loanItemResult.IsFailure)
             return loanItemResult.Error;
 
-        await loanRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        var allEvents = new List<IDomainEvent>();
-        allEvents.AddRange(loan.DomainEvents);
-        allEvents.AddRange(item.DomainEvents);
-        await eventDispatcher.DispatchAsync(allEvents, cancellationToken);
-        loan.ClearDomainEvents();
-        item.ClearDomainEvents();
+        inventoryRepository.Update(item);
+        await orchestrator.SaveEntitiesAsync([loan, item], cancellationToken);
 
         return Result.Success();
     }

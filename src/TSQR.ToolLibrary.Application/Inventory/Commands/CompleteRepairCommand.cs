@@ -5,7 +5,7 @@ public record CompleteRepairCommand(MaintenanceRecordId RecordId, InventoryItemI
 public class CompleteRepairCommandHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
     IRepository<MaintenanceRecord, MaintenanceRecordId> maintenanceRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<CompleteRepairCommand, Result>
 {
     public async Task<Result> ExecuteAsync(CompleteRepairCommand command, CancellationToken cancellationToken)
@@ -27,12 +27,10 @@ public class CompleteRepairCommandHandler(
         var repairResult = item.CompleteRepair(command.NewCondition);
         if (repairResult.IsFailure) return repairResult.Error;
 
-        await maintenanceRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
+        maintenanceRepository.Update(record);
+        inventoryRepository.Update(item);
 
-        await eventDispatcher.DispatchAsync(record.DomainEvents, cancellationToken);
-        await eventDispatcher.DispatchAsync(item.DomainEvents, cancellationToken);
-        record.ClearDomainEvents();
-        item.ClearDomainEvents();
+        await orchestrator.SaveEntitiesAsync([record, item], cancellationToken);
 
         return Result.Success();
     }

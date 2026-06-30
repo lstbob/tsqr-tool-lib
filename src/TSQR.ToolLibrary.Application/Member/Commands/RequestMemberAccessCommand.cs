@@ -9,7 +9,7 @@ public record RequestMemberAccessCommand(
 
 public class RequestMemberAccessCommandHandler(
     IRepository<MemberAgg, MemberId> memberRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<RequestMemberAccessCommand, Result>
 {
     public async Task<Result> ExecuteAsync(RequestMemberAccessCommand command, CancellationToken cancellationToken)
@@ -29,10 +29,8 @@ public class RequestMemberAccessCommandHandler(
         if (requestResult.IsFailure)
             return requestResult.Error;
 
-        await memberRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(member.DomainEvents, cancellationToken);
-        member.ClearDomainEvents();
+        memberRepository.Update(member);
+        await orchestrator.SaveEntitiesAsync(member, cancellationToken);
 
         return Result.Success();
     }

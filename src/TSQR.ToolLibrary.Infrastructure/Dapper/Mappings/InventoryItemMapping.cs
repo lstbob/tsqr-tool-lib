@@ -47,7 +47,7 @@ internal sealed record InventoryItemUpdateDto(
     long TotalUsageTimeTicks,
     bool IsUnderRepair);
 
-public sealed class InventoryItemMapping : IEntityMapping<InventoryItem>
+public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
 {
     public string TableName => "InventoryItems";
 
@@ -78,7 +78,7 @@ public sealed class InventoryItemMapping : IEntityMapping<InventoryItem>
 
     public string DeleteSql => "DELETE FROM InventoryItems WHERE Id = @Id";
 
-    public async Task<InventoryItem?> GetByIdAsync(IDatabaseConnection db, object id)
+    public async Task<InventoryItem?> GetByIdAsync(ISqlConnection db, object id)
     {
         var row = await db.QuerySingleOrDefaultAsync<InventoryItemRow>(
             @"SELECT Id, ToolId, OriginalOwnerId, InitialAcquisitionDate, SerialNumber,

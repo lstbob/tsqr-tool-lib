@@ -4,7 +4,7 @@ public record ReturnToolCommand(InventoryItemId ItemId, Condition ReturnedCondit
 
 public class ReturnToolCommandHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<ReturnToolCommand, Result>
 {
     public async Task<Result> ExecuteAsync(ReturnToolCommand command, CancellationToken cancellationToken)
@@ -17,10 +17,8 @@ public class ReturnToolCommandHandler(
         if (returnResult.IsFailure)
             return returnResult.Error;
 
-        await inventoryRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(item.DomainEvents, cancellationToken);
-        item.ClearDomainEvents();
+        inventoryRepository.Update(item);
+        await orchestrator.SaveEntitiesAsync(item, cancellationToken);
 
         return Result.Success();
     }

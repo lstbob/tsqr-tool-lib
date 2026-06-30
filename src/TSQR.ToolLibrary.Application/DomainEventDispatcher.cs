@@ -2,21 +2,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace TSQR.ToolLibrary.Application;
 
-public class DomainEventDispatcher : IDomainEventDispatcher
+public class DomainEventDispatcher(IServiceProvider serviceProvider) : IDomainEventDispatcher
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public DomainEventDispatcher(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
-
-    public async Task DispatchAsync(IReadOnlyCollection<IDomainEvent> domainEvents, CancellationToken cancellationToken = default)
+    public async Task DispatchAsync(
+        IReadOnlyCollection<IDomainEvent> domainEvents,
+        CancellationToken cancellationToken = default
+    )
     {
         foreach (var domainEvent in domainEvents)
         {
             var handlerType = typeof(IDomainEventHandler<>).MakeGenericType(domainEvent.GetType());
-            var handlers = _serviceProvider.GetServices(handlerType);
+            var handlers = serviceProvider.GetServices(handlerType);
 
             foreach (var handler in handlers)
             {

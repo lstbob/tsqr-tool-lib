@@ -11,6 +11,6 @@ public class ToolId(int value) : ValueObject
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;
-    } 
+    }
 }
 

@@ -6,7 +6,7 @@ public record VerifyMemberCommand(MemberId MemberId, MemberId VerifiedByAdminId)
 
 public class VerifyMemberCommandHandler(
     IRepository<MemberAgg, MemberId> memberRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<VerifyMemberCommand, Result>
 {
     public async Task<Result> ExecuteAsync(VerifyMemberCommand command, CancellationToken cancellationToken)
@@ -19,10 +19,8 @@ public class VerifyMemberCommandHandler(
         if (verifyResult.IsFailure)
             return verifyResult.Error;
 
-        await memberRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(member.DomainEvents, cancellationToken);
-        member.ClearDomainEvents();
+        memberRepository.Update(member);
+        await orchestrator.SaveEntitiesAsync(member, cancellationToken);
 
         return Result.Success();
     }

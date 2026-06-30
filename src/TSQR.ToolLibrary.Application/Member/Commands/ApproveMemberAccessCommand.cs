@@ -6,7 +6,7 @@ public record ApproveMemberAccessCommand(MemberId MemberId, MemberId AdminId);
 
 public class ApproveMemberAccessCommandHandler(
     IRepository<MemberAgg, MemberId> memberRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<ApproveMemberAccessCommand, Result>
 {
     public async Task<Result> ExecuteAsync(ApproveMemberAccessCommand command, CancellationToken cancellationToken)
@@ -19,10 +19,8 @@ public class ApproveMemberAccessCommandHandler(
         if (approveResult.IsFailure)
             return approveResult.Error;
 
-        await memberRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(member.DomainEvents, cancellationToken);
-        member.ClearDomainEvents();
+        memberRepository.Update(member);
+        await orchestrator.SaveEntitiesAsync(member, cancellationToken);
 
         return Result.Success();
     }

@@ -6,7 +6,7 @@ public record ConfirmPickupCommand(ReservationId ReservationId);
 
 public class ConfirmPickupCommandHandler(
     IRepository<ReservationAgg, ReservationId> reservationRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<ConfirmPickupCommand, Result>
 {
     public async Task<Result> ExecuteAsync(ConfirmPickupCommand command, CancellationToken cancellationToken)
@@ -19,10 +19,8 @@ public class ConfirmPickupCommandHandler(
         if (confirmResult.IsFailure)
             return confirmResult.Error;
 
-        await reservationRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-        await eventDispatcher.DispatchAsync(reservation.DomainEvents, cancellationToken);
-        reservation.ClearDomainEvents();
+        reservationRepository.Update(reservation);
+        await orchestrator.SaveEntitiesAsync(reservation, cancellationToken);
 
         return Result.Success();
     }

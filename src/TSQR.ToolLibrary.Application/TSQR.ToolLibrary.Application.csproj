@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TSQR.ToolLibrary.Domain\TSQR.ToolLibrary.Domain.csproj" />
-    <ProjectReference Include="..\TSQR.ToolLibrary.Common\TSQR.ToolLibrary.Common.csproj" />
+    <PackageReference Include="TSQR.Common" Version="1.0.0" />
   </ItemGroup>
 
 </Project>

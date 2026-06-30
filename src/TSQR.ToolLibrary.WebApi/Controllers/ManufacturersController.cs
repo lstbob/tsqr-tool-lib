@@ -1,4 +1,4 @@
-using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 using TSQR.ToolLibrary.WebApi.Queries;
@@ -6,19 +6,15 @@ using TSQR.ToolLibrary.WebApi.Queries;
 namespace TSQR.ToolLibrary.WebApi.Controllers;
 
 [ApiController]
+[AllowAnonymous] // public read-only manufacturer list (consumed unauthenticated by the UI)
 [Route("api/manufacturers")]
-public sealed class ManufacturersController : ControllerBase
+public sealed class ManufacturersController(
+    IInteractor<GetManufacturersQuery, List<ManufacturerDto>> getManufacturers
+) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public ManufacturersController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     [HttpGet]
     public async Task<List<ManufacturerDto>> GetAll()
     {
-        return await _mediator.Send(new GetManufacturersQuery());
+        return await getManufacturers.ExecuteAsync(new GetManufacturersQuery());
     }
 }

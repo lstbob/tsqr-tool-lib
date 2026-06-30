@@ -32,7 +32,7 @@ internal sealed record MaintenanceRecordUpdateDto(
     DateTime? CompletedDate,
     Condition? ResultingCondition);
 
-public sealed class MaintenanceRecordMapping : IEntityMapping<MaintenanceRecord>
+public sealed class MaintenanceRecordMapping : ISqlEntityMapping<MaintenanceRecord>
 {
     public string TableName => "MaintenanceRecords";
 
@@ -53,7 +53,7 @@ public sealed class MaintenanceRecordMapping : IEntityMapping<MaintenanceRecord>
 
     public string DeleteSql => "DELETE FROM MaintenanceRecords WHERE Id = @Id";
 
-    public async Task<MaintenanceRecord?> GetByIdAsync(IDatabaseConnection db, object id)
+    public async Task<MaintenanceRecord?> GetByIdAsync(ISqlConnection db, object id)
     {
         var row = await db.QuerySingleOrDefaultAsync<MaintenanceRecordRow>(
             @"SELECT Id, ItemId, ReportedById, ReportedDate, Description,

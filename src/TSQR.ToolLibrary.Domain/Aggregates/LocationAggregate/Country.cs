@@ -12,13 +12,13 @@ public class Country : Entity<CountryId>
     {
         Name = name;
     }
-    
+
     /// <summary>
     /// Static factory method to create a new <see cref="Country"/> instance. 
     /// </summary>
     public static Country Create(string name)
     {
-        return new (new (default), name);
+        return new(new(default), name);
     }
 
     /// <summary>
@@ -26,9 +26,9 @@ public class Country : Entity<CountryId>
     /// </summary>
     public static Country Create(CountryId id, string name)
     {
-        return new (id, name);
+        return new(id, name);
     }
-    
-    public string Name { get; } 
+
+    public string Name { get; }
 }
-    
+

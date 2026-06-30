@@ -11,5 +11,5 @@ public class CountryId(int value) : ValueObject
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;
-    }    
+    }
 }

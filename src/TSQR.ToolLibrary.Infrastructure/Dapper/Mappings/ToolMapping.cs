@@ -4,7 +4,7 @@ internal sealed record ToolRow(
     ToolId Id,
     string Model,
     string Description,
-    ManufcaturerId ManufacturerId,
+    ManufacturerId ManufacturerId,
     string ManufacturerName,
     ToolType ToolType,
     AmortizationRate AmortizationRate,
@@ -29,7 +29,7 @@ internal sealed record ToolUpdateDto(
     AmortizationRate AmortizationRate,
     string? Metadata);
 
-public sealed class ToolMapping : IEntityMapping<Tool>
+public sealed class ToolMapping : ISqlEntityMapping<Tool>
 {
     public string TableName => "Tools";
 
@@ -46,7 +46,7 @@ public sealed class ToolMapping : IEntityMapping<Tool>
 
     public string DeleteSql => "DELETE FROM Tools WHERE Id = @Id";
 
-    public async Task<Tool?> GetByIdAsync(IDatabaseConnection db, object id)
+    public async Task<Tool?> GetByIdAsync(ISqlConnection db, object id)
     {
         var row = await db.QuerySingleOrDefaultAsync<ToolRow>(
             @"SELECT t.Id, t.Model, t.Description, t.ToolType, t.AmortizationRate, t.Metadata,

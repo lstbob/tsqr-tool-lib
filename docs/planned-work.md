@@ -104,7 +104,7 @@ engine + Loan lifecycle right first; most else hangs off them.**
 4. Stand up the **test project**; cover `InventoryItem` and `Loan` invariants + the register-tool handler.
 5. Introduce the **CirculationRule** concept and refactor `Loan.EndLoan` to use `Policy`/`FineService`
    instead of the hard-coded `$1/day`; add `Loan.Renew()`.
-6. Fix the small naming bugs (`ManufcaturerId`, `MaxLoanRerservationDays`) while touching those files.
+6. Fix the small naming bugs (`ManufacturerId`, `MaxLoanRerservationDays`) while touching those files.
 
 ## 7. Sources
 

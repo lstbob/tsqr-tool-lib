@@ -14,6 +14,6 @@ public class LocationId(int value) : ValueObject
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;
-    } 
+    }
 }
 

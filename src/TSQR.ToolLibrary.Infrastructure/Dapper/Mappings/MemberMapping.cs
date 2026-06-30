@@ -50,7 +50,7 @@ internal sealed record MemberUpdateDto(
     DateTime? StartDate,
     DateTime? EndDate);
 
-public sealed class MemberMapping : IEntityMapping<Member>
+public sealed class MemberMapping : ISqlEntityMapping<Member>
 {
     public string TableName => "Members";
 
@@ -74,7 +74,7 @@ public sealed class MemberMapping : IEntityMapping<Member>
 
     public string DeleteSql => "DELETE FROM Members WHERE Id = @Id";
 
-    public async Task<Member?> GetByIdAsync(IDatabaseConnection db, object id)
+    public async Task<Member?> GetByIdAsync(ISqlConnection db, object id)
     {
         var row = await db.QuerySingleOrDefaultAsync<MemberRow>(
             @"SELECT Id, FirstName, MiddleName, LastName, Age, Address, Email, PhoneNumber,

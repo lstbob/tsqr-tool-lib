@@ -14,6 +14,11 @@ public class ToolReturnedEventHandler(
             return;
 
         nextInLine.NotifyNextInLine("The tool has been returned and is now available for you.");
-        await reservationRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
+        reservationRepository.Update(nextInLine);
+
+        // The mutation on nextInLine is committed by the outer
+        // DomainEventOrchestrator.SaveEntitiesAsync as part of the originating
+        // command's transaction. If the original command rolls back, this
+        // side-effect rolls back too - preserving cross-aggregate invariants.
     }
 }

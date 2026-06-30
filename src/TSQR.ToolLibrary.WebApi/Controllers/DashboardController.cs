@@ -1,4 +1,4 @@
-using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 using TSQR.ToolLibrary.WebApi.Queries;
@@ -6,19 +6,17 @@ using TSQR.ToolLibrary.WebApi.Queries;
 namespace TSQR.ToolLibrary.WebApi.Controllers;
 
 [ApiController]
+[AllowAnonymous] // public read-only dashboard stats (consumed unauthenticated by the UI home page)
 [Route("api/dashboard")]
-public sealed class DashboardController : ControllerBase
+public sealed class DashboardController(
+    IInteractor<GetDashboardStatsQuery, DashboardStats> getStats
+) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public DashboardController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
+    private readonly IInteractor<GetDashboardStatsQuery, DashboardStats> _getStats = getStats;
 
     [HttpGet("stats")]
     public async Task<DashboardStats> GetStats()
     {
-        return await _mediator.Send(new GetDashboardStatsQuery());
+        return await _getStats.ExecuteAsync(new GetDashboardStatsQuery());
     }
 }

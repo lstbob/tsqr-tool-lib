@@ -10,7 +10,7 @@ public record ReserveToolCommand(
 public class ReserveToolCommandHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
     IRepository<ReservationAgg, ReservationId> reservationRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<ReserveToolCommand, Result<ReservationId>>
 {
     public async Task<Result<ReservationId>> ExecuteAsync(ReserveToolCommand command, CancellationToken cancellationToken)
@@ -33,10 +33,9 @@ public class ReserveToolCommandHandler(
 
         var reservation = reservationResult.Value;
         await reservationRepository.AddAsync(reservation, cancellationToken);
-        await reservationRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
+        inventoryRepository.Update(item);
 
-        await eventDispatcher.DispatchAsync(reservation.DomainEvents, cancellationToken);
-        reservation.ClearDomainEvents();
+        await orchestrator.SaveEntitiesAsync([reservation, item], cancellationToken);
 
         return reservation.Id;
     }

@@ -7,7 +7,7 @@ public record CancelReservationCommand(ReservationId ReservationId);
 public class CancelReservationCommandHandler(
     IRepository<ReservationAgg, ReservationId> reservationRepository,
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
-    IDomainEventDispatcher eventDispatcher)
+    DomainEventOrchestrator orchestrator)
     : IInteractor<CancelReservationCommand, Result>
 {
     public async Task<Result> ExecuteAsync(CancelReservationCommand command, CancellationToken cancellationToken)
@@ -24,10 +24,13 @@ public class CancelReservationCommandHandler(
 
         item?.ClearReservation();
 
-        await reservationRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
+        reservationRepository.Update(reservation);
+        if (item is not null)
+            inventoryRepository.Update(item);
 
-        await eventDispatcher.DispatchAsync(reservation.DomainEvents, cancellationToken);
-        reservation.ClearDomainEvents();
+        await orchestrator.SaveEntitiesAsync(
+            item is null ? [reservation] : [reservation, item],
+            cancellationToken);
 
         return Result.Success();
     }

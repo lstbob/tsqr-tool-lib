@@ -1,4 +1,4 @@
-namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
+namespace TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate;
 
 /// <summary>
 /// Represents the unique identifier for a loan.
