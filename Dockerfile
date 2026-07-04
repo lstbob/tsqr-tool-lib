@@ -1,5 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
+ARG GITHUB_PACKAGES_TOKEN
 
 COPY nuget.config .
 COPY TSQR.ToolLibrary.sln .
