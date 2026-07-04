@@ -23,6 +23,7 @@ public sealed class ReservationsCommandController(
     private readonly IInteractor<CompleteReservationCommand, Result> _complete = complete;
 
     [HttpPost("create")]
+    [Authorize(Roles = "Admin,LocationCoordinator,Repairman,Regular")]
     [ProducesResponseType(typeof(ReservationId), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -45,6 +46,7 @@ public sealed class ReservationsCommandController(
     }
 
     [HttpPost("activate")]
+    [Authorize(Roles = "Admin,LocationCoordinator,Repairman,Regular")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -63,6 +65,7 @@ public sealed class ReservationsCommandController(
     }
 
     [HttpPost("cancel")]
+    [Authorize(Roles = "Admin,LocationCoordinator,Repairman,Regular")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -78,6 +81,7 @@ public sealed class ReservationsCommandController(
     }
 
     [HttpPost("confirm-pickup")]
+    [Authorize(Roles = "Admin,LocationCoordinator,Repairman")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -96,6 +100,7 @@ public sealed class ReservationsCommandController(
     }
 
     [HttpPost("complete")]
+    [Authorize(Roles = "Admin,LocationCoordinator")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]

@@ -19,7 +19,7 @@ builder.Services.AddOpenApi();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("JWT Key not configured.");
-var jwtIssuer = jwtSection["Issuer"] ?? "tsqr-identity";
+var jwtIssuer = jwtSection["Issuer"] ?? "tsqr-autheo";
 var jwtAudience = jwtSection["Audience"] ?? "tsqr-services";
 
 builder
@@ -114,7 +114,14 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     IInteractor<GetManufacturersQuery, List<ManufacturerDto>>,
     GetManufacturersHandler
->();
+    >();
+builder.Services.AddScoped<IInteractor<GetMembersQuery, PagedResult<MemberListItem>>, GetMembersHandler>();
+builder.Services.AddScoped<IInteractor<GetMemberByIdQuery, MemberDetail?>, GetMemberByIdHandler>();
+builder.Services.AddScoped<IInteractor<GetReservationsQuery, PagedResult<ReservationListItem>>, GetReservationsHandler>();
+builder.Services.AddScoped<IInteractor<GetReservationByIdQuery, ReservationListItem?>, GetReservationByIdHandler>();
+builder.Services.AddScoped<IInteractor<GetInventoryQuery, PagedResult<InventoryListItem>>, GetInventoryHandler>();
+builder.Services.AddScoped<IInteractor<GetInventoryByIdQuery, InventoryListItem?>, GetInventoryByIdHandler>();
+builder.Services.AddScoped<IInteractor<GetMaintenanceQuery, PagedResult<MaintenanceListItem>>, GetMaintenanceHandler>();
 
 var app = builder.Build();
 

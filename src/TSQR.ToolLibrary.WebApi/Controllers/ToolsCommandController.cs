@@ -37,6 +37,7 @@ public sealed class ToolsCommandController(
     private readonly IInteractor<MarkToolAsLostCommand, Result> _markAsLost = markAsLost;
 
     [HttpPost("register")]
+    [Authorize(Roles = "Admin,LocationCoordinator")]
     [ProducesResponseType(typeof(ToolId), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -72,6 +73,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("update-details")]
+    [Authorize(Roles = "Admin,LocationCoordinator")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -105,6 +107,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("scarcity")]
+    [Authorize(Roles = "Admin,LocationCoordinator")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -127,6 +130,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("remove-scarcity")]
+    [Authorize(Roles = "Admin,LocationCoordinator")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -148,6 +152,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("loan")]
+    [Authorize(Roles = "Admin,LocationCoordinator,Repairman")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -166,6 +171,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("return")]
+    [Authorize(Roles = "Admin,LocationCoordinator,Repairman")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -184,6 +190,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("mark-for-repair")]
+    [Authorize(Roles = "Admin,LocationCoordinator,Repairman")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -206,6 +213,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("complete-repair")]
+    [Authorize(Roles = "Admin,LocationCoordinator,Repairman")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -229,6 +237,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("mark-lost")]
+    [Authorize(Roles = "Admin,LocationCoordinator,Repairman")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]

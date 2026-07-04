@@ -13,6 +13,7 @@ public sealed class LoansCommandController(
 ) : ControllerBase
 {
     [HttpPost("mark-not-returned")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
