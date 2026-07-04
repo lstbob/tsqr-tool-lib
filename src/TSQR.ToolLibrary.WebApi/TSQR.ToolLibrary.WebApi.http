@@ -1,6 +1,62 @@
-@TSQR.ToolLibrary.WebApi_HostAddress = http://localhost:5079
+### TSQR Tool Library API — Sample Requests
 
-GET {{TSQR.ToolLibrary.WebApi_HostAddress}}/weatherforecast/
-Accept: application/json
+### Public (no auth required)
+
+GET {{Host}}/api/tools?page=1&pageSize=20
+GET {{Host}}/api/tools/1
+GET {{Host}}/api/tools/stats
+GET {{Host}}/api/dashboard/stats
+GET {{Host}}/api/manufacturers
+
+### Authenticated (requires Bearer token from tsqr-autheo)
+
+POST {{Host}}/api/tools/register
+Content-Type: application/json
+
+{
+  "model": "Test Tool",
+  "description": "A test tool",
+  "manufacturerId": 1,
+  "toolType": 1,
+  "amortizationRate": 1,
+  "ownerId": 1,
+  "serialNumber": "TEST-001",
+  "initialCondition": 2
+}
 
 ###
+
+POST {{Host}}/api/members/register
+Content-Type: application/json
+
+{
+  "firstName": "Jane",
+  "middleName": "",
+  "lastName": "Doe",
+  "age": 30,
+  "address": "123 Main St",
+  "email": "jane@example.com",
+  "phoneNumber": "555-0100",
+  "status": 1
+}
+
+###
+
+POST {{Host}}/api/reservations/create
+Content-Type: application/json
+
+{
+  "itemId": 1,
+  "memberId": 2,
+  "reservationDate": "2026-07-15"
+}
+
+###
+
+GET {{Host}}/api/members?page=1&pageSize=20
+Authorization: Bearer {{token}}
+
+###
+
+GET {{Host}}/api/inventory?pageSize=50
+Authorization: Bearer {{token}}
