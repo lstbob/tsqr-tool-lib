@@ -1,14 +1,16 @@
 namespace TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
 
-internal sealed record ReservationRow(
-    ReservationId Id,
-    InventoryItemId ItemId,
-    MemberId MemberId,
-    DateTime ReservationDate,
-    DateTime ExpiryDate,
-    ReservationStatus Status,
-    bool IsConfirmed,
-    int QueuePosition);
+internal sealed record ReservationRow
+{
+    public ReservationId Id { get; init; }
+    public InventoryItemId ItemId { get; init; }
+    public MemberId MemberId { get; init; }
+    public DateTime ReservationDate { get; init; }
+    public DateTime ExpiryDate { get; init; }
+    public ReservationStatus Status { get; init; }
+    public bool IsConfirmed { get; init; }
+    public int QueuePosition { get; init; }
+}
 
 internal sealed record ReservationInsertDto(
     int ItemId,
@@ -35,7 +37,7 @@ public sealed class ReservationMapping : ISqlEntityMapping<Reservation>
 
     public string InsertSql =>
         @"INSERT INTO Reservations (ItemId, MemberId, ReservationDate, ExpiryDate, Status, IsConfirmed, QueuePosition)
-          VALUES (@ItemId, @MemberId, @ReservationDate, @ExpiryDate, @Status, @IsConfirmed, @QueuePosition);
+          VALUES (@ItemId, @MemberId, @ReservationDate, @ExpiryDate, @Status, @IsConfirmed, @QueuePosition)
           RETURNING Id";
 
     public string UpdateSql =>
@@ -48,7 +50,7 @@ public sealed class ReservationMapping : ISqlEntityMapping<Reservation>
 
     public string DeleteSql => "DELETE FROM Reservations WHERE Id = @Id";
 
-    public async Task<Reservation?> GetByIdAsync(ISqlConnection db, object id)
+    public async Task<Reservation?> GetByIdAsync(ISqlConnection db, int id)
     {
         var row = await db.QuerySingleOrDefaultAsync<ReservationRow>(
             @"SELECT Id, ItemId, MemberId, ReservationDate, ExpiryDate,

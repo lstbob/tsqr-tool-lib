@@ -1,16 +1,22 @@
 namespace TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
 
-internal sealed record ToolRow(
-    ToolId Id,
-    string Model,
-    string Description,
-    ManufacturerId ManufacturerId,
-    string ManufacturerName,
-    ToolType ToolType,
-    AmortizationRate AmortizationRate,
-    string? Metadata);
+internal sealed record ToolRow
+{
+    public ToolId Id { get; init; }
+    public string Model { get; init; }
+    public string Description { get; init; }
+    public ManufacturerId ManufacturerId { get; init; }
+    public string ManufacturerName { get; init; }
+    public ToolType ToolType { get; init; }
+    public AmortizationRate AmortizationRate { get; init; }
+    public string? Metadata { get; init; }
+}
 
-internal sealed record ScarcityRow(LocationId LocationId, ScarcityLevel ScarcityLevel);
+internal sealed record ScarcityRow
+{
+    public LocationId LocationId { get; init; }
+    public ScarcityLevel ScarcityLevel { get; init; }
+}
 
 internal sealed record ToolInsertDto(
     string Model,
@@ -35,7 +41,7 @@ public sealed class ToolMapping : ISqlEntityMapping<Tool>
 
     public string InsertSql =>
         @"INSERT INTO Tools (Model, Description, ManufacturerId, ToolType, AmortizationRate, Metadata)
-          VALUES (@Model, @Description, @ManufacturerId, @ToolType, @AmortizationRate, @Metadata);
+          VALUES (@Model, @Description, @ManufacturerId, @ToolType, @AmortizationRate, @Metadata)
           RETURNING Id";
 
     public string UpdateSql =>
@@ -46,7 +52,7 @@ public sealed class ToolMapping : ISqlEntityMapping<Tool>
 
     public string DeleteSql => "DELETE FROM Tools WHERE Id = @Id";
 
-    public async Task<Tool?> GetByIdAsync(ISqlConnection db, object id)
+    public async Task<Tool?> GetByIdAsync(ISqlConnection db, int id)
     {
         var row = await db.QuerySingleOrDefaultAsync<ToolRow>(
             @"SELECT t.Id, t.Model, t.Description, t.ToolType, t.AmortizationRate, t.Metadata,

@@ -1,20 +1,22 @@
 namespace TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
 
-internal sealed record InventoryItemRow(
-    InventoryItemId Id,
-    ToolId ToolId,
-    MemberId OriginalOwnerId,
-    DateTime InitialAcquisitionDate,
-    string SerialNumber,
-    ItemStatus Status,
-    Condition Condition,
-    MemberId? CurrentHolderId,
-    DateTime? LastBorrowedDate,
-    DateTime? ReservationDate,
-    MemberId? ReservationMemberId,
-    int LoanCount,
-    long TotalUsageTimeTicks,
-    bool IsUnderRepair);
+internal sealed record InventoryItemRow
+{
+    public InventoryItemId Id { get; init; }
+    public ToolId ToolId { get; init; }
+    public MemberId OriginalOwnerId { get; init; }
+    public DateTime InitialAcquisitionDate { get; init; }
+    public string SerialNumber { get; init; }
+    public ItemStatus Status { get; init; }
+    public Condition Condition { get; init; }
+    public MemberId? CurrentHolderId { get; init; }
+    public DateTime? LastBorrowedDate { get; init; }
+    public DateTime? ReservationDate { get; init; }
+    public MemberId? ReservationMemberId { get; init; }
+    public int LoanCount { get; init; }
+    public long TotalUsageTimeTicks { get; init; }
+    public bool IsUnderRepair { get; init; }
+}
 
 internal sealed record InventoryItemInsertDto(
     int ToolId,
@@ -59,7 +61,7 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
           VALUES (@ToolId, @OriginalOwnerId, @InitialAcquisitionDate, @SerialNumber,
                 @Status, @Condition, @CurrentHolderId, @LastBorrowedDate,
                 @ReservationDate, @ReservationMemberId, @LoanCount,
-                @TotalUsageTimeTicks, @IsUnderRepair);
+                @TotalUsageTimeTicks, @IsUnderRepair)
           RETURNING Id";
 
     public string UpdateSql =>
@@ -78,7 +80,7 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
 
     public string DeleteSql => "DELETE FROM InventoryItems WHERE Id = @Id";
 
-    public async Task<InventoryItem?> GetByIdAsync(ISqlConnection db, object id)
+    public async Task<InventoryItem?> GetByIdAsync(ISqlConnection db, int id)
     {
         var row = await db.QuerySingleOrDefaultAsync<InventoryItemRow>(
             @"SELECT Id, ToolId, OriginalOwnerId, InitialAcquisitionDate, SerialNumber,

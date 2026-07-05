@@ -80,12 +80,14 @@ builder.Services.AddSingleton<ISqlEntityMapping<Member>, MemberMapping>();
 builder.Services.AddSingleton<ISqlEntityMapping<Reservation>, ReservationMapping>();
 builder.Services.AddSingleton<ISqlEntityMapping<MaintenanceRecord>, MaintenanceRecordMapping>();
 builder.Services.AddSingleton<ISqlEntityMapping<Tool>, ToolMapping>();
+builder.Services.AddSingleton<ISqlEntityMapping<Loan>, LoanMapping>();
 
 builder.Services.AddScoped<
     IRepository<InventoryItem, InventoryItemId>,
     SqlRepository<InventoryItem, InventoryItemId>
 >();
 builder.Services.AddScoped<IRepository<Member, MemberId>, SqlRepository<Member, MemberId>>();
+builder.Services.AddScoped<IRepository<Loan, LoanId>, SqlRepository<Loan, LoanId>>();
 builder.Services.AddScoped<
     IRepository<Reservation, ReservationId>,
     SqlRepository<Reservation, ReservationId>
@@ -95,6 +97,7 @@ builder.Services.AddScoped<
     SqlRepository<MaintenanceRecord, MaintenanceRecordId>
 >();
 builder.Services.AddScoped<IToolRepository, ToolRepository>();
+builder.Services.AddScoped<IRepository<Tool, ToolId>>(sp => sp.GetRequiredService<IToolRepository>());
 builder.Services.AddScoped<IManufacturerRepository, ManufacturerRepository>();
 builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
 

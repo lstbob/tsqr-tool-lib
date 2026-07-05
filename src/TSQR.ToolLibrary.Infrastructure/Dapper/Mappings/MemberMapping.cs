@@ -1,21 +1,23 @@
 namespace TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
 
-internal sealed record MemberRow(
-    MemberId Id,
-    string FirstName,
-    string MiddleName,
-    string LastName,
-    int Age,
-    string Address,
-    string Email,
-    string PhoneNumber,
-    MemberStatus Status,
-    bool IsVerified,
-    MemberId? VerifiedByAdminId,
-    DateTime? VerificationDate,
-    MembershipType? MembershipType,
-    DateTime? StartDate,
-    DateTime? EndDate);
+internal sealed record MemberRow
+{
+    public MemberId Id { get; init; }
+    public string FirstName { get; init; }
+    public string MiddleName { get; init; }
+    public string LastName { get; init; }
+    public int Age { get; init; }
+    public string Address { get; init; }
+    public string Email { get; init; }
+    public string PhoneNumber { get; init; }
+    public MemberStatus Status { get; init; }
+    public bool IsVerified { get; init; }
+    public MemberId? VerifiedByAdminId { get; init; }
+    public DateTime? VerificationDate { get; init; }
+    public MembershipType? MembershipType { get; init; }
+    public DateTime? StartDate { get; init; }
+    public DateTime? EndDate { get; init; }
+}
 
 internal sealed record MemberInsertDto(
     string FirstName,
@@ -60,7 +62,7 @@ public sealed class MemberMapping : ISqlEntityMapping<Member>
                 MembershipType, StartDate, EndDate)
           VALUES (@FirstName, @MiddleName, @LastName, @Age, @Address, @Email, @PhoneNumber,
                 @Status, @IsVerified, @VerifiedByAdminId, @VerificationDate,
-                @MembershipType, @StartDate, @EndDate);
+                @MembershipType, @StartDate, @EndDate)
           RETURNING Id";
 
     public string UpdateSql =>
@@ -74,7 +76,7 @@ public sealed class MemberMapping : ISqlEntityMapping<Member>
 
     public string DeleteSql => "DELETE FROM Members WHERE Id = @Id";
 
-    public async Task<Member?> GetByIdAsync(ISqlConnection db, object id)
+    public async Task<Member?> GetByIdAsync(ISqlConnection db, int id)
     {
         var row = await db.QuerySingleOrDefaultAsync<MemberRow>(
             @"SELECT Id, FirstName, MiddleName, LastName, Age, Address, Email, PhoneNumber,
