@@ -14,7 +14,7 @@ public interface ISqlEntityMapping<TEntity>
     string UpdateSql { get; }
     string DeleteSql { get; }
 
-    Task<TEntity?> GetByIdAsync(ISqlConnection db, object id);
+    Task<TEntity?> GetByIdAsync(ISqlConnection db, int id);
     object ToInsertParameters(TEntity entity);
     object ToUpdateParameters(TEntity entity);
 }

@@ -30,12 +30,14 @@ public sealed class ToolRepository(ISqlUnitOfWork uow, ISqlEntityMapping<Tool> m
 
     public async Task<ToolStats> GetStatsAsync(CancellationToken cancellationToken = default)
     {
+        // COUNT(*) returns bigint (Int64); cast to int so Dapper can materialize
+        // StatsRow(int Key, int Count) — without the cast, record construction throws.
         var typeStats = await Database.QueryAsync<StatsRow>(
-            "SELECT ToolType AS Key, COUNT(*) AS Count FROM Tools GROUP BY ToolType ORDER BY Key"
+            "SELECT ToolType AS Key, COUNT(*)::int AS Count FROM Tools GROUP BY ToolType ORDER BY Key"
         );
 
         var scarcityStats = await Database.QueryAsync<StatsRow>(
-            "SELECT sl.ScarcityLevel AS Key, COUNT(*) AS Count FROM ToolScarcityByLocation sl GROUP BY sl.ScarcityLevel ORDER BY Key"
+            "SELECT sl.ScarcityLevel AS Key, COUNT(*)::int AS Count FROM ToolScarcityByLocation sl GROUP BY sl.ScarcityLevel ORDER BY Key"
         );
 
         return new ToolStats(

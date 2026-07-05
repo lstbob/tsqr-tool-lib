@@ -85,6 +85,17 @@ CREATE TABLE IF NOT EXISTS MaintenanceRecords (
     ResultingCondition INTEGER
 );
 
+CREATE TABLE IF NOT EXISTS Loans (
+    Id SERIAL PRIMARY KEY,
+    MemberId INTEGER NOT NULL REFERENCES Members(Id),
+    CheckoutDate TIMESTAMP NOT NULL,
+    DueDate TIMESTAMP NOT NULL,
+    ItemId INTEGER NOT NULL REFERENCES InventoryItems(Id),
+    Status INTEGER NOT NULL,
+    ReturnedDate TIMESTAMP,
+    FineAccrued NUMERIC(10,2) NOT NULL DEFAULT 0
+);
+
 -- Seed: Manufacturers
 INSERT INTO Manufacturers (Name) VALUES
     ('DeWalt'),

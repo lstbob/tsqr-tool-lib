@@ -19,6 +19,7 @@ RUN dotnet restore ./src/TSQR.ToolLibrary.WebApi/TSQR.ToolLibrary.WebApi.csproj
 RUN dotnet publish ./src/TSQR.ToolLibrary.WebApi/TSQR.ToolLibrary.WebApi.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+RUN apt-get update && apt-get install -y curl --no-install-recommends && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080

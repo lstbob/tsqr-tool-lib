@@ -93,10 +93,9 @@ public class Loan : Entity<LoanId>, IAggregateRoot
         if (endDateResult.IsFailure)
             return endDateResult.Error;
 
-        var notInPastResult = expectedEndDate.ValidateNotInPast(nameof(expectedEndDate));
-        if (notInPastResult.IsFailure)
-            return notInPastResult.Error;
-
+        // No not-in-past check: the loan-end moment is "now" (DateTime.UtcNow from the
+        // handler), which is always microseconds behind a fresh UtcNow, so ValidateNotInPast
+        // would reject every call. Ending a loan can never legitimately be a future date.
         if (expectedEndDate > DueDate)
         {
             Status = LoanStatus.Overdue;

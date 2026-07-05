@@ -1,15 +1,17 @@
 namespace TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
 
-internal sealed record MaintenanceRecordRow(
-    MaintenanceRecordId Id,
-    InventoryItemId ItemId,
-    MemberId ReportedById,
-    DateTime ReportedDate,
-    string Description,
-    MaintenanceStatus Status,
-    MemberId? CompletedById,
-    DateTime? CompletedDate,
-    Condition? ResultingCondition);
+internal sealed record MaintenanceRecordRow
+{
+    public MaintenanceRecordId Id { get; init; }
+    public InventoryItemId ItemId { get; init; }
+    public MemberId ReportedById { get; init; }
+    public DateTime ReportedDate { get; init; }
+    public string Description { get; init; }
+    public MaintenanceStatus Status { get; init; }
+    public MemberId? CompletedById { get; init; }
+    public DateTime? CompletedDate { get; init; }
+    public Condition? ResultingCondition { get; init; }
+}
 
 internal sealed record MaintenanceRecordInsertDto(
     int ItemId,
@@ -40,7 +42,7 @@ public sealed class MaintenanceRecordMapping : ISqlEntityMapping<MaintenanceReco
         @"INSERT INTO MaintenanceRecords (ItemId, ReportedById, ReportedDate, Description, Status,
                 CompletedById, CompletedDate, ResultingCondition)
           VALUES (@ItemId, @ReportedById, @ReportedDate, @Description, @Status,
-                @CompletedById, @CompletedDate, @ResultingCondition);
+                @CompletedById, @CompletedDate, @ResultingCondition)
           RETURNING Id";
 
     public string UpdateSql =>
@@ -53,7 +55,7 @@ public sealed class MaintenanceRecordMapping : ISqlEntityMapping<MaintenanceReco
 
     public string DeleteSql => "DELETE FROM MaintenanceRecords WHERE Id = @Id";
 
-    public async Task<MaintenanceRecord?> GetByIdAsync(ISqlConnection db, object id)
+    public async Task<MaintenanceRecord?> GetByIdAsync(ISqlConnection db, int id)
     {
         var row = await db.QuerySingleOrDefaultAsync<MaintenanceRecordRow>(
             @"SELECT Id, ItemId, ReportedById, ReportedDate, Description,

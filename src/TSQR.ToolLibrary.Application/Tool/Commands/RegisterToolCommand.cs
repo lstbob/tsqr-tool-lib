@@ -1,4 +1,5 @@
 using ToolAgg = TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate.Tool;
+using MemberAgg = TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate.Member;
 
 namespace TSQR.ToolLibrary.Application.Tool.Commands;
 
@@ -16,13 +17,16 @@ public record RegisterToolCommand(
 public class RegisterToolCommandHandler(
     IRepository<ToolAgg, ToolId> toolRepository,
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
+    IRepository<MemberAgg, MemberId> memberRepository,
     DomainEventOrchestrator orchestrator)
     : IInteractor<RegisterToolCommand, Result<ToolId>>
 {
     public async Task<Result<ToolId>> ExecuteAsync(RegisterToolCommand command, CancellationToken cancellationToken)
     {
-        // Tool.Register raises ToolRegisteredEvent inside the aggregate factory,
-        // so the application layer does not raise domain events itself.
+        var member = await memberRepository.GetByIdAsync(command.OwnerId, cancellationToken);
+        if (member is null)
+            return new NotFoundError(nameof(command.OwnerId), "Owner member not found.");
+
         var toolResult = ToolAgg.Register(
             command.OwnerId,
             command.Model,

@@ -20,7 +20,7 @@ public class SqlRepository<TEntity, TId>(ISqlUnitOfWork uow, ISqlEntityMapping<T
         CancellationToken cancellationToken = default
     )
     {
-        return await mapping.GetByIdAsync(uow.Connection, id);
+        return await mapping.GetByIdAsync(uow.Connection, (int)((dynamic)id!).Value);
     }
 
     public virtual async Task AddAsync(
