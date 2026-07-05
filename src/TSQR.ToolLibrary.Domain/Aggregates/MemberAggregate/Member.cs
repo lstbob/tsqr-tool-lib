@@ -17,7 +17,8 @@ public class Member : Entity<MemberId>, IAggregateRoot
         DateTime? verificationDate,
         MembershipRecord? record = null,
         Identification? identification = null,
-        AccessRequestStatus accessRequestStatus = AccessRequestStatus.NotSet) : base(id)
+        AccessRequestStatus accessRequestStatus = AccessRequestStatus.NotSet,
+        int communityId = 0) : base(id)
     {
         FirstName = firstName;
         MiddleName = middleName;
@@ -33,6 +34,7 @@ public class Member : Entity<MemberId>, IAggregateRoot
         Record = record;
         Identification = identification;
         AccessRequestStatus = accessRequestStatus;
+        CommunityId = communityId;
     }
 
     public string FirstName { get; }
@@ -49,6 +51,7 @@ public class Member : Entity<MemberId>, IAggregateRoot
     public MembershipRecord? Record { get; private set; }
     public Identification? Identification { get; private set; }
     public AccessRequestStatus AccessRequestStatus { get; private set; }
+    public int CommunityId { get; private set; }
 
     public static Result<Member> Create(
         string firstName,
@@ -59,7 +62,8 @@ public class Member : Entity<MemberId>, IAggregateRoot
         string email,
         string phoneNumber,
         MemberStatus status,
-        MembershipRecord? record = null)
+        MembershipRecord? record = null,
+        int communityId = 0)
     {
         var firstNameResult = firstName.Validate(nameof(firstName));
         if (firstNameResult.IsFailure) return firstNameResult.Error;
@@ -95,7 +99,8 @@ public class Member : Entity<MemberId>, IAggregateRoot
             false,
             null,
             null,
-            record);
+            record,
+            communityId: communityId);
     }
 
     public static Member Create(
@@ -113,7 +118,8 @@ public class Member : Entity<MemberId>, IAggregateRoot
         DateTime? verificationDate,
         MembershipRecord? record = null,
         Identification? identification = null,
-        AccessRequestStatus accessRequestStatus = AccessRequestStatus.NotSet)
+        AccessRequestStatus accessRequestStatus = AccessRequestStatus.NotSet,
+        int communityId = 0)
     {
         return new Member(
             id,
@@ -130,7 +136,8 @@ public class Member : Entity<MemberId>, IAggregateRoot
             verificationDate,
             record,
             identification,
-            accessRequestStatus);
+            accessRequestStatus,
+            communityId);
     }
 
     public Result RequestAccess(Identification identification)

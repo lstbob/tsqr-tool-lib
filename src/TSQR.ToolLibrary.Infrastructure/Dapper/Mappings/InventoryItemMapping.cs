@@ -16,6 +16,7 @@ internal sealed record InventoryItemRow
     public int LoanCount { get; init; }
     public long TotalUsageTimeTicks { get; init; }
     public bool IsUnderRepair { get; init; }
+    public int CommunityId { get; init; }
 }
 
 internal sealed record InventoryItemInsertDto(
@@ -31,7 +32,8 @@ internal sealed record InventoryItemInsertDto(
     int? ReservationMemberId,
     int LoanCount,
     long TotalUsageTimeTicks,
-    bool IsUnderRepair);
+    bool IsUnderRepair,
+    int CommunityId);
 
 internal sealed record InventoryItemUpdateDto(
     int Id,
@@ -47,7 +49,8 @@ internal sealed record InventoryItemUpdateDto(
     int? ReservationMemberId,
     int LoanCount,
     long TotalUsageTimeTicks,
-    bool IsUnderRepair);
+    bool IsUnderRepair,
+    int CommunityId);
 
 public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
 {
@@ -57,11 +60,11 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
         @"INSERT INTO InventoryItems (ToolId, OriginalOwnerId, InitialAcquisitionDate, SerialNumber,
                 Status, Condition, CurrentHolderId, LastBorrowedDate,
                 ReservationDate, ReservationMemberId, LoanCount,
-                TotalUsageTimeTicks, IsUnderRepair)
+                TotalUsageTimeTicks, IsUnderRepair, CommunityId)
           VALUES (@ToolId, @OriginalOwnerId, @InitialAcquisitionDate, @SerialNumber,
                 @Status, @Condition, @CurrentHolderId, @LastBorrowedDate,
                 @ReservationDate, @ReservationMemberId, @LoanCount,
-                @TotalUsageTimeTicks, @IsUnderRepair)
+                @TotalUsageTimeTicks, @IsUnderRepair, @CommunityId)
           RETURNING Id";
 
     public string UpdateSql =>
@@ -75,7 +78,8 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
               ReservationMemberId = @ReservationMemberId,
               LoanCount = @LoanCount,
               TotalUsageTimeTicks = @TotalUsageTimeTicks,
-              IsUnderRepair = @IsUnderRepair
+              IsUnderRepair = @IsUnderRepair,
+              CommunityId = @CommunityId
           WHERE Id = @Id";
 
     public string DeleteSql => "DELETE FROM InventoryItems WHERE Id = @Id";
@@ -86,7 +90,7 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
             @"SELECT Id, ToolId, OriginalOwnerId, InitialAcquisitionDate, SerialNumber,
                      Status, Condition, CurrentHolderId, LastBorrowedDate,
                      ReservationDate, ReservationMemberId, LoanCount,
-                     TotalUsageTimeTicks, IsUnderRepair
+                     TotalUsageTimeTicks, IsUnderRepair, CommunityId
               FROM InventoryItems WHERE Id = @Id", new { Id = id });
 
         if (row is null) return null;
@@ -105,7 +109,8 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
             row.ReservationMemberId,
             row.LoanCount,
             TimeSpan.FromTicks(row.TotalUsageTimeTicks),
-            row.IsUnderRepair);
+            row.IsUnderRepair,
+            row.CommunityId);
     }
 
     public object ToInsertParameters(InventoryItem entity) => new InventoryItemInsertDto(
@@ -121,7 +126,8 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
         entity.ReservationMemberId?.Value,
         entity.LoanCount,
         entity.TotalUsageTime.Ticks,
-        entity.IsUnderRepair);
+        entity.IsUnderRepair,
+        entity.CommunityId);
 
     public object ToUpdateParameters(InventoryItem entity) => new InventoryItemUpdateDto(
         entity.Id.Value,
@@ -137,5 +143,6 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
         entity.ReservationMemberId?.Value,
         entity.LoanCount,
         entity.TotalUsageTime.Ticks,
-        entity.IsUnderRepair);
+        entity.IsUnderRepair,
+        entity.CommunityId);
 }

@@ -10,7 +10,8 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
         DateTime expiryDate,
         ReservationStatus status,
         bool isConfirmed,
-        int queuePosition) : base(id)
+        int queuePosition,
+        int communityId = 0) : base(id)
     {
         ItemId = itemId;
         MemberId = memberId;
@@ -19,6 +20,7 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
         Status = status;
         IsConfirmed = isConfirmed;
         QueuePosition = queuePosition;
+        CommunityId = communityId;
     }
 
     public InventoryItemId ItemId { get; }
@@ -28,13 +30,15 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
     public ReservationStatus Status { get; private set; }
     public bool IsConfirmed { get; private set; }
     public int QueuePosition { get; private set; }
+    public int CommunityId { get; private set; }
 
     public static Result<Reservation> Create(
         InventoryItemId itemId,
         MemberId memberId,
         DateTime reservationDate,
         DateTime expiryDate,
-        int queuePosition)
+        int queuePosition,
+        int communityId = 0)
     {
         if (itemId is null)
             return new ValidationError(nameof(itemId), "Item ID is required.");
@@ -53,16 +57,18 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
             expiryDate,
             ReservationStatus.Pending,
             false,
-            queuePosition);
+            queuePosition,
+            communityId);
     }
 
     public static Result<Reservation> Create(
         InventoryItemId itemId,
         MemberId memberId,
-        DateTime reservationDate)
+        DateTime reservationDate,
+        int communityId = 0)
     {
         var expiryDate = reservationDate.AddDays(14);
-        return Create(itemId, memberId, reservationDate, expiryDate, 1);
+        return Create(itemId, memberId, reservationDate, expiryDate, 1, communityId);
     }
 
     public static Reservation Create(
@@ -73,7 +79,8 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
         DateTime expiryDate,
         ReservationStatus status,
         bool isConfirmed,
-        int queuePosition)
+        int queuePosition,
+        int communityId = 0)
     {
         return new Reservation(
             id,
@@ -83,7 +90,8 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
             expiryDate,
             status,
             isConfirmed,
-            queuePosition);
+            queuePosition,
+            communityId);
     }
 
     public Result ConfirmPickup()

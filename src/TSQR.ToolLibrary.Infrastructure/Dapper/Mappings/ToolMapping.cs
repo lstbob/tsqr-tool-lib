@@ -10,6 +10,7 @@ internal sealed record ToolRow
     public ToolType ToolType { get; init; }
     public AmortizationRate AmortizationRate { get; init; }
     public string? Metadata { get; init; }
+    public int CommunityId { get; init; }
 }
 
 internal sealed record ScarcityRow
@@ -24,7 +25,8 @@ internal sealed record ToolInsertDto(
     int ManufacturerId,
     ToolType ToolType,
     AmortizationRate AmortizationRate,
-    string? Metadata);
+    string? Metadata,
+    int CommunityId);
 
 internal sealed record ToolUpdateDto(
     int Id,
@@ -33,21 +35,23 @@ internal sealed record ToolUpdateDto(
     int ManufacturerId,
     ToolType ToolType,
     AmortizationRate AmortizationRate,
-    string? Metadata);
+    string? Metadata,
+    int CommunityId);
 
 public sealed class ToolMapping : ISqlEntityMapping<Tool>
 {
     public string TableName => "Tools";
 
     public string InsertSql =>
-        @"INSERT INTO Tools (Model, Description, ManufacturerId, ToolType, AmortizationRate, Metadata)
-          VALUES (@Model, @Description, @ManufacturerId, @ToolType, @AmortizationRate, @Metadata)
+        @"INSERT INTO Tools (Model, Description, ManufacturerId, ToolType, AmortizationRate, Metadata, CommunityId)
+          VALUES (@Model, @Description, @ManufacturerId, @ToolType, @AmortizationRate, @Metadata, @CommunityId)
           RETURNING Id";
 
     public string UpdateSql =>
         @"UPDATE Tools
           SET Model = @Model, Description = @Description, ManufacturerId = @ManufacturerId,
-              ToolType = @ToolType, AmortizationRate = @AmortizationRate, Metadata = @Metadata
+              ToolType = @ToolType, AmortizationRate = @AmortizationRate, Metadata = @Metadata,
+              CommunityId = @CommunityId
           WHERE Id = @Id";
 
     public string DeleteSql => "DELETE FROM Tools WHERE Id = @Id";
@@ -55,7 +59,7 @@ public sealed class ToolMapping : ISqlEntityMapping<Tool>
     public async Task<Tool?> GetByIdAsync(ISqlConnection db, int id)
     {
         var row = await db.QuerySingleOrDefaultAsync<ToolRow>(
-            @"SELECT t.Id, t.Model, t.Description, t.ToolType, t.AmortizationRate, t.Metadata,
+            @"SELECT t.Id, t.Model, t.Description, t.ToolType, t.AmortizationRate, t.Metadata, t.CommunityId,
                      m.Id AS ManufacturerId, m.Name AS ManufacturerName
               FROM Tools t
               INNER JOIN Manufacturers m ON m.Id = t.ManufacturerId
@@ -70,7 +74,8 @@ public sealed class ToolMapping : ISqlEntityMapping<Tool>
             Manufacturer.Create(row.ManufacturerId, row.ManufacturerName),
             row.ToolType,
             row.AmortizationRate,
-            row.Metadata);
+            row.Metadata,
+            row.CommunityId);
 
         var scarcityRows = await db.QueryAsync<ScarcityRow>(
             "SELECT LocationId, ScarcityLevel FROM ToolScarcityByLocation WHERE ToolId = @Id",
@@ -88,7 +93,8 @@ public sealed class ToolMapping : ISqlEntityMapping<Tool>
         entity.Manufacturer.Id.Value,
         entity.Type,
         entity.AmortizationRate,
-        entity.Metadata);
+        entity.Metadata,
+        entity.CommunityId);
 
     public object ToUpdateParameters(Tool entity) => new ToolUpdateDto(
         entity.Id.Value,
@@ -97,5 +103,6 @@ public sealed class ToolMapping : ISqlEntityMapping<Tool>
         entity.Manufacturer.Id.Value,
         entity.Type,
         entity.AmortizationRate,
-        entity.Metadata);
+        entity.Metadata,
+        entity.CommunityId);
 }

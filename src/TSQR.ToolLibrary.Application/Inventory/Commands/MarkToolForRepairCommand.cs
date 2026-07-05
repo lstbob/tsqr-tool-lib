@@ -1,6 +1,6 @@
 namespace TSQR.ToolLibrary.Application.Inventory.Commands;
 
-public record MarkToolForRepairCommand(InventoryItemId ItemId, MemberId ReportedById, string Description);
+public record MarkToolForRepairCommand(InventoryItemId ItemId, MemberId ReportedById, string Description, int CommunityId = 1);
 
 public class MarkToolForRepairCommandHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
@@ -18,7 +18,7 @@ public class MarkToolForRepairCommandHandler(
         if (markResult.IsFailure)
             return markResult.Error;
 
-        var recordResult = MaintenanceRecord.Create(command.ItemId, command.ReportedById, command.Description);
+        var recordResult = MaintenanceRecord.Create(command.ItemId, command.ReportedById, command.Description, command.CommunityId);
         if (recordResult.IsFailure)
             return recordResult.Error;
 

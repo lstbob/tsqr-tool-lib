@@ -11,7 +11,8 @@ public record RegisterMemberCommand(
     string Email,
     string PhoneNumber,
     MemberStatus Status,
-    MembershipRecord? Record = null);
+    MembershipRecord? Record = null,
+    int CommunityId = 1);
 
 public class RegisterMemberCommandHandler(
     IRepository<MemberAgg, MemberId> memberRepository,
@@ -29,7 +30,8 @@ public class RegisterMemberCommandHandler(
             command.Email,
             command.PhoneNumber,
             command.Status,
-            command.Record);
+            command.Record,
+            command.CommunityId);
 
         if (memberResult.IsFailure)
             return memberResult.Error;

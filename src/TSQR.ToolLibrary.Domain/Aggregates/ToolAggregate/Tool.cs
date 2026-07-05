@@ -9,7 +9,8 @@ public class Tool : Entity<ToolId>, IAggregateRoot
         Manufacturer manufacturer,
         ToolType type,
         AmortizationRate amortizationRate,
-        string? metadata = null) : base(id)
+        string? metadata = null,
+        int communityId = 0) : base(id)
     {
         Model = model;
         Description = description;
@@ -17,6 +18,7 @@ public class Tool : Entity<ToolId>, IAggregateRoot
         Type = type;
         AmortizationRate = amortizationRate;
         Metadata = metadata;
+        CommunityId = communityId;
     }
 
     public string Model { get; private set; }
@@ -25,6 +27,7 @@ public class Tool : Entity<ToolId>, IAggregateRoot
     public ToolType Type { get; private set; }
     public AmortizationRate AmortizationRate { get; private set; }
     public string? Metadata { get; private set; }
+    public int CommunityId { get; private set; }
 
     private readonly Dictionary<LocationId, ScarcityLevel> _scarcityByLocation = [];
     public IReadOnlyDictionary<LocationId, ScarcityLevel> ScarcityByLocation => _scarcityByLocation.AsReadOnly();
@@ -35,7 +38,8 @@ public class Tool : Entity<ToolId>, IAggregateRoot
         Manufacturer manufacturer,
         ToolType type,
         AmortizationRate amortizationRate,
-        string? metadata = null)
+        string? metadata = null,
+        int communityId = 0)
     {
         var modelResult = model.Validate(nameof(model));
         if (modelResult.IsFailure) return modelResult.Error;
@@ -58,7 +62,7 @@ public class Tool : Entity<ToolId>, IAggregateRoot
         var rateNotDefaultResult = amortizationRate.ValidateNotDefault(nameof(amortizationRate));
         if (rateNotDefaultResult.IsFailure) return rateNotDefaultResult.Error;
 
-        return new Tool(new ToolId(default), modelResult.Value, descriptionResult.Value, manufacturer, type, amortizationRate, metadata);
+        return new Tool(new ToolId(default), modelResult.Value, descriptionResult.Value, manufacturer, type, amortizationRate, metadata, communityId);
     }
 
     public static Tool Create(
@@ -68,9 +72,10 @@ public class Tool : Entity<ToolId>, IAggregateRoot
         Manufacturer manufacturer,
         ToolType type,
         AmortizationRate amortizationRate,
-        string? metadata = null)
+        string? metadata = null,
+        int communityId = 0)
     {
-        return new Tool(id, model, description, manufacturer, type, amortizationRate, metadata);
+        return new Tool(id, model, description, manufacturer, type, amortizationRate, metadata, communityId);
     }
 
     /// <summary>
@@ -86,12 +91,13 @@ public class Tool : Entity<ToolId>, IAggregateRoot
         Manufacturer manufacturer,
         ToolType type,
         AmortizationRate amortizationRate,
-        string? metadata = null)
+        string? metadata = null,
+        int communityId = 0)
     {
         if (ownerId is null)
             return new ValidationError(nameof(ownerId), "Owner ID is required.");
 
-        var createResult = Create(model, description, manufacturer, type, amortizationRate, metadata);
+        var createResult = Create(model, description, manufacturer, type, amortizationRate, metadata, communityId);
         if (createResult.IsFailure)
             return createResult.Error;
 

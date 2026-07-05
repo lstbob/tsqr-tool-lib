@@ -8,13 +8,15 @@ public class Loan : Entity<LoanId>, IAggregateRoot
         DateTime checkoutDate,
         DateTime dueDate,
         InventoryItemId itemId,
-        LoanStatus status) : base(id)
+        LoanStatus status,
+        int communityId = 0) : base(id)
     {
         MemberId = memberId;
         CheckoutDate = checkoutDate;
         DueDate = dueDate;
         ItemId = itemId;
         Status = status;
+        CommunityId = communityId;
     }
 
     public MemberId MemberId { get; }
@@ -24,6 +26,7 @@ public class Loan : Entity<LoanId>, IAggregateRoot
     public LoanStatus Status { get; private set; }
     public DateTime ReturnedDate { get; private set; }
     public decimal FineAccrued { get; private set; }
+    public int CommunityId { get; private set; }
 
     public static Result<Loan> Create(
         LoanId id,
@@ -31,7 +34,8 @@ public class Loan : Entity<LoanId>, IAggregateRoot
         DateTime checkoutDate,
         DateTime dueDate,
         InventoryItemId itemId,
-        LoanStatus status)
+        LoanStatus status,
+        int communityId = 0)
     {
         if (memberId is null)
             return new ValidationError(nameof(memberId), "Member ID is required.");
@@ -62,7 +66,7 @@ public class Loan : Entity<LoanId>, IAggregateRoot
         if (notDefaultResult.IsFailure)
             return notDefaultResult.Error;
 
-        return new Loan(id, memberId, checkoutDate, dueDate, itemId, status);
+        return new Loan(id, memberId, checkoutDate, dueDate, itemId, status, communityId);
     }
 
     public static Result<Loan> Create(
@@ -70,18 +74,20 @@ public class Loan : Entity<LoanId>, IAggregateRoot
         DateTime checkoutDate,
         LoanStatus status,
         DateTime dueDate,
-        InventoryItemId itemId)
+        InventoryItemId itemId,
+        int communityId = 0)
     {
-        return Create(new LoanId(default), memberId, checkoutDate, dueDate, itemId, status);
+        return Create(new LoanId(default), memberId, checkoutDate, dueDate, itemId, status, communityId);
     }
 
     public static Result<Loan> Create(
         MemberId memberId,
-        InventoryItemId itemId)
+        InventoryItemId itemId,
+        int communityId = 0)
     {
         var checkoutDate = DateTime.UtcNow;
         var dueDate = checkoutDate.AddDays(7);
-        return Create(new LoanId(default), memberId, checkoutDate, dueDate, itemId, LoanStatus.Active);
+        return Create(new LoanId(default), memberId, checkoutDate, dueDate, itemId, LoanStatus.Active, communityId);
     }
 
     public Result EndLoan(DateTime expectedEndDate)

@@ -12,7 +12,8 @@ public record RegisterToolCommand(
     MemberId OwnerId,
     string SerialNumber,
     Condition InitialCondition,
-    string? Metadata = null);
+    string? Metadata = null,
+    int CommunityId = 1);
 
 public class RegisterToolCommandHandler(
     IRepository<ToolAgg, ToolId> toolRepository,
@@ -34,7 +35,8 @@ public class RegisterToolCommandHandler(
             command.Manufacturer,
             command.Type,
             command.AmortizationRate,
-            command.Metadata);
+            command.Metadata,
+            command.CommunityId);
 
         if (toolResult.IsFailure)
             return toolResult.Error;
@@ -47,7 +49,8 @@ public class RegisterToolCommandHandler(
             command.OwnerId,
             DateTime.UtcNow,
             command.SerialNumber,
-            command.InitialCondition);
+            command.InitialCondition,
+            command.CommunityId);
 
         if (inventoryResult.IsFailure)
             return inventoryResult.Error;

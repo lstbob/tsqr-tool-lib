@@ -5,7 +5,8 @@ namespace TSQR.ToolLibrary.Application.Reservation.Commands;
 public record ReserveToolCommand(
     InventoryItemId ItemId,
     MemberId MemberId,
-    DateTime ReservationDate);
+    DateTime ReservationDate,
+    int CommunityId = 1);
 
 public class ReserveToolCommandHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
@@ -26,7 +27,8 @@ public class ReserveToolCommandHandler(
         var reservationResult = ReservationAgg.Create(
             command.ItemId,
             command.MemberId,
-            command.ReservationDate);
+            command.ReservationDate,
+            command.CommunityId);
 
         if (reservationResult.IsFailure)
             return reservationResult.Error;

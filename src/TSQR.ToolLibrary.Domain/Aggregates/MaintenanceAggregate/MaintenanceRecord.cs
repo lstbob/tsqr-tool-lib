@@ -11,7 +11,8 @@ public class MaintenanceRecord : Entity<MaintenanceRecordId>, IAggregateRoot
         MaintenanceStatus status,
         MemberId? completedById = null,
         DateTime? completedDate = null,
-        Condition? resultingCondition = null) : base(id)
+        Condition? resultingCondition = null,
+        int communityId = 0) : base(id)
     {
         ItemId = itemId;
         ReportedById = reportedById;
@@ -21,6 +22,7 @@ public class MaintenanceRecord : Entity<MaintenanceRecordId>, IAggregateRoot
         CompletedById = completedById;
         CompletedDate = completedDate;
         ResultingCondition = resultingCondition;
+        CommunityId = communityId;
     }
 
     public InventoryItemId ItemId { get; }
@@ -31,11 +33,13 @@ public class MaintenanceRecord : Entity<MaintenanceRecordId>, IAggregateRoot
     public MemberId? CompletedById { get; private set; }
     public DateTime? CompletedDate { get; private set; }
     public Condition? ResultingCondition { get; private set; }
+    public int CommunityId { get; private set; }
 
     public static Result<MaintenanceRecord> Create(
         InventoryItemId itemId,
         MemberId reportedById,
-        string description)
+        string description,
+        int communityId = 0)
     {
         if (itemId is null)
             return new ValidationError(nameof(itemId), "Item ID is required.");
@@ -52,7 +56,8 @@ public class MaintenanceRecord : Entity<MaintenanceRecordId>, IAggregateRoot
             reportedById,
             DateTime.UtcNow,
             descriptionResult.Value,
-            MaintenanceStatus.Reported);
+            MaintenanceStatus.Reported,
+            communityId: communityId);
     }
 
     public static Result<MaintenanceRecord> Create(
@@ -64,7 +69,8 @@ public class MaintenanceRecord : Entity<MaintenanceRecordId>, IAggregateRoot
         MaintenanceStatus status,
         MemberId? completedById,
         DateTime? completedDate,
-        Condition? resultingCondition)
+        Condition? resultingCondition,
+        int communityId = 0)
     {
         if (itemId is null)
             return new ValidationError(nameof(itemId), "Item ID is required.");
@@ -84,7 +90,8 @@ public class MaintenanceRecord : Entity<MaintenanceRecordId>, IAggregateRoot
             status,
             completedById,
             completedDate,
-            resultingCondition);
+            resultingCondition,
+            communityId);
     }
 
     public Result StartWork()

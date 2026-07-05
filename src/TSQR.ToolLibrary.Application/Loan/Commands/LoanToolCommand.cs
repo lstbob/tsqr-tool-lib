@@ -3,7 +3,7 @@ using LoanAgg = TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate.Loan;
 
 namespace TSQR.ToolLibrary.Application.Loan.Commands;
 
-public record LoanToolCommand(InventoryItemId ItemId, MemberId MemberId);
+public record LoanToolCommand(InventoryItemId ItemId, MemberId MemberId, int CommunityId = 1);
 
 public class LoanToolCommandHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
@@ -25,7 +25,7 @@ public class LoanToolCommandHandler(
         if (item is null)
             return new NotFoundError(nameof(command.ItemId), "Inventory item not found.");
 
-        var loanResult = LoanAgg.Create(command.MemberId, command.ItemId);
+        var loanResult = LoanAgg.Create(command.MemberId, command.ItemId, command.CommunityId);
         if (loanResult.IsFailure)
             return loanResult.Error;
 

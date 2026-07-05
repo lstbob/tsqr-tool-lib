@@ -17,6 +17,7 @@ internal sealed record MemberRow
     public MembershipType? MembershipType { get; init; }
     public DateTime? StartDate { get; init; }
     public DateTime? EndDate { get; init; }
+    public int CommunityId { get; init; }
 }
 
 internal sealed record MemberInsertDto(
@@ -33,7 +34,8 @@ internal sealed record MemberInsertDto(
     DateTime? VerificationDate,
     MembershipType? MembershipType,
     DateTime? StartDate,
-    DateTime? EndDate);
+    DateTime? EndDate,
+    int CommunityId);
 
 internal sealed record MemberUpdateDto(
     int Id,
@@ -50,7 +52,8 @@ internal sealed record MemberUpdateDto(
     DateTime? VerificationDate,
     MembershipType? MembershipType,
     DateTime? StartDate,
-    DateTime? EndDate);
+    DateTime? EndDate,
+    int CommunityId);
 
 public sealed class MemberMapping : ISqlEntityMapping<Member>
 {
@@ -59,10 +62,10 @@ public sealed class MemberMapping : ISqlEntityMapping<Member>
     public string InsertSql =>
         @"INSERT INTO Members (FirstName, MiddleName, LastName, Age, Address, Email, PhoneNumber,
                 Status, IsVerified, VerifiedByAdminId, VerificationDate,
-                MembershipType, StartDate, EndDate)
+                MembershipType, StartDate, EndDate, CommunityId)
           VALUES (@FirstName, @MiddleName, @LastName, @Age, @Address, @Email, @PhoneNumber,
                 @Status, @IsVerified, @VerifiedByAdminId, @VerificationDate,
-                @MembershipType, @StartDate, @EndDate)
+                @MembershipType, @StartDate, @EndDate, @CommunityId)
           RETURNING Id";
 
     public string UpdateSql =>
@@ -71,7 +74,8 @@ public sealed class MemberMapping : ISqlEntityMapping<Member>
               Age = @Age, Address = @Address, Email = @Email, PhoneNumber = @PhoneNumber,
               Status = @Status, IsVerified = @IsVerified,
               VerifiedByAdminId = @VerifiedByAdminId, VerificationDate = @VerificationDate,
-              MembershipType = @MembershipType, StartDate = @StartDate, EndDate = @EndDate
+              MembershipType = @MembershipType, StartDate = @StartDate, EndDate = @EndDate,
+              CommunityId = @CommunityId
           WHERE Id = @Id";
 
     public string DeleteSql => "DELETE FROM Members WHERE Id = @Id";
@@ -81,7 +85,7 @@ public sealed class MemberMapping : ISqlEntityMapping<Member>
         var row = await db.QuerySingleOrDefaultAsync<MemberRow>(
             @"SELECT Id, FirstName, MiddleName, LastName, Age, Address, Email, PhoneNumber,
                      Status, IsVerified, VerifiedByAdminId, VerificationDate,
-                     MembershipType, StartDate, EndDate
+                     MembershipType, StartDate, EndDate, CommunityId
               FROM Members WHERE Id = @Id", new { Id = id });
 
         if (row is null) return null;
@@ -103,7 +107,8 @@ public sealed class MemberMapping : ISqlEntityMapping<Member>
             row.IsVerified,
             row.VerifiedByAdminId,
             row.VerificationDate,
-            record);
+            record,
+            communityId: row.CommunityId);
     }
 
     public object ToInsertParameters(Member entity) => new MemberInsertDto(
@@ -120,7 +125,8 @@ public sealed class MemberMapping : ISqlEntityMapping<Member>
         entity.VerificationDate,
         entity.Record?.MembershipType,
         entity.Record?.StartDate,
-        entity.Record?.EndDate);
+        entity.Record?.EndDate,
+        entity.CommunityId);
 
     public object ToUpdateParameters(Member entity) => new MemberUpdateDto(
         entity.Id.Value,
@@ -137,5 +143,6 @@ public sealed class MemberMapping : ISqlEntityMapping<Member>
         entity.VerificationDate,
         entity.Record?.MembershipType,
         entity.Record?.StartDate,
-        entity.Record?.EndDate);
+        entity.Record?.EndDate,
+        entity.CommunityId);
 }

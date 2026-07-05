@@ -10,6 +10,7 @@ internal sealed record LoanRow
     public LoanStatus Status { get; init; }
     public DateTime? ReturnedDate { get; init; }
     public decimal FineAccrued { get; init; }
+    public int CommunityId { get; init; }
 }
 
 internal sealed record LoanInsertDto(
@@ -18,7 +19,8 @@ internal sealed record LoanInsertDto(
     DateTime DueDate,
     int ItemId,
     LoanStatus Status,
-    decimal FineAccrued);
+    decimal FineAccrued,
+    int CommunityId);
 
 internal sealed record LoanUpdateDto(
     int Id,
@@ -28,15 +30,16 @@ internal sealed record LoanUpdateDto(
     int ItemId,
     LoanStatus Status,
     DateTime? ReturnedDate,
-    decimal FineAccrued);
+    decimal FineAccrued,
+    int CommunityId);
 
 public sealed class LoanMapping : ISqlEntityMapping<Loan>
 {
     public string TableName => "Loans";
 
     public string InsertSql =>
-        @"INSERT INTO Loans (MemberId, CheckoutDate, DueDate, ItemId, Status, FineAccrued)
-          VALUES (@MemberId, @CheckoutDate, @DueDate, @ItemId, @Status, @FineAccrued)
+        @"INSERT INTO Loans (MemberId, CheckoutDate, DueDate, ItemId, Status, FineAccrued, CommunityId)
+          VALUES (@MemberId, @CheckoutDate, @DueDate, @ItemId, @Status, @FineAccrued, @CommunityId)
           RETURNING Id";
 
     public string UpdateSql =>
@@ -44,7 +47,7 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
           SET MemberId = @MemberId, CheckoutDate = @CheckoutDate,
               DueDate = @DueDate, ItemId = @ItemId,
               Status = @Status, ReturnedDate = @ReturnedDate,
-              FineAccrued = @FineAccrued
+              FineAccrued = @FineAccrued, CommunityId = @CommunityId
           WHERE Id = @Id";
 
     public string DeleteSql => "DELETE FROM Loans WHERE Id = @Id";
@@ -53,7 +56,7 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
     {
         var row = await db.QuerySingleOrDefaultAsync<LoanRow>(
             @"SELECT Id, MemberId, CheckoutDate, DueDate, ItemId,
-                     Status, ReturnedDate, FineAccrued
+                     Status, ReturnedDate, FineAccrued, CommunityId
               FROM Loans WHERE Id = @Id", new { Id = id });
 
         if (row is null) return null;
@@ -64,7 +67,8 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
             row.CheckoutDate,
             row.DueDate,
             row.ItemId,
-            row.Status);
+            row.Status,
+            row.CommunityId);
         return result.IsSuccess ? result.Value : null;
     }
 
@@ -74,7 +78,8 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
         entity.DueDate,
         entity.ItemId.Value,
         entity.Status,
-        entity.FineAccrued);
+        entity.FineAccrued,
+        entity.CommunityId);
 
     public object ToUpdateParameters(Loan entity) => new LoanUpdateDto(
         entity.Id.Value,
@@ -84,5 +89,6 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
         entity.ItemId.Value,
         entity.Status,
         entity.ReturnedDate == default ? null : entity.ReturnedDate,
-        entity.FineAccrued);
+        entity.FineAccrued,
+        entity.CommunityId);
 }
