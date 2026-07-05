@@ -16,7 +16,8 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         MemberId? reservationMemberId = null,
         int loanCount = 0,
         TimeSpan totalUsageTime = default,
-        bool isUnderRepair = false) : base(id)
+        bool isUnderRepair = false,
+        int communityId = 0) : base(id)
     {
         ToolId = toolId;
         OriginalOwnerId = originalOwnerId;
@@ -31,6 +32,7 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         LoanCount = loanCount;
         TotalUsageTime = totalUsageTime;
         IsUnderRepair = isUnderRepair;
+        CommunityId = communityId;
     }
 
     public ToolId ToolId { get; }
@@ -46,13 +48,15 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
     public int LoanCount { get; private set; }
     public TimeSpan TotalUsageTime { get; private set; }
     public bool IsUnderRepair { get; private set; }
+    public int CommunityId { get; private set; }
 
     public static Result<InventoryItem> Create(
         ToolId toolId,
         MemberId originalOwnerId,
         DateTime initialAcquisitionDate,
         string serialNumber,
-        Condition condition)
+        Condition condition,
+        int communityId = 0)
     {
         if (toolId is null)
             return new ValidationError(nameof(toolId), "Tool ID is required.");
@@ -84,7 +88,8 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
             initialAcquisitionDate,
             serialResult.Value,
             ItemStatus.Available,
-            condition);
+            condition,
+            communityId: communityId);
     }
 
     public static InventoryItem Create(
@@ -101,7 +106,8 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         MemberId? reservationMemberId,
         int loanCount = 0,
         TimeSpan totalUsageTime = default,
-        bool isUnderRepair = false)
+        bool isUnderRepair = false,
+        int communityId = 0)
     {
         return new InventoryItem(
             id,
@@ -117,7 +123,8 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
             reservationMemberId,
             loanCount,
             totalUsageTime,
-            isUnderRepair);
+            isUnderRepair,
+            communityId);
     }
 
     public Result Loan(MemberId memberId)
