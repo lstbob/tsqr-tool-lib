@@ -6,9 +6,9 @@ namespace TSQR.ToolLibrary.Application.Loan.Commands;
 public record LoanToolCommand(InventoryItemId ItemId, MemberId MemberId, int CommunityId = 1);
 
 public class LoanToolCommandHandler(
-    IRepository<InventoryItem, InventoryItemId> inventoryRepository,
     IRepository<MemberAgg, MemberId> memberRepository,
     IRepository<LoanAgg, LoanId> loanRepository,
+    IReservationRepository reservationRepository,
     DomainEventOrchestrator orchestrator)
     : IInteractor<LoanToolCommand, Result>
 {
@@ -21,9 +21,10 @@ public class LoanToolCommandHandler(
         if (!member.IsEligibleToBorrow())
             return new DomainError(nameof(member.Status), "Member is not eligible to borrow tools.");
 
-        var item = await inventoryRepository.GetByIdAsync(command.ItemId, cancellationToken);
-        if (item is null)
-            return new NotFoundError(nameof(command.ItemId), "Inventory item not found.");
+        var reservations = await reservationRepository.GetByItemIdAsync(command.ItemId, cancellationToken);
+        var activeReservation = reservations.FirstOrDefault(r => r.Status is ReservationStatus.Confirmed or ReservationStatus.Active);
+        if (activeReservation is not null && activeReservation.MemberId != command.MemberId)
+            return new DomainError(nameof(command.ItemId), "Tool is reserved by another member.");
 
         var loanResult = LoanAgg.Create(command.MemberId, command.ItemId, command.CommunityId);
         if (loanResult.IsFailure)
@@ -31,13 +32,7 @@ public class LoanToolCommandHandler(
 
         var loan = loanResult.Value;
         await loanRepository.AddAsync(loan, cancellationToken);
-
-        var loanItemResult = item.Loan(command.MemberId);
-        if (loanItemResult.IsFailure)
-            return loanItemResult.Error;
-
-        inventoryRepository.Update(item);
-        await orchestrator.SaveEntitiesAsync([loan, item], cancellationToken);
+        await orchestrator.SaveEntitiesAsync(loan, cancellationToken);
 
         return Result.Success();
     }

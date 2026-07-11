@@ -222,7 +222,7 @@ public class AggregateDomainEventTests
             "SN-001",
             ItemStatus.Available,
             Condition.New,
-            currentHolderId: null, lastBorrowedDate: null, reservationDate: null, reservationMemberId: null);
+            currentHolderId: null, lastBorrowedDate: null);
 
     private static InventoryItem MakeLoanedItem(MemberId borrower)
     {

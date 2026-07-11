@@ -87,7 +87,10 @@ public class Loan : Entity<LoanId>, IAggregateRoot
     {
         var checkoutDate = DateTime.UtcNow;
         var dueDate = checkoutDate.AddDays(7);
-        return Create(new LoanId(default), memberId, checkoutDate, dueDate, itemId, LoanStatus.Active, communityId);
+        var loan = Create(new LoanId(default), memberId, checkoutDate, dueDate, itemId, LoanStatus.Active, communityId);
+        if (loan.IsSuccess)
+            loan.Value.AddDomainEvent(new LoanCreatedDomainEvent(itemId, memberId, communityId));
+        return loan;
     }
 
     public Result EndLoan(DateTime expectedEndDate)
