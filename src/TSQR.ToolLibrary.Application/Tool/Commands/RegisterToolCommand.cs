@@ -17,7 +17,6 @@ public record RegisterToolCommand(
 
 public class RegisterToolCommandHandler(
     IRepository<ToolAgg, ToolId> toolRepository,
-    IRepository<InventoryItem, InventoryItemId> inventoryRepository,
     IRepository<MemberAgg, MemberId> memberRepository,
     DomainEventOrchestrator orchestrator)
     : IInteractor<RegisterToolCommand, Result<ToolId>>
@@ -42,21 +41,10 @@ public class RegisterToolCommandHandler(
             return toolResult.Error;
 
         var tool = toolResult.Value;
+        tool.AddDomainEvent(new InventoryItemRequiredEvent(
+            tool.Id, command.OwnerId, command.SerialNumber, command.InitialCondition, command.CommunityId));
         await toolRepository.AddAsync(tool, cancellationToken);
-
-        var inventoryResult = InventoryItem.Create(
-            tool.Id,
-            command.OwnerId,
-            DateTime.UtcNow,
-            command.SerialNumber,
-            command.InitialCondition,
-            command.CommunityId);
-
-        if (inventoryResult.IsFailure)
-            return inventoryResult.Error;
-
-        await inventoryRepository.AddAsync(inventoryResult.Value, cancellationToken);
-        await orchestrator.SaveEntitiesAsync([tool, inventoryResult.Value], cancellationToken);
+        await orchestrator.SaveEntitiesAsync(tool, cancellationToken);
 
         return tool.Id;
     }

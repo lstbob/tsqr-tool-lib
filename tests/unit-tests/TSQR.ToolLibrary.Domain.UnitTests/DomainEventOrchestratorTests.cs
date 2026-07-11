@@ -139,9 +139,7 @@ public class DomainEventOrchestratorTests
             ItemStatus.Available,
             Condition.New,
             currentHolderId: null,
-            lastBorrowedDate: null,
-            reservationDate: null,
-            reservationMemberId: null
+            lastBorrowedDate: null
         );
         Assert.True(item.Loan(new MemberId(2)).IsSuccess);
         Assert.Single(item.DomainEvents);
@@ -158,7 +156,7 @@ public class DomainEventOrchestratorTests
         await orchestrator.SaveEntitiesAsync([loan, item], CancellationToken.None);
 
         Assert.Equal(1, dispatcher.DispatchCallCount);
-        Assert.Single(dispatched);
+        Assert.Equal(2, dispatched.Count);
         Assert.Empty(item.DomainEvents);
         Assert.Empty(loan.DomainEvents);
     }

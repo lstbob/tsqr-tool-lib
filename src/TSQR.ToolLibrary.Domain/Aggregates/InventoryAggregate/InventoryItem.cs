@@ -12,8 +12,6 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         Condition condition,
         MemberId? currentHolderId = null,
         DateTime? lastBorrowedDate = null,
-        DateTime? reservationDate = null,
-        MemberId? reservationMemberId = null,
         int loanCount = 0,
         TimeSpan totalUsageTime = default,
         bool isUnderRepair = false,
@@ -27,8 +25,6 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         Condition = condition;
         CurrentHolderId = currentHolderId;
         LastBorrowedDate = lastBorrowedDate;
-        ReservationDate = reservationDate;
-        ReservationMemberId = reservationMemberId;
         LoanCount = loanCount;
         TotalUsageTime = totalUsageTime;
         IsUnderRepair = isUnderRepair;
@@ -43,8 +39,6 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
     public Condition Condition { get; private set; }
     public MemberId? CurrentHolderId { get; private set; }
     public DateTime? LastBorrowedDate { get; private set; }
-    public DateTime? ReservationDate { get; private set; }
-    public MemberId? ReservationMemberId { get; private set; }
     public int LoanCount { get; private set; }
     public TimeSpan TotalUsageTime { get; private set; }
     public bool IsUnderRepair { get; private set; }
@@ -102,8 +96,6 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         Condition condition,
         MemberId? currentHolderId,
         DateTime? lastBorrowedDate,
-        DateTime? reservationDate,
-        MemberId? reservationMemberId,
         int loanCount = 0,
         TimeSpan totalUsageTime = default,
         bool isUnderRepair = false,
@@ -119,8 +111,6 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
             condition,
             currentHolderId,
             lastBorrowedDate,
-            reservationDate,
-            reservationMemberId,
             loanCount,
             totalUsageTime,
             isUnderRepair,
@@ -141,14 +131,10 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         if (Status == ItemStatus.Lost)
             return new DomainError(nameof(Status), "Tool is lost and cannot be borrowed.");
 
-        if (ReservationMemberId is not null && ReservationMemberId != memberId)
-            return new DomainError(nameof(ReservationMemberId), "Tool is reserved by another member.");
-
         CurrentHolderId = memberId;
         Status = ItemStatus.Loaned;
         LastBorrowedDate = DateTime.UtcNow;
         LoanCount++;
-        ClearReservation();
 
         AddDomainEvent(new ItemLoanedDomainEvent(Id, memberId, LastBorrowedDate.Value));
         return Result.Success();
@@ -177,33 +163,13 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         return Result.Success();
     }
 
-    public Result Reserve(DateTime reserveDate, MemberId member)
+    public Result Reserve()
     {
-        if (ReservationDate is not null)
-            return new DomainError(nameof(ReservationDate), "Tool is already reserved.");
-
-        if (member is null)
-            return new ValidationError(nameof(member), "Member is required.");
-
         if (Status != ItemStatus.Available)
             return new DomainError(nameof(Status), "Only available tools can be reserved.");
 
-        if (reserveDate == default || reserveDate <= DateTime.UtcNow)
-            return new ValidationError(nameof(reserveDate), "Reservation date must be in the future.");
-
-        if (reserveDate > DateTime.UtcNow.AddDays(28))
-            return new DomainError(nameof(reserveDate), "Tool cannot be reserved more than 28 days in advance.");
-
-        ReservationDate = reserveDate;
-        ReservationMemberId = member;
         Status = ItemStatus.Reserved;
         return Result.Success();
-    }
-
-    public void ClearReservation()
-    {
-        ReservationDate = null;
-        ReservationMemberId = null;
     }
 
     public Result MarkAsLost(MemberId reporter)

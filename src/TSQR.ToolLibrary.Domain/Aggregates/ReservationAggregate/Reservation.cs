@@ -68,7 +68,11 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
         int communityId = 0)
     {
         var expiryDate = reservationDate.AddDays(14);
-        return Create(itemId, memberId, reservationDate, expiryDate, 1, communityId);
+        var reservation = Create(itemId, memberId, reservationDate, expiryDate, 1, communityId);
+        if (reservation.IsSuccess)
+            reservation.Value.AddDomainEvent(new ReservationCreatedDomainEvent(
+                reservation.Value.Id, itemId, memberId, reservationDate));
+        return reservation;
     }
 
     public static Reservation Create(

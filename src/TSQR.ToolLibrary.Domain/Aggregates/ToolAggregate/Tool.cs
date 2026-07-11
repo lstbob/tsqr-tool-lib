@@ -78,12 +78,6 @@ public class Tool : Entity<ToolId>, IAggregateRoot
         return new Tool(id, model, description, manufacturer, type, amortizationRate, metadata, communityId);
     }
 
-    /// <summary>
-    /// Factory for registering a new tool with a member. Performs the same validation
-    /// as <see cref="Create(string, string, Manufacturer, ToolType, AmortizationRate, string?)"/>
-    /// and additionally raises <see cref="ToolRegisteredEvent"/> so the application layer
-    /// does not raise domain events itself.
-    /// </summary>
     public static Result<Tool> Register(
         MemberId ownerId,
         string model,

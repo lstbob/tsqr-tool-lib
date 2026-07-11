@@ -6,7 +6,6 @@ public record CancelReservationCommand(ReservationId ReservationId);
 
 public class CancelReservationCommandHandler(
     IRepository<ReservationAgg, ReservationId> reservationRepository,
-    IRepository<InventoryItem, InventoryItemId> inventoryRepository,
     DomainEventOrchestrator orchestrator)
     : IInteractor<CancelReservationCommand, Result>
 {
@@ -16,21 +15,12 @@ public class CancelReservationCommandHandler(
         if (reservation is null)
             return new NotFoundError(nameof(command.ReservationId), "Reservation not found.");
 
-        var item = await inventoryRepository.GetByIdAsync(reservation.ItemId, cancellationToken);
-
         var cancelResult = reservation.Cancel();
         if (cancelResult.IsFailure)
             return cancelResult.Error;
 
-        item?.ClearReservation();
-
         reservationRepository.Update(reservation);
-        if (item is not null)
-            inventoryRepository.Update(item);
-
-        await orchestrator.SaveEntitiesAsync(
-            item is null ? [reservation] : [reservation, item],
-            cancellationToken);
+        await orchestrator.SaveEntitiesAsync(reservation, cancellationToken);
 
         return Result.Success();
     }

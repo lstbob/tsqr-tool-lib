@@ -11,8 +11,6 @@ internal sealed record InventoryItemRow
     public Condition Condition { get; init; }
     public MemberId? CurrentHolderId { get; init; }
     public DateTime? LastBorrowedDate { get; init; }
-    public DateTime? ReservationDate { get; init; }
-    public MemberId? ReservationMemberId { get; init; }
     public int LoanCount { get; init; }
     public long TotalUsageTimeTicks { get; init; }
     public bool IsUnderRepair { get; init; }
@@ -28,8 +26,6 @@ internal sealed record InventoryItemInsertDto(
     Condition Condition,
     int? CurrentHolderId,
     DateTime? LastBorrowedDate,
-    DateTime? ReservationDate,
-    int? ReservationMemberId,
     int LoanCount,
     long TotalUsageTimeTicks,
     bool IsUnderRepair,
@@ -45,8 +41,6 @@ internal sealed record InventoryItemUpdateDto(
     Condition Condition,
     int? CurrentHolderId,
     DateTime? LastBorrowedDate,
-    DateTime? ReservationDate,
-    int? ReservationMemberId,
     int LoanCount,
     long TotalUsageTimeTicks,
     bool IsUnderRepair,
@@ -59,12 +53,10 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
     public string InsertSql =>
         @"INSERT INTO InventoryItems (ToolId, OriginalOwnerId, InitialAcquisitionDate, SerialNumber,
                 Status, Condition, CurrentHolderId, LastBorrowedDate,
-                ReservationDate, ReservationMemberId, LoanCount,
-                TotalUsageTimeTicks, IsUnderRepair, CommunityId)
+                LoanCount, TotalUsageTimeTicks, IsUnderRepair, CommunityId)
           VALUES (@ToolId, @OriginalOwnerId, @InitialAcquisitionDate, @SerialNumber,
                 @Status, @Condition, @CurrentHolderId, @LastBorrowedDate,
-                @ReservationDate, @ReservationMemberId, @LoanCount,
-                @TotalUsageTimeTicks, @IsUnderRepair, @CommunityId)
+                @LoanCount, @TotalUsageTimeTicks, @IsUnderRepair, @CommunityId)
           RETURNING Id";
 
     public string UpdateSql =>
@@ -74,8 +66,6 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
               SerialNumber = @SerialNumber, Status = @Status,
               Condition = @Condition, CurrentHolderId = @CurrentHolderId,
               LastBorrowedDate = @LastBorrowedDate,
-              ReservationDate = @ReservationDate,
-              ReservationMemberId = @ReservationMemberId,
               LoanCount = @LoanCount,
               TotalUsageTimeTicks = @TotalUsageTimeTicks,
               IsUnderRepair = @IsUnderRepair,
@@ -89,8 +79,7 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
         var row = await db.QuerySingleOrDefaultAsync<InventoryItemRow>(
             @"SELECT Id, ToolId, OriginalOwnerId, InitialAcquisitionDate, SerialNumber,
                      Status, Condition, CurrentHolderId, LastBorrowedDate,
-                     ReservationDate, ReservationMemberId, LoanCount,
-                     TotalUsageTimeTicks, IsUnderRepair, CommunityId
+                     LoanCount, TotalUsageTimeTicks, IsUnderRepair, CommunityId
               FROM InventoryItems WHERE Id = @Id", new { Id = id });
 
         if (row is null) return null;
@@ -105,8 +94,6 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
             row.Condition,
             row.CurrentHolderId,
             row.LastBorrowedDate,
-            row.ReservationDate,
-            row.ReservationMemberId,
             row.LoanCount,
             TimeSpan.FromTicks(row.TotalUsageTimeTicks),
             row.IsUnderRepair,
@@ -122,8 +109,6 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
         entity.Condition,
         entity.CurrentHolderId?.Value,
         entity.LastBorrowedDate,
-        entity.ReservationDate,
-        entity.ReservationMemberId?.Value,
         entity.LoanCount,
         entity.TotalUsageTime.Ticks,
         entity.IsUnderRepair,
@@ -139,8 +124,6 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
         entity.Condition,
         entity.CurrentHolderId?.Value,
         entity.LastBorrowedDate,
-        entity.ReservationDate,
-        entity.ReservationMemberId?.Value,
         entity.LoanCount,
         entity.TotalUsageTime.Ticks,
         entity.IsUnderRepair,
