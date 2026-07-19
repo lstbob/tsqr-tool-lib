@@ -22,9 +22,9 @@ The solution is **C# / .NET 9** built with **Domain-Driven Design + Clean Archit
 |---|---|---|
 | `TSQR.ToolLibrary.Domain` | Aggregates, value objects, domain events, domain services, repository interfaces | 🟢 **Mostly implemented** |
 | `TSQR.ToolLibrary.Common` | Base building blocks (`Entity<TId>`, `ValueObject`, `IAggregateRoot`) + validation extensions | 🟢 Implemented |
-| `TSQR.ToolLibrary.Application` | MediatR command handlers (use cases) | 🟡 **Partial** — commands only, no queries, events not dispatched |
-| `TSQR.ToolLibrary.WebApi` | HTTP entry point | 🔴 **Stub** — default template (`WeatherForecast`), not wired to Application |
-| `TSQR.ToolLibrary.Infrastructure` | Persistence / external adapters | 🔴 **Missing** — empty folder, not in the solution |
+| `TSQR.ToolLibrary.Application` | MediatR command handlers (use cases) | 🟢 **Implemented** — commands + query handlers, domain events dispatched in-transaction |
+| `TSQR.ToolLibrary.WebApi` | HTTP entry point | 🟢 **Implemented** — real controllers wired to Application, JWT auth, health endpoint |
+| `TSQR.ToolLibrary.Infrastructure` | Persistence / external adapters | 🟢 **Implemented** — Dapper repositories, SqlRepository base, DapperUnitOfWork, TypeHandlers |
 | `tests/.../Domain.UnitTests` | Unit tests | 🔴 **Removed** — directory exists, no source files |
 
 **Dependency direction (Clean Architecture, correct):**
@@ -57,10 +57,10 @@ Seven aggregate folders under `src/TSQR.ToolLibrary.Domain/Aggregates/`. Each ro
 
 | Aggregate (root) | Key state | Behaviors | Domain events raised | Status |
 |---|---|---|---|---|
-| **Tool** | Model, Description, Manufacturer, Type, AmortizationRate, `ScarcityByLocation` | `Create`, `UpdateToolDetails`, `SetScarcityLevel`, `RemoveScarcityLevel` | — (registration event raised by Application) | 🟢 |
-| **InventoryItem** | ToolId, OwnerId, SerialNumber, `Status`, `Condition`, holder, loan count, usage time, repair flag | `Loan`, `Return`, `Reserve` (≤28d), `ClearReservation`, `MarkAsLost`, `MarkForRepair`, `CompleteRepair` | `ItemLoanedDomainEvent`, `ToolReturnedEvent` | 🟢 |
-| **Loan** | MemberId, ItemId, CheckoutDate, DueDate, `Status`, ReturnedDate, `FineAccrued` | `Create`, `EndLoan` (computes overdue + fine) | `LoanOverdueDomainEvent` | 🟡 fine hard-coded; no renewal |
-| **Reservation** | ItemId, MemberId, ReservationDate, ExpiryDate, `Status`, IsConfirmed, `QueuePosition` | `Create`, `ConfirmPickup`, `Activate`, `Cancel`, `Complete`, `MoveDownInQueue` | `ReservationConfirmedEvent`, `ReservationCancelledEvent` | 🟡 queue not automated |
+| **Tool** | Model, Description, Manufacturer, Type, AmortizationRate, `ScarcityByLocation` | `Create`, `UpdateToolDetails`, `SetScarcityLevel`, `RemoveScarcityLevel` | `ToolRegisteredEvent` (raised by `Tool.Register()`), `InventoryItemRequiredEvent` (raised by `Tool.Register()` to defer InventoryItem creation) | 🟢 |
+| **InventoryItem** | ToolId, OwnerId, SerialNumber, `Status`, `Condition`, holder, loan count, usage time, repair flag | `Loan`, `Return`, `Reserve`, `MarkAsLost`, `MarkForRepair`, `CompleteRepair` | `ItemLoanedDomainEvent`, `ToolReturnedEvent`, `ToolMarkedForRepairEvent` | 🟢 reservation state no longer duplicated on the item (see #33) |
+| **Loan** | MemberId, ItemId, CheckoutDate, DueDate, `Status`, ReturnedDate, `FineAccrued` | `Create`, `EndLoan` (computes overdue + fine) | `LoanCreatedDomainEvent` (raised by `Loan.Create()`, side-effect on InventoryItem handled in `LoanCreatedDomainEventHandler`), `LoanOverdueDomainEvent` | 🟡 fine hard-coded; no renewal |
+| **Reservation** | ItemId, MemberId, ReservationDate, ExpiryDate, `Status`, IsConfirmed, `QueuePosition` | `Create`, `ConfirmPickup`, `Activate`, `Cancel`, `Complete`, `MoveDownInQueue` | `ReservationCreatedDomainEvent` (raised by `Reservation.Create()`, side-effect on InventoryItem handled in `ReservationCreatedDomainEventHandler`), `ReservationConfirmedEvent`, `ReservationCancelledEvent` | 🟡 queue not automated |
 | **Member** | Name, contact, `Status`, `IsVerified`, verifier/date, `Record` | `Create`, `Verify`, `Suspend`, `Ban`, `Reinstate`, `IsEligibleToBorrow` | `MemberVerifiedEvent` | 🟢 |
 | **MaintenanceRecord** | ItemId, ReportedBy/Date, Description, `Status`, CompletedBy/Date, ResultingCondition | `Create`, `StartWork`, `Complete` | `ToolRepairedEvent` | 🟢 |
 | **Policy** *(+ Location, Country, Manufacturer as supporting entities)* | ToolType, LocationId, late fee/day, max loan/renewal/reservation days | `Create`, `SetDetails` | — | 🟡 defined, not enforced anywhere |
@@ -84,16 +84,22 @@ Invariants are enforced in factories/methods via the validation extensions in Co
 
 ### 4.3 Domain events
 
-`IDomainEvent : INotification` (MediatR). 14 event records in `Domain/Events/`:
+`IDomainEvent : INotification` (MediatR). Event records in `Domain/Events/`:
 
-- **Raised today:** `ToolRegisteredEvent`, `ItemLoanedDomainEvent`, `ToolReturnedEvent`,
-  `ReservationConfirmedEvent`, `ReservationCancelledEvent`, `ToolMarkedForRepairEvent`,
-  `ToolRepairedEvent`, `LoanOverdueDomainEvent`, `MemberVerifiedEvent`, `ToolReservedEvent`.
+- **Raised and dispatched today:** `ToolRegisteredEvent`, `InventoryItemRequiredEvent`,
+  `ItemLoanedDomainEvent`, `ToolReturnedEvent`, `LoanCreatedDomainEvent`,
+  `ReservationCreatedDomainEvent`, `ReservationConfirmedEvent`, `ReservationCancelledEvent`,
+  `ToolMarkedForRepairEvent`, `ToolRepairedEvent`, `LoanOverdueDomainEvent`,
+  `MemberVerifiedEvent`.
 - **Defined but never raised (stubs):** `PickupReminderEvent`, `ReturnReminderEvent`,
   `NextInLineNotificationEvent` — the notification side of the domain is not yet wired.
 
-> ⚠️ Events are **added to aggregates but never published** — there is no dispatcher in the
-> Application/WebApi layer, so no handler ever runs (see §7).
+> ✅ Events are **collected from tracked aggregates and dispatched in-transaction** by
+> `DomainEventOrchestrator` / `DomainEventDispatcher` (the eShop "Option A" pattern — dispatch
+> before commit, clear on success). Handlers run inside the same `DapperUnitOfWork` transaction,
+> so side effects on other aggregates (e.g. `InventoryItem.Loan()` triggered by `LoanCreatedDomainEvent`)
+> commit atomically with the originating command. This was added in commit `9fed56a` and is wired
+> in `Application/DependencyInjection.cs`.
 
 ### 4.4 Domain services
 
@@ -106,30 +112,43 @@ Invariants are enforced in factories/methods via the validation extensions in Co
 ### 4.5 Repository abstractions
 
 `IRepository<TAggregateRoot, TId>` (GetById/Add/Update/Delete + `IUnitOfWork`) and
-`IUnitOfWork` (SaveChangesAsync) are defined in the Domain. **No implementations exist** —
-the Infrastructure project is empty.
+`IUnitOfWork` (SaveChangesAsync) are defined in the Domain. **Implementations live in
+`TSQR.ToolLibrary.Infrastructure`** — a generic `SqlRepository<TEntity, TId>` paired with
+`ISqlEntityMapping<TEntity>` (one mapping class per aggregate), a `DapperUnitOfWork` with
+transient-failure retry (3 attempts, exponential backoff), and Dapper `TypeHandlers` for the
+value-object IDs. Each bounded-context microservice uses the same stack.
 
 ## 5. Application layer (use cases)
 
-MediatR command handlers, organized by sub-area. **8 commands, 0 queries:**
+Command handlers use the `IInteractor<TCommand, TResult>` pattern (MediatR was replaced).
+Commands mutate a single aggregate per transaction and rely on domain events for side effects
+on other aggregates (see §4.3). Read queries go through dedicated query interfaces
+(`IDashboardQueries`, etc.) using raw Dapper SQL → DTO records (CQRS separation is clean —
+no aggregate is loaded for a query).
 
 | Area | Commands |
 |---|---|
-| Tool | `RegisterToolCommand` |
-| Reservation | `ReserveToolCommand` (enforces ≤28-day advance), `ConfirmPickupCommand`, `CancelReservationCommand` |
+| Tool | `RegisterToolCommand` (emits `InventoryItemRequiredEvent`; InventoryItem created in handler) |
+| Reservation | `ReserveToolCommand` (enforces ≤28-day advance; emits `ReservationCreatedDomainEvent`), `ConfirmPickupCommand`, `CancelReservationCommand` |
 | Inventory | `ReturnToolCommand`, `MarkToolForRepairCommand`, `CompleteRepairCommand` |
+| Loan | `LoanToolCommand` (emits `LoanCreatedDomainEvent`; `InventoryItem.Loan()` runs in handler) |
 | Member | `VerifyMemberCommand` |
 
-Handlers load aggregates via `IRepository<T>` and call `UnitOfWork.SaveChangesAsync()`.
-**Gaps:** no read/query side; queue automation (`MoveDownInQueue`/`ShiftQueueAfterCancellation`)
-not invoked; domain events not dispatched.
+Handlers load aggregates via `IRepository<T>` and call `DomainEventOrchestrator.SaveEntitiesAsync`
+(which dispatches events in-transaction and commits via `UnitOfWork.SaveChangesAsync`).
+**Gaps:** queue automation (`MoveDownInQueue`/`ShiftQueueAfterCancellation`) not invoked;
+reminder/next-in-line events still stubbed; `Policy` aggregate not enforced; `Loan.EndLoan` fine
+still hard-coded.
 
 ## 6. WebApi, Infrastructure, Tests
 
-- **WebApi:** `Program.cs` is the default .NET template (OpenAPI + sample `WeatherForecast`).
-  No MediatR registration, no DI for repositories, no DbContext, **no real endpoints**.
-- **Infrastructure:** placeholder folder, **0 source files, not referenced by the solution** —
-  no EF Core, no repository implementations, no persistence at all.
+- **WebApi:** real controllers wired to Application handlers, JWT Bearer auth, role-based
+  authorization on commands, a `/api/health` endpoint, and Dockerfile/`docker/init.sql` for
+  local Postgres bootstrapping.
+- **Infrastructure:** `TSQR.ToolLibrary.Infrastructure` project — Dapper `SqlRepository<TEntity, TId>`
+  base, per-aggregate `ISqlEntityMapping<T>` under `Dapper/Mappings/`, repository implementations
+  under `Dapper/Repositories/`, `DapperUnitOfWork` + `DapperConnection`, and `TypeHandlers` for
+  the value-object IDs. Referenced by the solution.
 - **Tests:** `tests/unit-tests/TSQR.ToolLibrary.Domain.UnitTests/` exists but contains only
   build artifacts; the test sources were removed when `main` was aligned to the opencode refactor.
 
@@ -137,10 +156,15 @@ not invoked; domain events not dispatched.
 
 These came out of the analysis and are worth confirming in code:
 
-1. **No persistence** — `IRepository`/`IUnitOfWork` have no implementations; nothing is stored.
-2. **No API** — WebApi is a template shell, not connected to the Application layer.
-3. **Domain events never published** — added to aggregates, but no dispatcher; the three reminder/
-   next-in-line events are never even raised.
+1. ~~**No persistence** — `IRepository`/`IUnitOfWork` have no implementations; nothing is stored.~~
+   **Fixed** — Dapper-backed `SqlRepository` + `DapperUnitOfWork` exist in Infrastructure.
+2. ~~**No API** — WebApi is a template shell, not connected to the Application layer.~~
+   **Fixed** — real controllers, JWT auth, role-based authorization.
+3. ~~**Domain events never published** — added to aggregates, but no dispatcher; the three reminder/
+   next-in-line events are never even raised.~~
+   **Fixed for the dispatch pipeline — `DomainEventOrchestrator`/`DomainEventDispatcher` publish
+   events in-transaction (commit `9fed56a`); the reminder/next-in-line trio (`PickupReminderEvent`,
+   `ReturnReminderEvent`, `NextInLineNotificationEvent`) are still defined-but-not-raised stubs.
 4. **Reservation queue not automated** — `ReservationQueueService` and `MoveDownInQueue` exist but
    cancellation/return don't shift the queue or notify the next member.
 5. **Fines not policy-driven** — `Loan.EndLoan` hard-codes `$1.00/day`; `Policy.LateFeePerDay`
@@ -155,7 +179,9 @@ These came out of the analysis and are worth confirming in code:
 
 The **domain model is the mature part** and a solid foundation: aggregates, value objects,
 events, and a clean dependency structure are in place, and the ubiquitous language matches the
-problem space. What's missing is everything that makes it *run*: **persistence (Infrastructure),
-a real API (WebApi), event dispatching, queue/notification automation, policy enforcement, and
-tests**. The recommended sequence for closing those gaps — informed by how real tool libraries
-and existing platforms work — is in [`planned-work.md`](./planned-work.md).
+problem space. The infrastructure to make it *run* is now in place — **persistence (Dapper-based
+Infrastructure), a real API (WebApi with JWT auth), and in-transaction domain-event dispatch**.
+What's still missing is the operational layer on top: **queue/notification automation, policy
+enforcement, loan renewal, test coverage, and the still-stubbed reminder/next-in-line events**.
+The recommended sequence for closing those gaps — informed by how real tool libraries and
+existing platforms work — is in [`planned-work.md`](./planned-work.md).
