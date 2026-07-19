@@ -1,3 +1,4 @@
+using TSQR.Common.Errors;
 using TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.MaintenanceAggregate;
@@ -147,10 +148,17 @@ public class AggregateDomainEventTests
         var now = DateTime.UtcNow;
         var checkout = now.AddDays(-10);
         var due = now.AddDays(7);
-        var loanResult = Loan.Create(new LoanId(1), borrower, checkout, due, itemId, LoanStatus.Active);
+        // Snapshotted rate of $2.50/day at checkout time - policy changes
+        // after checkout must NOT retroactively affect in-flight loans.
+        const decimal snapshotLateFeePerDay = 2.50m;
+        var loanResult = Loan.Create(
+            new LoanId(1), borrower, checkout, due, itemId, LoanStatus.Active,
+            lateFeePerDay: snapshotLateFeePerDay, renewalCount: 0);
         Assert.True(loanResult.IsSuccess);
         var loan = loanResult.Value;
 
+        // 3 days past due at the snapshotted rate -> 3 * $2.50 = $7.50
+        // (endDate = now+10, due = now+7 -> overdue = 3 days)
         var endResult = loan.EndLoan(now.AddDays(10));
 
         Assert.True(endResult.IsSuccess);
@@ -159,7 +167,8 @@ public class AggregateDomainEventTests
         Assert.Equal(loan.Id, overdue.LoanId);
         Assert.Equal(itemId, overdue.ItemId);
         Assert.Equal(LoanStatus.Overdue, loan.Status);
-        Assert.True(loan.FineAccrued > 0);
+        Assert.Equal(snapshotLateFeePerDay, loan.LateFeePerDay);
+        Assert.Equal(7.50m, loan.FineAccrued);
     }
 
     [Fact]
@@ -179,6 +188,130 @@ public class AggregateDomainEventTests
         Assert.True(endResult.IsSuccess);
         Assert.Empty(loan.DomainEvents);
         Assert.Equal(LoanStatus.Returned, loan.Status);
+    }
+
+    [Fact]
+    public void Loan_Create_PolicyDriven_SnapshotsMaxLoanDurationDaysAndLateFeePerDay()
+    {
+        // Policy: 5-day loan duration, $1.50/day fine.
+        var itemId = new InventoryItemId(42);
+        var borrower = new MemberId(7);
+        const int maxLoanDurationDays = 5;
+        const decimal lateFeePerDay = 1.50m;
+
+        var loanResult = Loan.Create(borrower, itemId, maxLoanDurationDays, lateFeePerDay, communityId: 1);
+
+        Assert.True(loanResult.IsSuccess);
+        var loan = loanResult.Value;
+        // DueDate = checkoutDate + maxLoanDurationDays (within a small clock skew).
+        Assert.True((loan.DueDate - loan.CheckoutDate).TotalDays - maxLoanDurationDays < 0.001);
+        Assert.Equal(lateFeePerDay, loan.LateFeePerDay);
+        Assert.Equal(0, loan.RenewalCount);
+        Assert.Equal(LoanStatus.Active, loan.Status);
+        // The factory raises LoanCreatedDomainEvent in-transaction.
+        var ev = Assert.IsType<LoanCreatedDomainEvent>(Assert.Single(loan.DomainEvents));
+        Assert.Equal(itemId, ev.ItemId);
+        Assert.Equal(borrower, ev.MemberId);
+    }
+
+    [Fact]
+    public void Loan_Create_RejectsNonPositiveMaxLoanDurationDays()
+    {
+        var itemId = new InventoryItemId(42);
+        var borrower = new MemberId(7);
+
+        var loanResult = Loan.Create(borrower, itemId, maxLoanDurationDays: 0, lateFeePerDay: 1.00m);
+
+        Assert.True(loanResult.IsFailure);
+        Assert.IsType<ValidationError>(loanResult.Error);
+    }
+
+    [Fact]
+    public void Loan_Create_RejectsNegativeLateFeePerDay()
+    {
+        var itemId = new InventoryItemId(42);
+        var borrower = new MemberId(7);
+        var now = DateTime.UtcNow;
+
+        var loanResult = Loan.Create(
+            new LoanId(1), borrower, now, now.AddDays(7), itemId, LoanStatus.Active,
+            lateFeePerDay: -0.50m, renewalCount: 0);
+
+        Assert.True(loanResult.IsFailure);
+        Assert.IsType<ValidationError>(loanResult.Error);
+    }
+
+    [Fact]
+    public void Loan_Renew_WhenUnderMaxRenewalCount_ExtendsDueDateAndIncrementsCounter()
+    {
+        var itemId = new InventoryItemId(42);
+        var borrower = new MemberId(7);
+        var loanResult = Loan.Create(borrower, itemId, maxLoanDurationDays: 5, lateFeePerDay: 1.50m);
+        Assert.True(loanResult.IsSuccess);
+        var loan = loanResult.Value;
+        var originalDueDate = loan.DueDate;
+
+        var renewResult = loan.Renew(maxLoanDurationDays: 5, maxRenewalCount: 2);
+
+        Assert.True(renewResult.IsSuccess);
+        Assert.Equal(1, loan.RenewalCount);
+        Assert.True(loan.DueDate > originalDueDate);
+        Assert.True((loan.DueDate - originalDueDate).TotalDays - 5 < 0.001);
+        Assert.Equal(LoanStatus.Active, loan.Status);
+    }
+
+    [Fact]
+    public void Loan_Renew_WhenAtMaxRenewalCount_RejectsRenewal()
+    {
+        var itemId = new InventoryItemId(42);
+        var borrower = new MemberId(7);
+        var loanResult = Loan.Create(borrower, itemId, maxLoanDurationDays: 5, lateFeePerDay: 1.50m);
+        Assert.True(loanResult.IsSuccess);
+        var loan = loanResult.Value;
+        Assert.True(loan.Renew(maxLoanDurationDays: 5, maxRenewalCount: 2).IsSuccess);
+        Assert.True(loan.Renew(maxLoanDurationDays: 5, maxRenewalCount: 2).IsSuccess);
+
+        // Third renewal - MaxRenewalCount=2 means at most two renewals are allowed.
+        var thirdRenewal = loan.Renew(maxLoanDurationDays: 5, maxRenewalCount: 2);
+
+        Assert.True(thirdRenewal.IsFailure);
+        Assert.IsType<DomainError>(thirdRenewal.Error);
+        Assert.Equal(2, loan.RenewalCount);
+    }
+
+    [Fact]
+    public void Loan_Renew_WhenNotActive_RejectsRenewal()
+    {
+        var itemId = new InventoryItemId(42);
+        var borrower = new MemberId(7);
+        var now = DateTime.UtcNow;
+        var loanResult = Loan.Create(
+            new LoanId(1), borrower, now.AddDays(-10), now.AddDays(7),
+            itemId, LoanStatus.Returned);
+        Assert.True(loanResult.IsSuccess);
+        var loan = loanResult.Value;
+
+        var renewResult = loan.Renew(maxLoanDurationDays: 5, maxRenewalCount: 2);
+
+        Assert.True(renewResult.IsFailure);
+        Assert.IsType<DomainError>(renewResult.Error);
+    }
+
+    [Fact]
+    public void Reservation_Create_PolicyDriven_DerivesExpiryFromMaxLoanReservationDays()
+    {
+        var itemId = new InventoryItemId(42);
+        var memberId = new MemberId(7);
+        var reservationDate = DateTime.UtcNow.AddDays(1);
+
+        var reservationResult = Reservation.Create(
+            itemId, memberId, reservationDate, maxLoanReservationDays: 10, communityId: 1);
+
+        Assert.True(reservationResult.IsSuccess);
+        var reservation = reservationResult.Value;
+        Assert.True((reservation.ExpiryDate - reservation.ReservationDate).TotalDays - 10 < 0.001);
+        // The factory raises ReservationCreatedDomainEvent in-transaction.
+        Assert.IsType<ReservationCreatedDomainEvent>(Assert.Single(reservation.DomainEvents));
     }
 
     [Fact]

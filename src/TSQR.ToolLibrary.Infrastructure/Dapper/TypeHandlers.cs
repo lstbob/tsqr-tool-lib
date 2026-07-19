@@ -65,6 +65,14 @@ internal sealed class LocationIdHandler : SqlMapper.TypeHandler<LocationId>
         parameter.Value = value?.Value;
 }
 
+internal sealed class PolicyIdHandler : SqlMapper.TypeHandler<PolicyId>
+{
+    public override PolicyId Parse(object value) => new((int)value);
+
+    public override void SetValue(IDbDataParameter parameter, PolicyId? value) =>
+        parameter.Value = value?.Value;
+}
+
 public static class TypeHandlerRegistrations
 {
     private static bool _registered;
@@ -86,6 +94,7 @@ public static class TypeHandlerRegistrations
             SqlMapper.AddTypeHandler(new ManufacturerIdHandler());
             SqlMapper.AddTypeHandler(new LoanIdHandler());
             SqlMapper.AddTypeHandler(new LocationIdHandler());
+            SqlMapper.AddTypeHandler(new PolicyIdHandler());
             _registered = true;
         }
     }

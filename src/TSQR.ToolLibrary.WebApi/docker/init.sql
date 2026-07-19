@@ -83,6 +83,21 @@ CREATE TABLE IF NOT EXISTS MaintenanceRecords (
     ResultingCondition INTEGER
 );
 
+CREATE TABLE IF NOT EXISTS Policies (
+    Id SERIAL PRIMARY KEY,
+    ToolType INTEGER NOT NULL,
+    -- NULL = global policy for the tool type; non-NULL = location-specific override.
+    -- Lookup fallback: (ToolType, LocationId) exact match wins, else the
+    -- (ToolType, LocationId IS NULL) global one.
+    LocationId INTEGER REFERENCES Locations(Id),
+    Name VARCHAR(200) NOT NULL,
+    Description VARCHAR(1000) NOT NULL,
+    LateFeePerDay NUMERIC(10,2) NOT NULL,
+    MaxLoanDurationDays INTEGER NOT NULL,
+    MaxRenewalCount INTEGER NOT NULL,
+    MaxLoanReservationDays INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS Loans (
     Id SERIAL PRIMARY KEY,
     MemberId INTEGER NOT NULL REFERENCES Members(Id),
@@ -91,7 +106,13 @@ CREATE TABLE IF NOT EXISTS Loans (
     ItemId INTEGER NOT NULL REFERENCES InventoryItems(Id),
     Status INTEGER NOT NULL,
     ReturnedDate TIMESTAMP,
-    FineAccrued NUMERIC(10,2) NOT NULL DEFAULT 0
+    FineAccrued NUMERIC(10,2) NOT NULL DEFAULT 0,
+    -- Late fee rate snapshotted from the active Policy at checkout time. A
+    -- policy change after a loan has begun does NOT retroactively affect
+    -- in-flight loans - this is the DDD-correct way to capture policy at a
+    -- domain action.
+    LateFeePerDay NUMERIC(10,2) NOT NULL DEFAULT 1.00,
+    RenewalCount INTEGER NOT NULL DEFAULT 0
 );
 
 -- Seed: Manufacturers
@@ -195,6 +216,16 @@ INSERT INTO Reservations (ItemId, MemberId, ReservationDate, ExpiryDate, Status,
     (7, 2, '2024-12-08 11:00:00', '2024-12-18 11:00:00', 5, TRUE, 0),
     (13, 6, '2024-12-09 08:00:00', '2024-12-19 08:00:00', 4, FALSE, 0),
     (9, 8, '2024-12-11 15:00:00', '2024-12-25 15:00:00', 1, FALSE, 0);
+
+-- Seed: Policies (one global policy per ToolType; LocationId IS NULL = global)
+-- (ToolType: 1=HandTool,2=PowerTool,3=GardeningTool,4=ConstructionTool,5=SpecialtyTool,6=Other)
+INSERT INTO Policies (ToolType, LocationId, Name, Description, LateFeePerDay, MaxLoanDurationDays, MaxRenewalCount, MaxLoanReservationDays) VALUES
+    (1, NULL, 'Hand tool policy',       'Default lending policy for hand tools',          0.50, 7, 2, 14),
+    (2, NULL, 'Power tool policy',      'Default lending policy for power tools',         1.50, 5, 1, 10),
+    (3, NULL, 'Gardening tool policy',  'Default lending policy for gardening tools',     0.75, 7, 2, 14),
+    (4, NULL, 'Construction tool policy', 'Default lending policy for construction tools', 0.75, 7, 2, 14),
+    (5, NULL, 'Specialty tool policy', 'Default lending policy for specialty tools',      3.00, 3, 0,  7),
+    (6, NULL, 'Other tool policy',      'Default lending policy for other tools',         0.50, 7, 2, 14);
 
 -- Seed: MaintenanceRecords (Status: 1=Reported,2=InProgress,3=Completed)
 INSERT INTO MaintenanceRecords (ItemId, ReportedById, ReportedDate, Description, Status, CompletedById, CompletedDate, ResultingCondition) VALUES

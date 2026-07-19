@@ -61,19 +61,43 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
             communityId);
     }
 
+    public const int DefaultMaxLoanReservationDays = 14;
+
+    /// <summary>
+    /// Policy-driven factory. <paramref name="maxLoanReservationDays"/> is
+    /// taken from the active <see cref="Aggregates.ToolAggregate.Policy"/> at
+    /// the moment of reservation and used to derive <see cref="ExpiryDate"/>.
+    /// Raises <see cref="ReservationCreatedDomainEvent"/> on success.
+    /// </summary>
     public static Result<Reservation> Create(
         InventoryItemId itemId,
         MemberId memberId,
         DateTime reservationDate,
+        int maxLoanReservationDays,
         int communityId = 0)
     {
-        var expiryDate = reservationDate.AddDays(14);
+        if (maxLoanReservationDays <= 0)
+            return new ValidationError(nameof(maxLoanReservationDays), "Max loan reservation days must be positive.");
+
+        var expiryDate = reservationDate.AddDays(maxLoanReservationDays);
         var reservation = Create(itemId, memberId, reservationDate, expiryDate, 1, communityId);
         if (reservation.IsSuccess)
             reservation.Value.AddDomainEvent(new ReservationCreatedDomainEvent(
                 reservation.Value.Id, itemId, memberId, reservationDate));
         return reservation;
     }
+
+    /// <summary>
+    /// Backward-compatible default factory. Uses the legacy 14-day reservation
+    /// expiry. Prefer the Policy-driven overload above in handlers that have
+    /// access to the active Policy.
+    /// </summary>
+    public static Result<Reservation> Create(
+        InventoryItemId itemId,
+        MemberId memberId,
+        DateTime reservationDate,
+        int communityId = 0)
+        => Create(itemId, memberId, reservationDate, DefaultMaxLoanReservationDays, communityId);
 
     public static Reservation Create(
         ReservationId id,

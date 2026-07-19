@@ -1,14 +1,14 @@
 namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 
-public class Policy : Entity<PolicyId>
+public class Policy : Entity<PolicyId>, IAggregateRoot
 {
-    private const int maxAllowedLoanDurationDays = 7;
-    private const int maxAllowedRenewalCount = 2;
-    private const int maxAllowedLoanReservationDays = 14;
+    private const int MaxAllowedLoanDurationDays = 7;
+    private const int MaxAllowedRenewalCount = 2;
+    private const int MaxAllowedLoanReservationDays = 14;
 
     private Policy(PolicyId id,
         ToolType toolType,
-        LocationId locationId,
+        LocationId? locationId,
         string name,
         string description,
         decimal lateFeePerDay,
@@ -23,21 +23,26 @@ public class Policy : Entity<PolicyId>
         LateFeePerDay = lateFeePerDay;
         MaxLoanDurationDays = maxLoanDurationDays;
         MaxRenewalCount = maxRenewalCount;
-        MaxLoanRerservationDays = maxLoanReservationDays;
+        MaxLoanReservationDays = maxLoanReservationDays;
     }
 
     public ToolType ToolType { get; }
-    public LocationId LocationId { get; }
+    /// <summary>
+    /// Optional per-location policy. Null means the policy applies globally
+    /// (i.e., to all locations). Lookup keys off (ToolType, LocationId?):
+    /// an exact-match policy wins, else the null-location global one.
+    /// </summary>
+    public LocationId? LocationId { get; }
     public string Name { get; private set; }
     public string Description { get; private set; }
     public decimal LateFeePerDay { get; private set; }
     public int MaxLoanDurationDays { get; private set; }
     public int MaxRenewalCount { get; private set; }
-    public int MaxLoanRerservationDays { get; private set; }
+    public int MaxLoanReservationDays { get; private set; }
 
     public static Result<Policy> Create(
         ToolType toolType,
-        LocationId locationId,
+        LocationId? locationId,
         string name,
         string description,
         decimal lateFeePerDay,
@@ -51,19 +56,16 @@ public class Policy : Entity<PolicyId>
         var notDefaultResult = toolType.ValidateNotDefault(nameof(toolType));
         if (notDefaultResult.IsFailure) return notDefaultResult.Error;
 
-        if (locationId is null)
-            return new ValidationError(nameof(locationId), "Location ID is required.");
-
         if (lateFeePerDay < 0)
             return new ValidationError(nameof(lateFeePerDay), "Late fee per day cannot be negative.");
 
-        if (maxLoanDurationDays <= 0 || maxLoanDurationDays > maxAllowedLoanDurationDays)
+        if (maxLoanDurationDays <= 0 || maxLoanDurationDays > MaxAllowedLoanDurationDays)
             return new ValidationError(nameof(maxLoanDurationDays), "Invalid max loan duration days.");
 
-        if (maxRenewalCount <= 0 || maxRenewalCount > maxAllowedRenewalCount)
+        if (maxRenewalCount <= 0 || maxRenewalCount > MaxAllowedRenewalCount)
             return new ValidationError(nameof(maxRenewalCount), "Max renewal count cannot be negative.");
 
-        if (maxLoanReservationDays <= 0 || maxLoanReservationDays > maxAllowedLoanReservationDays)
+        if (maxLoanReservationDays <= 0 || maxLoanReservationDays > MaxAllowedLoanReservationDays)
             return new ValidationError(nameof(maxLoanReservationDays), "Max loan reservation days cannot be negative.");
 
         var nameResult = name.Validate(nameof(name));
@@ -87,7 +89,7 @@ public class Policy : Entity<PolicyId>
     public static Result<Policy> Create(
         PolicyId id,
         ToolType toolType,
-        LocationId locationId,
+        LocationId? locationId,
         string name,
         string description,
         decimal lateFeePerDay,
@@ -101,19 +103,16 @@ public class Policy : Entity<PolicyId>
         var notDefaultResult = toolType.ValidateNotDefault(nameof(toolType));
         if (notDefaultResult.IsFailure) return notDefaultResult.Error;
 
-        if (locationId is null)
-            return new ValidationError(nameof(locationId), "Location ID is required.");
-
         if (lateFeePerDay < 0)
             return new ValidationError(nameof(lateFeePerDay), "Late fee per day cannot be negative.");
 
-        if (maxLoanDurationDays <= 0 || maxLoanDurationDays > maxAllowedLoanDurationDays)
+        if (maxLoanDurationDays <= 0 || maxLoanDurationDays > MaxAllowedLoanDurationDays)
             return new ValidationError(nameof(maxLoanDurationDays), "Invalid max loan duration days.");
 
-        if (maxRenewalCount <= 0 || maxRenewalCount > maxAllowedRenewalCount)
+        if (maxRenewalCount <= 0 || maxRenewalCount > MaxAllowedRenewalCount)
             return new ValidationError(nameof(maxRenewalCount), "Max renewal count cannot be negative.");
 
-        if (maxLoanReservationDays <= 0 || maxLoanReservationDays > maxAllowedLoanReservationDays)
+        if (maxLoanReservationDays <= 0 || maxLoanReservationDays > MaxAllowedLoanReservationDays)
             return new ValidationError(nameof(maxLoanReservationDays), "Max loan reservation days cannot be negative.");
 
         var nameResult = name.Validate(nameof(name));
@@ -151,13 +150,13 @@ public class Policy : Entity<PolicyId>
         if (lateFeePerDay < 0)
             return new ValidationError(nameof(lateFeePerDay), "Late fee per day cannot be negative.");
 
-        if (maxLoanDurationDays <= 0 || maxLoanDurationDays > maxAllowedLoanDurationDays)
+        if (maxLoanDurationDays <= 0 || maxLoanDurationDays > MaxAllowedLoanDurationDays)
             return new ValidationError(nameof(maxLoanDurationDays), "Invalid max loan duration days.");
 
-        if (maxRenewalCount <= 0 || maxRenewalCount > maxAllowedRenewalCount)
+        if (maxRenewalCount <= 0 || maxRenewalCount > MaxAllowedRenewalCount)
             return new ValidationError(nameof(maxRenewalCount), "Max renewal count cannot be negative.");
 
-        if (maxLoanReservationDays <= 0 || maxLoanReservationDays > maxAllowedLoanReservationDays)
+        if (maxLoanReservationDays <= 0 || maxLoanReservationDays > MaxAllowedLoanReservationDays)
             return new ValidationError(nameof(maxLoanReservationDays), "Max loan reservation days cannot be negative.");
 
         Name = nameResult.Value;
@@ -165,7 +164,7 @@ public class Policy : Entity<PolicyId>
         LateFeePerDay = lateFeePerDay;
         MaxLoanDurationDays = maxLoanDurationDays;
         MaxRenewalCount = maxRenewalCount;
-        MaxLoanRerservationDays = maxLoanReservationDays;
+        MaxLoanReservationDays = maxLoanReservationDays;
 
         return Result.Success();
     }

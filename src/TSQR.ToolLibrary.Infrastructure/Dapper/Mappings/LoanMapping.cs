@@ -10,6 +10,8 @@ internal sealed record LoanRow
     public LoanStatus Status { get; init; }
     public DateTime? ReturnedDate { get; init; }
     public decimal FineAccrued { get; init; }
+    public decimal LateFeePerDay { get; init; }
+    public int RenewalCount { get; init; }
     public int CommunityId { get; init; }
 }
 
@@ -20,6 +22,8 @@ internal sealed record LoanInsertDto(
     int ItemId,
     LoanStatus Status,
     decimal FineAccrued,
+    decimal LateFeePerDay,
+    int RenewalCount,
     int CommunityId);
 
 internal sealed record LoanUpdateDto(
@@ -31,6 +35,8 @@ internal sealed record LoanUpdateDto(
     LoanStatus Status,
     DateTime? ReturnedDate,
     decimal FineAccrued,
+    decimal LateFeePerDay,
+    int RenewalCount,
     int CommunityId);
 
 public sealed class LoanMapping : ISqlEntityMapping<Loan>
@@ -38,8 +44,8 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
     public string TableName => "Loans";
 
     public string InsertSql =>
-        @"INSERT INTO Loans (MemberId, CheckoutDate, DueDate, ItemId, Status, FineAccrued, CommunityId)
-          VALUES (@MemberId, @CheckoutDate, @DueDate, @ItemId, @Status, @FineAccrued, @CommunityId)
+        @"INSERT INTO Loans (MemberId, CheckoutDate, DueDate, ItemId, Status, FineAccrued, LateFeePerDay, RenewalCount, CommunityId)
+          VALUES (@MemberId, @CheckoutDate, @DueDate, @ItemId, @Status, @FineAccrued, @LateFeePerDay, @RenewalCount, @CommunityId)
           RETURNING Id";
 
     public string UpdateSql =>
@@ -47,7 +53,8 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
           SET MemberId = @MemberId, CheckoutDate = @CheckoutDate,
               DueDate = @DueDate, ItemId = @ItemId,
               Status = @Status, ReturnedDate = @ReturnedDate,
-              FineAccrued = @FineAccrued, CommunityId = @CommunityId
+              FineAccrued = @FineAccrued, LateFeePerDay = @LateFeePerDay,
+              RenewalCount = @RenewalCount, CommunityId = @CommunityId
           WHERE Id = @Id";
 
     public string DeleteSql => "DELETE FROM Loans WHERE Id = @Id";
@@ -56,8 +63,8 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
     {
         var row = await db.QuerySingleOrDefaultAsync<LoanRow>(
             @"SELECT Id, MemberId, CheckoutDate, DueDate, ItemId,
-                     Status, ReturnedDate, FineAccrued, CommunityId
-              FROM Loans WHERE Id = @Id", new { Id = id });
+                     Status, ReturnedDate, FineAccrued, LateFeePerDay, RenewalCount, CommunityId
+               FROM Loans WHERE Id = @Id", new { Id = id });
 
         if (row is null) return null;
 
@@ -68,6 +75,8 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
             row.DueDate,
             row.ItemId,
             row.Status,
+            row.LateFeePerDay,
+            row.RenewalCount,
             row.CommunityId);
         return result.IsSuccess ? result.Value : null;
     }
@@ -79,6 +88,8 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
         entity.ItemId.Value,
         entity.Status,
         entity.FineAccrued,
+        entity.LateFeePerDay,
+        entity.RenewalCount,
         entity.CommunityId);
 
     public object ToUpdateParameters(Loan entity) => new LoanUpdateDto(
@@ -90,5 +101,7 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
         entity.Status,
         entity.ReturnedDate == default ? null : entity.ReturnedDate,
         entity.FineAccrued,
+        entity.LateFeePerDay,
+        entity.RenewalCount,
         entity.CommunityId);
 }
