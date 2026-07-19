@@ -106,11 +106,21 @@ public class AggregateDomainEventTests
         var result = reservation.ConfirmPickup();
 
         Assert.True(result.IsSuccess);
-        var ev = Assert.Single(reservation.DomainEvents);
-        var confirmed = Assert.IsType<ReservationConfirmedEvent>(ev);
+        // ConfirmPickup fans out two cross-aggregate signals: the canonical
+        // ReservationConfirmedEvent and the PickupReminderEvent that drives the
+        // InventoryItem hold side effect in PickupReminderHandler.
+        Assert.Equal(2, reservation.DomainEvents.Count);
+        var confirmed = Assert.IsType<ReservationConfirmedEvent>(
+            reservation.DomainEvents.Single(e => e is ReservationConfirmedEvent));
         Assert.Equal(reservation.Id, confirmed.ReservationId);
         Assert.Equal(reservation.ItemId, confirmed.ItemId);
         Assert.Equal(reservation.MemberId, confirmed.MemberId);
+        var reminder = Assert.IsType<PickupReminderEvent>(
+            reservation.DomainEvents.Single(e => e is PickupReminderEvent));
+        Assert.Equal(reservation.Id, reminder.ReservationId);
+        Assert.Equal(reservation.ItemId, reminder.ItemId);
+        Assert.Equal(reservation.MemberId, reminder.MemberId);
+        Assert.Equal(reservation.ReservationDate, reminder.PickupDate);
         Assert.True(reservation.IsConfirmed);
     }
 

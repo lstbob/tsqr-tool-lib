@@ -107,6 +107,12 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
         Status = ReservationStatus.Confirmed;
 
         AddDomainEvent(new ReservationConfirmedEvent(Id, ItemId, MemberId));
+        // The pickup reminder is a domain-level cross-aggregate signal: it tells
+        // the InventoryItem to be held (Available -> Reserved) for the confirmed
+        // pickup. Using ReservationDate as the planned pickup date - the event
+        // payload is consumed by PickupReminderHandler to perform the side effect
+        // on the InventoryItem aggregate.
+        AddDomainEvent(new PickupReminderEvent(Id, ItemId, MemberId, ReservationDate));
         return Result.Success();
     }
 
