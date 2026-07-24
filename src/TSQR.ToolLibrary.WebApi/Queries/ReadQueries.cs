@@ -1,5 +1,5 @@
 using Dapper;
-using TSQR.ToolLibrary.Infrastructure.Dapper;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 
 namespace TSQR.ToolLibrary.WebApi.Queries;
@@ -66,7 +66,8 @@ public sealed class GetMemberByIdHandler(ISqlUnitOfWork uow)
         var r = await uow.Connection.QuerySingleOrDefaultAsync<MemberRow>(
             "SELECT Id, FirstName, MiddleName, LastName, (LastName || ', ' || FirstName) AS FullName, Age, Address, Email, PhoneNumber, Status, IsVerified, VerifiedByAdminId, VerificationDate, MembershipType, StartDate, EndDate FROM Members WHERE Id = @Id",
             new { q.Id });
-        if (r is null) return null;
+        if (r is null)
+            return null;
         return new MemberDetail(
             r.Id, r.FirstName, r.MiddleName, r.LastName, r.FullName, r.Age, r.Address, r.Email, r.PhoneNumber,
             r.Status, ((TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate.MemberStatus)r.Status).ToString(),
@@ -146,7 +147,8 @@ public sealed class GetReservationByIdHandler(ISqlUnitOfWork uow)
             WHERE r.Id = @Id
             """;
         var r = await uow.Connection.QuerySingleOrDefaultAsync<Row>(sql, new { q.Id });
-        if (r is null) return null;
+        if (r is null)
+            return null;
         return new ReservationListItem(
             r.Id, r.ItemId, r.ItemSerialNumber ?? "", r.ToolModel ?? "", r.MemberId, r.MemberName ?? "",
             r.ReservationDate, r.ExpiryDate, r.Status,
@@ -239,7 +241,8 @@ public sealed class GetInventoryByIdHandler(ISqlUnitOfWork uow)
             WHERE i.Id = @Id
             """;
         var r = await uow.Connection.QuerySingleOrDefaultAsync<Row>(sql, new { q.Id });
-        if (r is null) return null;
+        if (r is null)
+            return null;
         return new InventoryListItem(
             r.Id, r.ToolId, r.ToolModel ?? "", r.ToolTypeName ?? "", r.OriginalOwnerId, r.OriginalOwnerName,
             r.InitialAcquisitionDate, r.SerialNumber ?? "", r.Status,

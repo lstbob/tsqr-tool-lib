@@ -1,4 +1,6 @@
-namespace TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
+
+namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Mappings;
 
 internal sealed record LoanRow
 {
@@ -46,7 +48,7 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
     public string InsertSql =>
         @"INSERT INTO Loans (MemberId, CheckoutDate, DueDate, ItemId, Status, FineAccrued, LateFeePerDay, RenewalCount, CommunityId)
           VALUES (@MemberId, @CheckoutDate, @DueDate, @ItemId, @Status, @FineAccrued, @LateFeePerDay, @RenewalCount, @CommunityId)
-          RETURNING Id";
+";
 
     public string UpdateSql =>
         @"UPDATE Loans
@@ -66,7 +68,8 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
                      Status, ReturnedDate, FineAccrued, LateFeePerDay, RenewalCount, CommunityId
                FROM Loans WHERE Id = @Id", new { Id = id });
 
-        if (row is null) return null;
+        if (row is null)
+            return null;
 
         var result = Loan.Create(
             row.Id,

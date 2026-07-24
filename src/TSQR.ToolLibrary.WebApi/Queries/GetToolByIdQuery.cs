@@ -9,7 +9,8 @@ public sealed class GetToolByIdHandler(IToolRepository toolRepo) : IInteractor<G
     public async Task<ToolDetail?> ExecuteAsync(GetToolByIdQuery request, CancellationToken ct)
     {
         var tool = await toolRepo.GetByIdAsync(new ToolId(request.Id), ct);
-        if (tool is null) return null;
+        if (tool is null)
+            return null;
 
         var scarcity = tool.ScarcityByLocation.Select(kvp => new ScarcityDto(
             kvp.Key.Value,

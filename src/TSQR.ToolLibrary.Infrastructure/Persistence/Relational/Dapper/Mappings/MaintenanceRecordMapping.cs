@@ -1,4 +1,6 @@
-namespace TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
+
+namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Mappings;
 
 internal sealed record MaintenanceRecordRow
 {
@@ -43,7 +45,7 @@ public sealed class MaintenanceRecordMapping : ISqlEntityMapping<MaintenanceReco
                 CompletedById, CompletedDate, ResultingCondition)
           VALUES (@ItemId, @ReportedById, @ReportedDate, @Description, @Status,
                 @CompletedById, @CompletedDate, @ResultingCondition)
-          RETURNING Id";
+";
 
     public string UpdateSql =>
         @"UPDATE MaintenanceRecords

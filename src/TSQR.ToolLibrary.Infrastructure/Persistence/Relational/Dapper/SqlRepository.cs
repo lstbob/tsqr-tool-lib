@@ -1,13 +1,12 @@
-namespace TSQR.ToolLibrary.Infrastructure.Dapper;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Abstractions;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 
-/// <summary>
-/// Generic Dapper-backed repository base. Lives in <c>Infrastructure.Dapper</c>
-/// because it is shaped by Dapper's <see cref="ISqlUnitOfWork"/> /
-/// <see cref="ISqlEntityMapping{TEntity}"/> contracts. A NoSQL or document
-/// adapter would implement <c>IRepository&lt;T,TId&gt;</c> directly with its
-/// own base class - never by deriving from this one.
-/// </summary>
-public class SqlRepository<TEntity, TId>(ISqlUnitOfWork uow, ISqlEntityMapping<TEntity> mapping)
+namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
+
+public class SqlRepository<TEntity, TId>(
+    ISqlUnitOfWork uow,
+    ISqlEntityMapping<TEntity> mapping,
+    ISqlDialect dialect)
     : IRepository<TEntity, TId>
     where TEntity : Entity<TId>, IAggregateRoot
     where TId : ValueObject
@@ -29,10 +28,8 @@ public class SqlRepository<TEntity, TId>(ISqlUnitOfWork uow, ISqlEntityMapping<T
     )
     {
         var db = uow.Connection;
-        var id = await db.ExecuteScalarAsync<int>(
-            mapping.InsertSql,
-            mapping.ToInsertParameters(entity)
-        );
+        var sql = mapping.InsertSql + dialect.SelectInsertedIdSuffix;
+        var id = await db.ExecuteScalarAsync<int>(sql, mapping.ToInsertParameters(entity));
 
         entity.SetAssignedId((TId)Activator.CreateInstance(typeof(TId), [id])!);
     }
@@ -49,4 +46,3 @@ public class SqlRepository<TEntity, TId>(ISqlUnitOfWork uow, ISqlEntityMapping<T
         db.Execute(mapping.DeleteSql, new { Id = entity.Id });
     }
 }
-

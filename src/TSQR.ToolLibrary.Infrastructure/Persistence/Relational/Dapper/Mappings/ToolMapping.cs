@@ -1,4 +1,6 @@
-namespace TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
+
+namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Mappings;
 
 internal sealed record ToolRow
 {
@@ -45,7 +47,7 @@ public sealed class ToolMapping : ISqlEntityMapping<Tool>
     public string InsertSql =>
         @"INSERT INTO Tools (Model, Description, ManufacturerId, ToolType, AmortizationRate, Metadata, CommunityId)
           VALUES (@Model, @Description, @ManufacturerId, @ToolType, @AmortizationRate, @Metadata, @CommunityId)
-          RETURNING Id";
+";
 
     public string UpdateSql =>
         @"UPDATE Tools
@@ -65,7 +67,8 @@ public sealed class ToolMapping : ISqlEntityMapping<Tool>
               INNER JOIN Manufacturers m ON m.Id = t.ManufacturerId
               WHERE t.Id = @Id", new { Id = id });
 
-        if (row is null) return null;
+        if (row is null)
+            return null;
 
         var tool = Tool.Create(
             row.Id,

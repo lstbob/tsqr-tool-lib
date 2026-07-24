@@ -66,25 +66,32 @@ public class Member : Entity<MemberId>, IAggregateRoot
         int communityId = 0)
     {
         var firstNameResult = firstName.Validate(nameof(firstName));
-        if (firstNameResult.IsFailure) return firstNameResult.Error;
+        if (firstNameResult.IsFailure)
+            return firstNameResult.Error;
 
         var lastNameResult = lastName.Validate(nameof(lastName));
-        if (lastNameResult.IsFailure) return lastNameResult.Error;
+        if (lastNameResult.IsFailure)
+            return lastNameResult.Error;
 
         var addressResult = address.Validate(nameof(address));
-        if (addressResult.IsFailure) return addressResult.Error;
+        if (addressResult.IsFailure)
+            return addressResult.Error;
 
         var emailResult = email.Validate(nameof(email));
-        if (emailResult.IsFailure) return emailResult.Error;
+        if (emailResult.IsFailure)
+            return emailResult.Error;
 
         var phoneResult = phoneNumber.Validate(nameof(phoneNumber));
-        if (phoneResult.IsFailure) return phoneResult.Error;
+        if (phoneResult.IsFailure)
+            return phoneResult.Error;
 
         var statusResult = status.ValidateDefined(nameof(status));
-        if (statusResult.IsFailure) return statusResult.Error;
+        if (statusResult.IsFailure)
+            return statusResult.Error;
 
         var notDefaultResult = status.ValidateNotDefault(nameof(status));
-        if (notDefaultResult.IsFailure) return notDefaultResult.Error;
+        if (notDefaultResult.IsFailure)
+            return notDefaultResult.Error;
 
         return new Member(
             new MemberId(default),

@@ -1,10 +1,9 @@
 namespace TSQR.ToolLibrary.Application.Inventory.Commands;
 
-public record MarkToolForRepairCommand(InventoryItemId ItemId, MemberId ReportedById, string Description, int CommunityId = 1);
+public record MarkToolForRepairCommand(InventoryItemId ItemId, MemberId ReportedById, string Description);
 
 public class MarkToolForRepairCommandHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
-    IRepository<MaintenanceRecord, MaintenanceRecordId> maintenanceRepository,
     DomainEventOrchestrator orchestrator)
     : IInteractor<MarkToolForRepairCommand, Result>
 {
@@ -18,15 +17,9 @@ public class MarkToolForRepairCommandHandler(
         if (markResult.IsFailure)
             return markResult.Error;
 
-        var recordResult = MaintenanceRecord.Create(command.ItemId, command.ReportedById, command.Description, command.CommunityId);
-        if (recordResult.IsFailure)
-            return recordResult.Error;
-
-        var record = recordResult.Value;
-        await maintenanceRepository.AddAsync(record, cancellationToken);
         inventoryRepository.Update(item);
 
-        await orchestrator.SaveEntitiesAsync([item, record], cancellationToken);
+        await orchestrator.SaveEntitiesAsync([item], cancellationToken);
 
         return Result.Success();
     }

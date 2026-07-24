@@ -4,9 +4,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using TSQR.ToolLibrary.Application;
-using TSQR.ToolLibrary.Infrastructure.Dapper;
-using TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
-using TSQR.ToolLibrary.Infrastructure.Dapper.Repositories;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Abstractions;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Mappings;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Repositories;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Postgres;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 using TSQR.ToolLibrary.WebApi.Middleware;
 using TSQR.ToolLibrary.WebApi.Queries;
@@ -68,7 +71,13 @@ var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-builder.Services.AddScoped<ISqlUnitOfWork>(_ => new DapperUnitOfWork(connectionString));
+builder.Services.AddSingleton<IDbConnectionFactory>(_ => new PostgresConnectionFactory(connectionString));
+builder.Services.AddSingleton<ISqlDialect>(_ => new PostgresDialect());
+
+builder.Services.AddScoped<ISqlUnitOfWork>(sp =>
+    new DapperUnitOfWork(
+        sp.GetRequiredService<IDbConnectionFactory>(),
+        sp.GetRequiredService<ISqlDialect>()));
 
 // The application layer depends only on IUnitOfWork (from the Domain). Register
 // the same Dapper adapter against IUnitOfWork so DomainEventOrchestrator can
@@ -76,26 +85,22 @@ builder.Services.AddScoped<ISqlUnitOfWork>(_ => new DapperUnitOfWork(connectionS
 builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ISqlUnitOfWork>());
 
 builder.Services.AddSingleton<ISqlEntityMapping<InventoryItem>, InventoryItemMapping>();
+builder.Services.AddSingleton<ISqlEntityMapping<MaintenanceRecord>, MaintenanceRecordMapping>();
 builder.Services.AddSingleton<ISqlEntityMapping<Member>, MemberMapping>();
 builder.Services.AddSingleton<ISqlEntityMapping<Reservation>, ReservationMapping>();
-builder.Services.AddSingleton<ISqlEntityMapping<MaintenanceRecord>, MaintenanceRecordMapping>();
 builder.Services.AddSingleton<ISqlEntityMapping<Tool>, ToolMapping>();
 builder.Services.AddSingleton<ISqlEntityMapping<Loan>, LoanMapping>();
 builder.Services.AddSingleton<ISqlEntityMapping<Policy>, PolicyMapping>();
 
 builder.Services.AddScoped<
     IRepository<InventoryItem, InventoryItemId>,
-    SqlRepository<InventoryItem, InventoryItemId>
+    InventoryItemRepository
 >();
 builder.Services.AddScoped<IRepository<Member, MemberId>, SqlRepository<Member, MemberId>>();
 builder.Services.AddScoped<IRepository<Loan, LoanId>, SqlRepository<Loan, LoanId>>();
 builder.Services.AddScoped<
     IRepository<Reservation, ReservationId>,
     SqlRepository<Reservation, ReservationId>
->();
-builder.Services.AddScoped<
-    IRepository<MaintenanceRecord, MaintenanceRecordId>,
-    SqlRepository<MaintenanceRecord, MaintenanceRecordId>
 >();
 builder.Services.AddScoped<IToolRepository, ToolRepository>();
 builder.Services.AddScoped<IRepository<Tool, ToolId>>(sp => sp.GetRequiredService<IToolRepository>());

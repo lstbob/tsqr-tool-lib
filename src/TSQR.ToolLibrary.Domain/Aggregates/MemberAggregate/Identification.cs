@@ -14,13 +14,16 @@ public class Identification : ValueObject
     public static Result<Identification> Create(IdentificationType type, string reference)
     {
         var typeResult = type.ValidateDefined(nameof(type));
-        if (typeResult.IsFailure) return typeResult.Error;
+        if (typeResult.IsFailure)
+            return typeResult.Error;
 
         var notDefaultResult = type.ValidateNotDefault(nameof(type));
-        if (notDefaultResult.IsFailure) return notDefaultResult.Error;
+        if (notDefaultResult.IsFailure)
+            return notDefaultResult.Error;
 
         var referenceResult = reference.Validate(nameof(reference));
-        if (referenceResult.IsFailure) return referenceResult.Error;
+        if (referenceResult.IsFailure)
+            return referenceResult.Error;
 
         return new Identification(type, referenceResult.Value);
     }

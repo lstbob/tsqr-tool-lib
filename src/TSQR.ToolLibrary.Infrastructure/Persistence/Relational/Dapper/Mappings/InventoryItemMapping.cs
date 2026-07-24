@@ -1,15 +1,17 @@
-namespace TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
+
+namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Mappings;
 
 internal sealed record InventoryItemRow
 {
-    public InventoryItemId Id { get; init; }
-    public ToolId ToolId { get; init; }
-    public MemberId OriginalOwnerId { get; init; }
+    public int Id { get; init; }
+    public int ToolId { get; init; }
+    public int OriginalOwnerId { get; init; }
     public DateTime InitialAcquisitionDate { get; init; }
     public string SerialNumber { get; init; }
     public ItemStatus Status { get; init; }
     public Condition Condition { get; init; }
-    public MemberId? CurrentHolderId { get; init; }
+    public int? CurrentHolderId { get; init; }
     public DateTime? LastBorrowedDate { get; init; }
     public int LoanCount { get; init; }
     public long TotalUsageTimeTicks { get; init; }
@@ -57,7 +59,7 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
           VALUES (@ToolId, @OriginalOwnerId, @InitialAcquisitionDate, @SerialNumber,
                 @Status, @Condition, @CurrentHolderId, @LastBorrowedDate,
                 @LoanCount, @TotalUsageTimeTicks, @IsUnderRepair, @CommunityId)
-          RETURNING Id";
+";
 
     public string UpdateSql =>
         @"UPDATE InventoryItems
@@ -82,21 +84,21 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
                      LoanCount, TotalUsageTimeTicks, IsUnderRepair, CommunityId
               FROM InventoryItems WHERE Id = @Id", new { Id = id });
 
-        if (row is null) return null;
+        if (row is null)
+            return null;
 
         return InventoryItem.Create(
-            row.Id,
-            row.ToolId,
-            row.OriginalOwnerId,
+            new InventoryItemId(row.Id),
+            new ToolId(row.ToolId),
+            new MemberId(row.OriginalOwnerId),
             row.InitialAcquisitionDate,
             row.SerialNumber,
             row.Status,
             row.Condition,
-            row.CurrentHolderId,
+            row.CurrentHolderId is null ? null : new MemberId(row.CurrentHolderId.Value),
             row.LastBorrowedDate,
             row.LoanCount,
             TimeSpan.FromTicks(row.TotalUsageTimeTicks),
-            row.IsUnderRepair,
             row.CommunityId);
     }
 
