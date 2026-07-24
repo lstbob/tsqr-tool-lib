@@ -1,4 +1,6 @@
-namespace TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
+
+namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Mappings;
 
 internal sealed record PolicyRow
 {
@@ -43,7 +45,7 @@ public sealed class PolicyMapping : ISqlEntityMapping<Policy>
                 MaxLoanDurationDays, MaxRenewalCount, MaxLoanReservationDays)
           VALUES (@ToolType, @LocationId, @Name, @Description, @LateFeePerDay,
                   @MaxLoanDurationDays, @MaxRenewalCount, @MaxLoanReservationDays)
-          RETURNING Id";
+";
 
     public string UpdateSql =>
         @"UPDATE Policies
@@ -65,7 +67,8 @@ public sealed class PolicyMapping : ISqlEntityMapping<Policy>
                      MaxLoanReservationDays
               FROM Policies WHERE Id = @Id", new { Id = id });
 
-        if (row is null) return null;
+        if (row is null)
+            return null;
 
         var result = Policy.Create(
             row.Id,

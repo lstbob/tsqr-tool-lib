@@ -1,6 +1,9 @@
-namespace TSQR.ToolLibrary.Infrastructure.Dapper;
+using System.Data;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 
-internal sealed class DapperConnection(NpgsqlConnection connection, IDbTransaction? transaction)
+namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
+
+internal sealed class DapperConnection(IDbConnection connection, IDbTransaction? transaction)
     : ISqlConnection
 {
     public Task<IEnumerable<T>> QueryAsync<T>(string sql, object? parameters = null) =>
@@ -29,4 +32,3 @@ internal sealed class DapperConnection(NpgsqlConnection connection, IDbTransacti
 
     public void Dispose() { }
 }
-

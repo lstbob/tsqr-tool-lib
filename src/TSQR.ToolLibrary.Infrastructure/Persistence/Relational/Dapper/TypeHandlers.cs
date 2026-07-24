@@ -1,4 +1,7 @@
-namespace TSQR.ToolLibrary.Infrastructure.Dapper;
+using System.Data;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Abstractions;
+
+namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
 
 internal sealed class ToolIdHandler : SqlMapper.TypeHandler<ToolId>
 {
@@ -33,14 +36,6 @@ internal sealed class ReservationIdHandler : SqlMapper.TypeHandler<ReservationId
         parameter.Value = value?.Value;
 }
 
-internal sealed class MaintenanceRecordIdHandler : SqlMapper.TypeHandler<MaintenanceRecordId>
-{
-    public override MaintenanceRecordId Parse(object value) => new((int)value);
-
-    public override void SetValue(IDbDataParameter parameter, MaintenanceRecordId? value) =>
-        parameter.Value = value?.Value;
-}
-
 internal sealed class ManufacturerIdHandler : SqlMapper.TypeHandler<ManufacturerId>
 {
     public override ManufacturerId Parse(object value) => new((int)value);
@@ -62,6 +57,14 @@ internal sealed class LocationIdHandler : SqlMapper.TypeHandler<LocationId>
     public override LocationId Parse(object value) => new((int)value);
 
     public override void SetValue(IDbDataParameter parameter, LocationId? value) =>
+        parameter.Value = value?.Value;
+}
+
+internal sealed class MaintenanceRecordIdHandler : SqlMapper.TypeHandler<MaintenanceRecordId>
+{
+    public override MaintenanceRecordId Parse(object value) => new((int)value);
+
+    public override void SetValue(IDbDataParameter parameter, MaintenanceRecordId? value) =>
         parameter.Value = value?.Value;
 }
 
@@ -90,10 +93,10 @@ public static class TypeHandlerRegistrations
             SqlMapper.AddTypeHandler(new MemberIdHandler());
             SqlMapper.AddTypeHandler(new InventoryItemIdHandler());
             SqlMapper.AddTypeHandler(new ReservationIdHandler());
-            SqlMapper.AddTypeHandler(new MaintenanceRecordIdHandler());
             SqlMapper.AddTypeHandler(new ManufacturerIdHandler());
             SqlMapper.AddTypeHandler(new LoanIdHandler());
             SqlMapper.AddTypeHandler(new LocationIdHandler());
+            SqlMapper.AddTypeHandler(new MaintenanceRecordIdHandler());
             SqlMapper.AddTypeHandler(new PolicyIdHandler());
             _registered = true;
         }

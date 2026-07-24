@@ -1,11 +1,15 @@
-using TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Abstractions;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Mappings;
 
-namespace TSQR.ToolLibrary.Infrastructure.Dapper.Repositories;
+namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Repositories;
 
 public sealed class DapperReservationRepository(
     ISqlUnitOfWork uow,
-    ISqlEntityMapping<Reservation> mapping
-) : SqlRepository<Reservation, ReservationId>(uow, mapping), IReservationRepository
+    ISqlEntityMapping<Reservation> mapping,
+    ISqlDialect dialect)
+    : SqlRepository<Reservation, ReservationId>(uow, mapping, dialect), IReservationRepository
 {
     public async Task<IReadOnlyCollection<Reservation>> GetByItemIdAsync(
         InventoryItemId itemId,

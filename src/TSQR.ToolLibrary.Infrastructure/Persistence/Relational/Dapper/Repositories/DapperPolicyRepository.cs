@@ -1,18 +1,16 @@
 using TSQR.ToolLibrary.Domain.Aggregates.LocationAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
-using TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Abstractions;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
 
-namespace TSQR.ToolLibrary.Infrastructure.Dapper.Repositories;
+namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Repositories;
 
-/// <summary>
-/// Dapper implementation of <see cref="IPolicyRepository"/>. Lookup is by
-/// (ToolType, LocationId?); when no location-specific policy exists, falls
-/// back to the global (LocationId=null) policy for the tool type.
-/// </summary>
 public sealed class DapperPolicyRepository(
     ISqlUnitOfWork uow,
-    ISqlEntityMapping<Policy> mapping
-) : SqlRepository<Policy, PolicyId>(uow, mapping), IPolicyRepository
+    ISqlEntityMapping<Policy> mapping,
+    ISqlDialect dialect)
+    : SqlRepository<Policy, PolicyId>(uow, mapping, dialect), IPolicyRepository
 {
     public async Task<Policy?> GetByToolTypeAsync(
         ToolType toolType,
@@ -33,7 +31,8 @@ public sealed class DapperPolicyRepository(
         );
 
         var row = rows.FirstOrDefault();
-        if (row is null) return null;
+        if (row is null)
+            return null;
 
         var result = Policy.Create(
             row.Id,

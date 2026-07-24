@@ -1,10 +1,9 @@
 namespace TSQR.ToolLibrary.Application.Inventory.Commands;
 
-public record CompleteRepairCommand(MaintenanceRecordId RecordId, InventoryItemId ItemId, MemberId CompletedById, Condition NewCondition);
+public record CompleteRepairCommand(InventoryItemId ItemId, MemberId CompletedById, Condition NewCondition);
 
 public class CompleteRepairCommandHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
-    IRepository<MaintenanceRecord, MaintenanceRecordId> maintenanceRepository,
     DomainEventOrchestrator orchestrator)
     : IInteractor<CompleteRepairCommand, Result>
 {
@@ -14,23 +13,13 @@ public class CompleteRepairCommandHandler(
         if (item is null)
             return new NotFoundError(nameof(command.ItemId), "Inventory item not found.");
 
-        var record = await maintenanceRepository.GetByIdAsync(command.RecordId, cancellationToken);
-        if (record is null)
-            return new NotFoundError(nameof(command.RecordId), "Maintenance record not found.");
+        var repairResult = item.CompleteRepair(command.CompletedById, command.NewCondition);
+        if (repairResult.IsFailure)
+            return repairResult.Error;
 
-        var startResult = record.StartWork();
-        if (startResult.IsFailure) return startResult.Error;
-
-        var completeResult = record.Complete(command.CompletedById, command.NewCondition);
-        if (completeResult.IsFailure) return completeResult.Error;
-
-        var repairResult = item.CompleteRepair(command.NewCondition);
-        if (repairResult.IsFailure) return repairResult.Error;
-
-        maintenanceRepository.Update(record);
         inventoryRepository.Update(item);
 
-        await orchestrator.SaveEntitiesAsync([record, item], cancellationToken);
+        await orchestrator.SaveEntitiesAsync([item], cancellationToken);
 
         return Result.Success();
     }

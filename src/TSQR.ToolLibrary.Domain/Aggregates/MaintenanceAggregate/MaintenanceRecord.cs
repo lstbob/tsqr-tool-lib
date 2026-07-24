@@ -1,6 +1,6 @@
 namespace TSQR.ToolLibrary.Domain.Aggregates.MaintenanceAggregate;
 
-public class MaintenanceRecord : Entity<MaintenanceRecordId>, IAggregateRoot
+public class MaintenanceRecord : Entity<MaintenanceRecordId>
 {
     private MaintenanceRecord(
         MaintenanceRecordId id,
@@ -123,7 +123,7 @@ public class MaintenanceRecord : Entity<MaintenanceRecordId>, IAggregateRoot
         CompletedDate = DateTime.UtcNow;
         ResultingCondition = resultingCondition;
 
-        AddDomainEvent(new ToolRepairedEvent(ItemId, completedById, resultingCondition));
+        // Event is raised by the parent aggregate (InventoryItem.CompleteRepair)
         return Result.Success();
     }
 }

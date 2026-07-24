@@ -1,4 +1,6 @@
-namespace TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
+
+namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Mappings;
 
 internal sealed record MemberRow
 {
@@ -66,7 +68,7 @@ public sealed class MemberMapping : ISqlEntityMapping<Member>
           VALUES (@FirstName, @MiddleName, @LastName, @Age, @Address, @Email, @PhoneNumber,
                 @Status, @IsVerified, @VerifiedByAdminId, @VerificationDate,
                 @MembershipType, @StartDate, @EndDate, @CommunityId)
-          RETURNING Id";
+";
 
     public string UpdateSql =>
         @"UPDATE Members
@@ -88,7 +90,8 @@ public sealed class MemberMapping : ISqlEntityMapping<Member>
                      MembershipType, StartDate, EndDate, CommunityId
               FROM Members WHERE Id = @Id", new { Id = id });
 
-        if (row is null) return null;
+        if (row is null)
+            return null;
 
         MembershipRecord? record = row.MembershipType.HasValue
             ? MembershipRecord.Create(row.StartDate!.Value, row.MembershipType.Value)

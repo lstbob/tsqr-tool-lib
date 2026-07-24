@@ -1,4 +1,6 @@
-namespace TSQR.ToolLibrary.Infrastructure.Dapper.Repositories;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
+
+namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Repositories;
 
 public sealed class DashboardQueries(ISqlUnitOfWork uow) : IDashboardQueries
 {

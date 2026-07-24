@@ -223,7 +223,6 @@ public sealed class ToolsCommandController(
     )
     {
         var command = new CompleteRepairCommand(
-            new MaintenanceRecordId(request.RecordId),
             new InventoryItemId(request.ItemId),
             new MemberId(request.CompletedById),
             (Condition)request.NewCondition

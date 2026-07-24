@@ -1,4 +1,6 @@
-namespace TSQR.ToolLibrary.Infrastructure.Dapper.Mappings;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
+
+namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Mappings;
 
 internal sealed record ReservationRow
 {
@@ -41,7 +43,7 @@ public sealed class ReservationMapping : ISqlEntityMapping<Reservation>
     public string InsertSql =>
         @"INSERT INTO Reservations (ItemId, MemberId, ReservationDate, ExpiryDate, Status, IsConfirmed, QueuePosition, CommunityId)
           VALUES (@ItemId, @MemberId, @ReservationDate, @ExpiryDate, @Status, @IsConfirmed, @QueuePosition, @CommunityId)
-          RETURNING Id";
+";
 
     public string UpdateSql =>
         @"UPDATE Reservations
@@ -60,7 +62,8 @@ public sealed class ReservationMapping : ISqlEntityMapping<Reservation>
                      Status, IsConfirmed, QueuePosition
               FROM Reservations WHERE Id = @Id", new { Id = id });
 
-        if (row is null) return null;
+        if (row is null)
+            return null;
 
         return Reservation.Create(
             row.Id,

@@ -50,36 +50,16 @@ public class Policy : Entity<PolicyId>, IAggregateRoot
         int maxRenewalCount,
         int maxLoanReservationDays)
     {
-        var toolTypeResult = toolType.ValidateDefined(nameof(toolType));
-        if (toolTypeResult.IsFailure) return toolTypeResult.Error;
-
-        var notDefaultResult = toolType.ValidateNotDefault(nameof(toolType));
-        if (notDefaultResult.IsFailure) return notDefaultResult.Error;
-
-        if (lateFeePerDay < 0)
-            return new ValidationError(nameof(lateFeePerDay), "Late fee per day cannot be negative.");
-
-        if (maxLoanDurationDays <= 0 || maxLoanDurationDays > MaxAllowedLoanDurationDays)
-            return new ValidationError(nameof(maxLoanDurationDays), "Invalid max loan duration days.");
-
-        if (maxRenewalCount <= 0 || maxRenewalCount > MaxAllowedRenewalCount)
-            return new ValidationError(nameof(maxRenewalCount), "Max renewal count cannot be negative.");
-
-        if (maxLoanReservationDays <= 0 || maxLoanReservationDays > MaxAllowedLoanReservationDays)
-            return new ValidationError(nameof(maxLoanReservationDays), "Max loan reservation days cannot be negative.");
-
-        var nameResult = name.Validate(nameof(name));
-        if (nameResult.IsFailure) return nameResult.Error;
-
-        var descriptionResult = description.Validate(nameof(description));
-        if (descriptionResult.IsFailure) return descriptionResult.Error;
+        var validation = ValidatePolicyFields(toolType, name, description, lateFeePerDay, maxLoanDurationDays, maxRenewalCount, maxLoanReservationDays);
+        if (validation.IsFailure)
+            return validation.Error;
 
         return new Policy(
             new PolicyId(default),
             toolType,
             locationId,
-            nameResult.Value,
-            descriptionResult.Value,
+            name,
+            description,
             lateFeePerDay,
             maxLoanDurationDays,
             maxRenewalCount,
@@ -97,36 +77,16 @@ public class Policy : Entity<PolicyId>, IAggregateRoot
         int maxRenewalCount,
         int maxLoanReservationDays)
     {
-        var toolTypeResult = toolType.ValidateDefined(nameof(toolType));
-        if (toolTypeResult.IsFailure) return toolTypeResult.Error;
-
-        var notDefaultResult = toolType.ValidateNotDefault(nameof(toolType));
-        if (notDefaultResult.IsFailure) return notDefaultResult.Error;
-
-        if (lateFeePerDay < 0)
-            return new ValidationError(nameof(lateFeePerDay), "Late fee per day cannot be negative.");
-
-        if (maxLoanDurationDays <= 0 || maxLoanDurationDays > MaxAllowedLoanDurationDays)
-            return new ValidationError(nameof(maxLoanDurationDays), "Invalid max loan duration days.");
-
-        if (maxRenewalCount <= 0 || maxRenewalCount > MaxAllowedRenewalCount)
-            return new ValidationError(nameof(maxRenewalCount), "Max renewal count cannot be negative.");
-
-        if (maxLoanReservationDays <= 0 || maxLoanReservationDays > MaxAllowedLoanReservationDays)
-            return new ValidationError(nameof(maxLoanReservationDays), "Max loan reservation days cannot be negative.");
-
-        var nameResult = name.Validate(nameof(name));
-        if (nameResult.IsFailure) return nameResult.Error;
-
-        var descriptionResult = description.Validate(nameof(description));
-        if (descriptionResult.IsFailure) return descriptionResult.Error;
+        var validation = ValidatePolicyFields(toolType, name, description, lateFeePerDay, maxLoanDurationDays, maxRenewalCount, maxLoanReservationDays);
+        if (validation.IsFailure)
+            return validation.Error;
 
         return new Policy(
             id,
             toolType,
             locationId,
-            nameResult.Value,
-            descriptionResult.Value,
+            name,
+            description,
             lateFeePerDay,
             maxLoanDurationDays,
             maxRenewalCount,
@@ -141,11 +101,36 @@ public class Policy : Entity<PolicyId>, IAggregateRoot
         int maxRenewalCount,
         int maxLoanReservationDays)
     {
-        var nameResult = name.Validate(nameof(name));
-        if (nameResult.IsFailure) return nameResult.Error;
+        var validation = ValidatePolicyFields(ToolType, name, description, lateFeePerDay, maxLoanDurationDays, maxRenewalCount, maxLoanReservationDays);
+        if (validation.IsFailure)
+            return validation.Error;
 
-        var descriptionResult = description.Validate(nameof(description));
-        if (descriptionResult.IsFailure) return descriptionResult.Error;
+        Name = name;
+        Description = description;
+        LateFeePerDay = lateFeePerDay;
+        MaxLoanDurationDays = maxLoanDurationDays;
+        MaxRenewalCount = maxRenewalCount;
+        MaxLoanReservationDays = maxLoanReservationDays;
+
+        return Result.Success();
+    }
+
+    private static Result ValidatePolicyFields(
+        ToolType toolType,
+        string name,
+        string description,
+        decimal lateFeePerDay,
+        int maxLoanDurationDays,
+        int maxRenewalCount,
+        int maxLoanReservationDays)
+    {
+        var toolTypeResult = toolType.ValidateDefined(nameof(toolType));
+        if (toolTypeResult.IsFailure)
+            return toolTypeResult.Error;
+
+        var notDefaultResult = toolType.ValidateNotDefault(nameof(toolType));
+        if (notDefaultResult.IsFailure)
+            return notDefaultResult.Error;
 
         if (lateFeePerDay < 0)
             return new ValidationError(nameof(lateFeePerDay), "Late fee per day cannot be negative.");
@@ -159,12 +144,13 @@ public class Policy : Entity<PolicyId>, IAggregateRoot
         if (maxLoanReservationDays <= 0 || maxLoanReservationDays > MaxAllowedLoanReservationDays)
             return new ValidationError(nameof(maxLoanReservationDays), "Max loan reservation days cannot be negative.");
 
-        Name = nameResult.Value;
-        Description = descriptionResult.Value;
-        LateFeePerDay = lateFeePerDay;
-        MaxLoanDurationDays = maxLoanDurationDays;
-        MaxRenewalCount = maxRenewalCount;
-        MaxLoanReservationDays = maxLoanReservationDays;
+        var nameResult = name.Validate(nameof(name));
+        if (nameResult.IsFailure)
+            return nameResult.Error;
+
+        var descriptionResult = description.Validate(nameof(description));
+        if (descriptionResult.IsFailure)
+            return descriptionResult.Error;
 
         return Result.Success();
     }

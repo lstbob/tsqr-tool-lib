@@ -1,7 +1,13 @@
-namespace TSQR.ToolLibrary.Infrastructure.Dapper.Repositories;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Abstractions;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
+namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Repositories;
 
-public sealed class ToolRepository(ISqlUnitOfWork uow, ISqlEntityMapping<Tool> mapping)
-    : SqlRepository<Tool, ToolId>(uow, mapping),
+public sealed class ToolRepository(
+    ISqlUnitOfWork uow,
+    ISqlEntityMapping<Tool> mapping,
+    ISqlDialect dialect)
+    : SqlRepository<Tool, ToolId>(uow, mapping, dialect),
         IToolRepository
 {
     public async Task<List<Tool>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -30,8 +36,6 @@ public sealed class ToolRepository(ISqlUnitOfWork uow, ISqlEntityMapping<Tool> m
 
     public async Task<ToolStats> GetStatsAsync(CancellationToken cancellationToken = default)
     {
-        // COUNT(*) returns bigint (Int64); cast to int so Dapper can materialize
-        // StatsRow(int Key, int Count) — without the cast, record construction throws.
         var typeStats = await Database.QueryAsync<StatsRow>(
             "SELECT ToolType AS Key, COUNT(*)::int AS Count FROM Tools GROUP BY ToolType ORDER BY Key"
         );

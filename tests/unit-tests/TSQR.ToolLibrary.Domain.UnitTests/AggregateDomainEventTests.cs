@@ -1,7 +1,6 @@
 using TSQR.Common.Errors;
 using TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate;
-using TSQR.ToolLibrary.Domain.Aggregates.MaintenanceAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
@@ -312,31 +311,6 @@ public class AggregateDomainEventTests
         Assert.True((reservation.ExpiryDate - reservation.ReservationDate).TotalDays - 10 < 0.001);
         // The factory raises ReservationCreatedDomainEvent in-transaction.
         Assert.IsType<ReservationCreatedDomainEvent>(Assert.Single(reservation.DomainEvents));
-    }
-
-    [Fact]
-    public void MaintenanceRecord_Complete_RaisesToolRepairedEvent()
-    {
-        var recordResult = MaintenanceRecord.Create(
-            new InventoryItemId(7),
-            new MemberId(1),
-            "blade misaligned");
-        Assert.True(recordResult.IsSuccess);
-        var record = recordResult.Value;
-
-        var startResult = record.StartWork();
-        Assert.True(startResult.IsSuccess);
-
-        var completedBy = new MemberId(2);
-        var newCondition = Condition.Repaired;
-        var completeResult = record.Complete(completedBy, newCondition);
-
-        Assert.True(completeResult.IsSuccess);
-        var ev = Assert.Single(record.DomainEvents);
-        var repaired = Assert.IsType<ToolRepairedEvent>(ev);
-        Assert.Equal(record.ItemId, repaired.ItemId);
-        Assert.Equal(completedBy, repaired.RepairedByMemberId);
-        Assert.Equal(newCondition, repaired.NewCondition);
     }
 
     // ---- Fixtures ----

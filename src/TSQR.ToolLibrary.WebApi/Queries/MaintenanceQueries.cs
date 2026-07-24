@@ -1,5 +1,5 @@
 using Dapper;
-using TSQR.ToolLibrary.Infrastructure.Dapper;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 
 namespace TSQR.ToolLibrary.WebApi.Queries;
