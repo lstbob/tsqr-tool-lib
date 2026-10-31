@@ -14,7 +14,7 @@ public class PickupReminderHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository)
     : IDomainEventHandler<PickupReminderEvent>
 {
-    public async Task HandleAsync(
+    public async ValueTask HandleAsync(
         PickupReminderEvent domainEvent,
         CancellationToken cancellationToken)
     {

@@ -16,11 +16,10 @@ namespace TSQR.ToolLibrary.Application.Events;
 /// All mutations are persisted in the originating unit-of-work transaction.
 /// </summary>
 public class ReservationCancelledEventHandler(
-    IReservationRepository reservationRepository,
-    IDomainEventDispatcher dispatcher)
+    IReservationRepository reservationRepository)
     : IDomainEventHandler<ReservationCancelledEvent>
 {
-    public async Task HandleAsync(
+    public async ValueTask HandleAsync(
         ReservationCancelledEvent domainEvent,
         CancellationToken cancellationToken)
     {
@@ -52,11 +51,7 @@ public class ReservationCancelledEventHandler(
             "A prior reservation was cancelled. The tool is now available for you.");
         reservationRepository.Update(nextInLine);
 
-        // The single-pass dispatcher only iterates events present at the call
-        // site, so handlers that produce further events are themselves
-        // responsible for dispatching them.
-        if (nextInLine.DomainEvents.Count > 0)
-            await dispatcher.DispatchAsync(
-                nextInLine.DomainEvents.ToList(), cancellationToken);
+        // The orchestrator drains the NextInLineNotificationEvent raised here
+        // in a subsequent dispatch pass, still inside the same transaction.
     }
 }

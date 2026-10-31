@@ -6,8 +6,9 @@ namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Reposito
 public sealed class ToolRepository(
     ISqlUnitOfWork uow,
     ISqlEntityMapping<Tool> mapping,
-    ISqlDialect dialect)
-    : SqlRepository<Tool, ToolId>(uow, mapping, dialect),
+    ISqlDialect dialect,
+    IDomainEventCollector eventCollector)
+    : SqlRepository<Tool, ToolId>(uow, mapping, dialect, eventCollector),
         IToolRepository
 {
     public async Task<List<Tool>> GetAllAsync(CancellationToken cancellationToken = default)

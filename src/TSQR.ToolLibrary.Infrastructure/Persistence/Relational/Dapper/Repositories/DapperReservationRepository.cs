@@ -8,8 +8,9 @@ namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Reposito
 public sealed class DapperReservationRepository(
     ISqlUnitOfWork uow,
     ISqlEntityMapping<Reservation> mapping,
-    ISqlDialect dialect)
-    : SqlRepository<Reservation, ReservationId>(uow, mapping, dialect), IReservationRepository
+    ISqlDialect dialect,
+    IDomainEventCollector eventCollector)
+    : SqlRepository<Reservation, ReservationId>(uow, mapping, dialect, eventCollector), IReservationRepository
 {
     public async Task<IReadOnlyCollection<Reservation>> GetByItemIdAsync(
         InventoryItemId itemId,

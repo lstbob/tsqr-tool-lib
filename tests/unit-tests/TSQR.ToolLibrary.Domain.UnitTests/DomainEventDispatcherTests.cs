@@ -33,10 +33,30 @@ public class DomainEventDispatcherTests
         var dispatcher = new DomainEventDispatcher(
             new HandlerServiceProvider(new ThrowingHandler()));
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            dispatcher.DispatchAsync([new TestEvent("payload")], CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await dispatcher.DispatchAsync([new TestEvent("payload")], CancellationToken.None));
 
         Assert.Equal("handler boom", ex.Message);
+    }
+
+    [Fact]
+    public async Task DispatchPostCommitAsync_InvokesOnlyPostCommitHandlers()
+    {
+        var domainEvent = new TestEvent("payload");
+        var inTransaction = new RecordingHandler();
+        var postCommit = new PostCommitHandler();
+        var dispatcher = new DomainEventDispatcher(
+            new HandlerServiceProvider(inTransaction, postCommit));
+
+        await dispatcher.DispatchAsync([domainEvent], CancellationToken.None);
+
+        Assert.Single(inTransaction.Handled);
+        Assert.Empty(postCommit.Handled);
+
+        await dispatcher.DispatchPostCommitAsync([domainEvent], CancellationToken.None);
+
+        Assert.Single(inTransaction.Handled);
+        Assert.Single(postCommit.Handled);
     }
 
     private sealed record TestEvent(string Payload) : DomainEvent;
@@ -45,22 +65,33 @@ public class DomainEventDispatcherTests
     {
         public List<TestEvent> Handled { get; } = [];
 
-        public Task HandleAsync(TestEvent domainEvent, CancellationToken cancellationToken = default)
+        public ValueTask HandleAsync(TestEvent domainEvent, CancellationToken cancellationToken = default)
         {
             Handled.Add(domainEvent);
-            return Task.CompletedTask;
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    private sealed class PostCommitHandler : IPostCommitDomainEventHandler<TestEvent>
+    {
+        public List<TestEvent> Handled { get; } = [];
+
+        public ValueTask HandleAsync(TestEvent domainEvent, CancellationToken cancellationToken = default)
+        {
+            Handled.Add(domainEvent);
+            return ValueTask.CompletedTask;
         }
     }
 
     private sealed class UnrelatedHandler : IDomainEventHandler<OtherEvent>
     {
-        public Task HandleAsync(OtherEvent domainEvent, CancellationToken cancellationToken = default) =>
-            Task.CompletedTask;
+        public ValueTask HandleAsync(OtherEvent domainEvent, CancellationToken cancellationToken = default) =>
+            ValueTask.CompletedTask;
     }
 
     private sealed class ThrowingHandler : IDomainEventHandler<TestEvent>
     {
-        public Task HandleAsync(TestEvent domainEvent, CancellationToken cancellationToken = default) =>
+        public ValueTask HandleAsync(TestEvent domainEvent, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("handler boom");
     }
 

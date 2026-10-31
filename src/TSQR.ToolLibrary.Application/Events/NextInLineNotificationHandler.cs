@@ -16,7 +16,7 @@ public class NextInLineNotificationHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository)
     : IDomainEventHandler<NextInLineNotificationEvent>
 {
-    public async Task HandleAsync(
+    public async ValueTask HandleAsync(
         NextInLineNotificationEvent domainEvent,
         CancellationToken cancellationToken)
     {

@@ -16,10 +16,10 @@ namespace TSQR.ToolLibrary.Application.Events;
 /// stays defined-but-unraised so the audit's "Defined but Dead" entry is
 /// closed for the dispatch pipeline while the time-based raise remains tracked.
 /// </summary>
-public class ReturnReminderHandler : IDomainEventHandler<ReturnReminderEvent>
+public class ReturnReminderHandler : IPostCommitDomainEventHandler<ReturnReminderEvent>
 {
-    public Task HandleAsync(ReturnReminderEvent domainEvent, CancellationToken cancellationToken)
+    public ValueTask HandleAsync(ReturnReminderEvent domainEvent, CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 }

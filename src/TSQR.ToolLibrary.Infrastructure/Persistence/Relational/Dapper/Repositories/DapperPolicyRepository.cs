@@ -9,8 +9,9 @@ namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Reposito
 public sealed class DapperPolicyRepository(
     ISqlUnitOfWork uow,
     ISqlEntityMapping<Policy> mapping,
-    ISqlDialect dialect)
-    : SqlRepository<Policy, PolicyId>(uow, mapping, dialect), IPolicyRepository
+    ISqlDialect dialect,
+    IDomainEventCollector eventCollector)
+    : SqlRepository<Policy, PolicyId>(uow, mapping, dialect, eventCollector), IPolicyRepository
 {
     public async Task<Policy?> GetByToolTypeAsync(
         ToolType toolType,

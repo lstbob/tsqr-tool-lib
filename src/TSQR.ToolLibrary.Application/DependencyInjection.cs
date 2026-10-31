@@ -61,6 +61,7 @@ public static class DependencyInjection
     public static IServiceCollection AddDomainEventFeatures(this IServiceCollection services)
     {
         services.AddScoped<DomainEventOrchestrator>();
+        services.AddScoped<IDomainEventCollector, DomainEventCollector>();
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
         services.AddScoped<IDomainEventHandler<ReservationCancelledEvent>, ReservationCancelledEventHandler>();
         services.AddScoped<IDomainEventHandler<ToolReturnedEvent>, ToolReturnedEventHandler>();
@@ -70,7 +71,7 @@ public static class DependencyInjection
         services.AddScoped<IDomainEventHandler<ToolMarkedForRepairEvent>, ToolMarkedForRepairNotificationHandler>();
         services.AddScoped<IDomainEventHandler<NextInLineNotificationEvent>, NextInLineNotificationHandler>();
         services.AddScoped<IDomainEventHandler<PickupReminderEvent>, PickupReminderHandler>();
-        services.AddScoped<IDomainEventHandler<ReturnReminderEvent>, ReturnReminderHandler>();
+        services.AddScoped<IPostCommitDomainEventHandler<ReturnReminderEvent>, ReturnReminderHandler>();
         return services;
     }
 

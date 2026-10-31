@@ -4,7 +4,7 @@ public class ReservationCreatedDomainEventHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository)
     : IDomainEventHandler<ReservationCreatedDomainEvent>
 {
-    public async Task HandleAsync(ReservationCreatedDomainEvent domainEvent, CancellationToken cancellationToken)
+    public async ValueTask HandleAsync(ReservationCreatedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         var item = await inventoryRepository.GetByIdAsync(domainEvent.ItemId, cancellationToken)
             ?? throw new InvalidOperationException($"InventoryItem {domainEvent.ItemId} not found for reservation side-effect.");

@@ -6,7 +6,8 @@ namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
 public class SqlRepository<TEntity, TId>(
     ISqlUnitOfWork uow,
     ISqlEntityMapping<TEntity> mapping,
-    ISqlDialect dialect)
+    ISqlDialect dialect,
+    IDomainEventCollector eventCollector)
     : IRepository<TEntity, TId>
     where TEntity : Entity<TId>, IAggregateRoot
     where TId : ValueObject
@@ -32,12 +33,14 @@ public class SqlRepository<TEntity, TId>(
         var id = await db.ExecuteScalarAsync<int>(sql, mapping.ToInsertParameters(entity));
 
         entity.SetAssignedId((TId)Activator.CreateInstance(typeof(TId), [id])!);
+        eventCollector.Track(entity);
     }
 
     public virtual void Update(TEntity entity)
     {
         var db = uow.Connection;
         db.Execute(mapping.UpdateSql, mapping.ToUpdateParameters(entity));
+        eventCollector.Track(entity);
     }
 
     public virtual void Delete(TEntity entity)
