@@ -6,6 +6,7 @@ global using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 global using TSQR.ToolLibrary.Domain.Events;
+global using TSQR.Common.Events;
 global using TSQR.Common.Errors;
 global using TSQR.Common.Extensions;
 global using TSQR.Common.Results;

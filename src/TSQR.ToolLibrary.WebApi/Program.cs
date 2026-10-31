@@ -3,14 +3,17 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using TSQR.Common.Messaging;
 using TSQR.ToolLibrary.Application;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Mappings;
+using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Outbox;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Repositories;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Postgres;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
+using TSQR.ToolLibrary.WebApi.Messaging;
 using TSQR.ToolLibrary.WebApi.Middleware;
 using TSQR.ToolLibrary.WebApi.Queries;
 
@@ -110,6 +113,10 @@ builder.Services.AddScoped<IRepository<Policy, PolicyId>>(sp => sp.GetRequiredSe
 builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
 
 builder.Services.AddScoped<IReservationRepository, DapperReservationRepository>();
+builder.Services.AddScoped<IOutboxStore, DapperOutboxStore>();
+builder.Services.AddScoped<ICrossDomainEventBus, OutboxCrossDomainEventBus>();
+builder.Services.AddScoped<IIntegrationEventTransport, LoggingIntegrationEventTransport>();
+builder.Services.AddHostedService<OutboxPublisherService>();
 builder.Services.AddApplicationFeatures();
 
 builder.Services.AddScoped<

@@ -419,4 +419,3 @@ FodyWeavers.xsd
 
 # Local NuGet configuration (contains env-var token references)
 NuGet.Config
-nuget.config

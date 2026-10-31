@@ -4,7 +4,7 @@ public class ToolReturnedEventHandler(
     IReservationRepository reservationRepository)
     : IDomainEventHandler<ToolReturnedEvent>
 {
-    public async Task HandleAsync(ToolReturnedEvent domainEvent, CancellationToken cancellationToken)
+    public async ValueTask HandleAsync(ToolReturnedEvent domainEvent, CancellationToken cancellationToken)
     {
         var allReservations = await reservationRepository.GetByItemIdAsync(domainEvent.ItemId, cancellationToken);
         var queueService = new ReservationQueueService();

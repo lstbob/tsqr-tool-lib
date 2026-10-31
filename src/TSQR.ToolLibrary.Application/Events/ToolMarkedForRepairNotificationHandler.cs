@@ -7,20 +7,18 @@ namespace TSQR.ToolLibrary.Application.Events;
 /// When an InventoryItem is marked for repair, the item cannot be loaned or
 /// picked up, so every non-terminal reservation on it must be cancelled. The
 /// handler cancels all <see cref="ReservationStatus.Pending"/> and
-/// <see cref="ReservationStatus.Confirmed"/> reservations, persists each mutation
-/// via the repository, then explicitly dispatches the resulting
-/// <see cref="ReservationCancelledEvent"/>s within the same unit-of-work
-/// transaction. Each dispatched event will run
-/// <see cref="ReservationCancelledEventHandler"/>, which shifts the queue
-/// positions behind the cancelled slot and notifies (and reserves the item for)
-/// the next-in-line member.
+/// <see cref="ReservationStatus.Confirmed"/> reservations and persists each
+/// mutation via the repository. The orchestrator then drains the resulting
+/// <see cref="ReservationCancelledEvent"/>s in a subsequent in-transaction
+/// pass. Each one runs <see cref="ReservationCancelledEventHandler"/>, which
+/// shifts the queue positions behind the cancelled slot and notifies (and
+/// reserves the item for) the next-in-line member.
 /// </summary>
 public class ToolMarkedForRepairNotificationHandler(
-    IReservationRepository reservationRepository,
-    IDomainEventDispatcher dispatcher)
+    IReservationRepository reservationRepository)
     : IDomainEventHandler<ToolMarkedForRepairEvent>
 {
-    public async Task HandleAsync(
+    public async ValueTask HandleAsync(
         ToolMarkedForRepairEvent domainEvent,
         CancellationToken cancellationToken)
     {
@@ -35,8 +33,6 @@ public class ToolMarkedForRepairNotificationHandler(
         if (cancellable.Count == 0)
             return;
 
-        var cascadedEvents = new List<IDomainEvent>();
-
         foreach (var reservation in cancellable)
         {
             var cancelResult = reservation.Cancel();
@@ -47,15 +43,10 @@ public class ToolMarkedForRepairNotificationHandler(
                 continue;
 
             reservationRepository.Update(reservation);
-            cascadedEvents.AddRange(reservation.DomainEvents);
         }
 
-        // Explicitly fan out the new events so the cancellation chain (queue
-        // shift + next-in-line notification + item hold) runs in the same
-        // transaction. The single-pass DomainEventDispatcher only iterates
-        // events present at the call site, so handlers that produce further
-        // events are themselves responsible for dispatching them.
-        if (cascadedEvents.Count > 0)
-            await dispatcher.DispatchAsync(cascadedEvents, cancellationToken);
+        // The orchestrator drains the ReservationCancelledEvents raised here
+        // in subsequent passes, still inside the same transaction. That drives
+        // queue shifting, next-in-line promotion, and the item hold.
     }
 }

@@ -4,7 +4,7 @@ public class InventoryItemRequiredEventHandler(
     IRepository<InventoryItem, InventoryItemId> inventoryRepository)
     : IDomainEventHandler<InventoryItemRequiredEvent>
 {
-    public async Task HandleAsync(InventoryItemRequiredEvent domainEvent, CancellationToken cancellationToken)
+    public async ValueTask HandleAsync(InventoryItemRequiredEvent domainEvent, CancellationToken cancellationToken)
     {
         var item = InventoryItem.Create(
             domainEvent.ToolId,

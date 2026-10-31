@@ -4,4 +4,4 @@ public record ReservationCancelledEvent(
     ReservationId ReservationId,
     InventoryItemId ItemId,
     MemberId MemberId
-) : IDomainEvent;
+) : DomainEvent;

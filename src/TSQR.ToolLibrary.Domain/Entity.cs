@@ -2,39 +2,37 @@ namespace TSQR.ToolLibrary.Domain;
 
 /// <summary>
 /// Non-generic base class for all domain entities. Holds the domain-event
-/// collection so the application layer's <see cref="DomainEventDispatcher"/>
+/// collection so the application layer's <see cref="IDomainEventDispatcher"/>
 /// can dispatch and clear events across aggregates without knowing their
 /// identifier type. Mirrors the eShop reference
 /// (<c>src/Ordering.Domain/SeedWork/Entity.cs</c>).
 /// </summary>
 public abstract class Entity
 {
-    private List<IDomainEvent> _domainEvents = [];
+    private readonly List<IDomainEvent> _domainEvents = [];
 
-    /// <summary>The domain events raised by this aggregate since the last dispatch.</summary>
-    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    /// <summary>
+    /// The domain events raised by this aggregate since the last dispatch.
+    /// Exposed as a read-only list so the getter does not allocate a wrapper
+    /// on every access.
+    /// </summary>
+    public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents;
 
     /// <summary>Records a domain event on this aggregate for later dispatch.</summary>
     public void AddDomainEvent(IDomainEvent eventItem)
     {
-        _domainEvents ??= [];
+        ArgumentNullException.ThrowIfNull(eventItem);
         _domainEvents.Add(eventItem);
     }
 
     /// <summary>Removes a previously recorded domain event.</summary>
-    public void RemoveDomainEvent(IDomainEvent eventItem)
-    {
-        _domainEvents?.Remove(eventItem);
-    }
+    public void RemoveDomainEvent(IDomainEvent eventItem) => _domainEvents.Remove(eventItem);
 
     /// <summary>
     /// Clears the collected domain events. Called by the application layer
     /// only after a successful transaction commit.
     /// </summary>
-    public void ClearDomainEvents()
-    {
-        _domainEvents?.Clear();
-    }
+    public void ClearDomainEvents() => _domainEvents.Clear();
 }
 
 /// <summary>

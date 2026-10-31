@@ -8,6 +8,12 @@ public class InMemoryRepository<TAggregateRoot, TId> : IRepository<TAggregateRoo
 {
     private readonly ConcurrentDictionary<string, TAggregateRoot> _store = new();
     private readonly InMemoryUnitOfWork _unitOfWork = new();
+    private readonly IDomainEventCollector? _eventCollector;
+
+    public InMemoryRepository(IDomainEventCollector? eventCollector = null)
+    {
+        _eventCollector = eventCollector;
+    }
 
     public IUnitOfWork UnitOfWork => _unitOfWork;
 
@@ -22,6 +28,8 @@ public class InMemoryRepository<TAggregateRoot, TId> : IRepository<TAggregateRoo
     {
         var key = GetEntityId(entity).ToString() ?? string.Empty;
         _store.TryAdd(key, entity);
+        if (entity is Entity aggregate)
+            _eventCollector?.Track(aggregate);
         return Task.CompletedTask;
     }
 
@@ -29,6 +37,8 @@ public class InMemoryRepository<TAggregateRoot, TId> : IRepository<TAggregateRoo
     {
         var key = GetEntityId(entity).ToString() ?? string.Empty;
         _store[key] = entity;
+        if (entity is Entity aggregate)
+            _eventCollector?.Track(aggregate);
     }
 
     public void Delete(TAggregateRoot entity)

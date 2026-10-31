@@ -21,8 +21,9 @@ public sealed class InventoryItemRepository(
     ISqlUnitOfWork uow,
     ISqlEntityMapping<InventoryItem> itemMapping,
     ISqlEntityMapping<MaintenanceRecord> recordMapping,
-    ISqlDialect dialect)
-    : SqlRepository<InventoryItem, InventoryItemId>(uow, itemMapping, dialect),
+    ISqlDialect dialect,
+    IDomainEventCollector eventCollector)
+    : SqlRepository<InventoryItem, InventoryItemId>(uow, itemMapping, dialect, eventCollector),
         IRepository<InventoryItem, InventoryItemId>
 {
     private static readonly MaintenanceStatus[] OpenStatuses =

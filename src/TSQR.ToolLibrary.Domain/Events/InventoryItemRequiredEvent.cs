@@ -5,4 +5,4 @@ public record InventoryItemRequiredEvent(
     MemberId OwnerId,
     string SerialNumber,
     Condition InitialCondition,
-    int CommunityId) : IDomainEvent;
+    int CommunityId) : DomainEvent;

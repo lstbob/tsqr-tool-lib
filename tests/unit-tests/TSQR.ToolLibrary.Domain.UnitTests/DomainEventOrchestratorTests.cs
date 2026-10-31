@@ -1,9 +1,11 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using TSQR.ToolLibrary.Application;
 using TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 using TSQR.ToolLibrary.Domain.Events;
+using TSQR.Common.Events;
 
 namespace TSQR.ToolLibrary.Domain.UnitTests;
 
@@ -63,7 +65,8 @@ public class DomainEventOrchestratorTests
         var dispatched = new List<IDomainEvent>();
         var dispatcher = new RecordingDispatcher(dispatched);
         var uow = new RecordingUnitOfWork();
-        var orchestrator = new DomainEventOrchestrator(uow, dispatcher);
+        var orchestrator = new DomainEventOrchestrator(
+            uow, dispatcher, new DomainEventCollector(), NullLogger<DomainEventOrchestrator>.Instance);
 
         await orchestrator.SaveEntitiesAsync(aggregate, CancellationToken.None);
 
@@ -85,7 +88,8 @@ public class DomainEventOrchestratorTests
 
         var dispatcher = new ThrowingDispatcher(new InvalidOperationException("handler boom"));
         var uow = new RecordingUnitOfWork();
-        var orchestrator = new DomainEventOrchestrator(uow, dispatcher);
+        var orchestrator = new DomainEventOrchestrator(
+            uow, dispatcher, new DomainEventCollector(), NullLogger<DomainEventOrchestrator>.Instance);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             orchestrator.SaveEntitiesAsync(aggregate, CancellationToken.None)
@@ -109,7 +113,8 @@ public class DomainEventOrchestratorTests
 
         var dispatcher = new RecordingDispatcher(new List<IDomainEvent>());
         var uow = new ThrowingUnitOfWork(new InvalidOperationException("commit boom"));
-        var orchestrator = new DomainEventOrchestrator(uow, dispatcher);
+        var orchestrator = new DomainEventOrchestrator(
+            uow, dispatcher, new DomainEventCollector(), NullLogger<DomainEventOrchestrator>.Instance);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             orchestrator.SaveEntitiesAsync(aggregate, CancellationToken.None)
@@ -151,7 +156,8 @@ public class DomainEventOrchestratorTests
         var dispatched = new List<IDomainEvent>();
         var dispatcher = new RecordingDispatcher(dispatched);
         var uow = new RecordingUnitOfWork();
-        var orchestrator = new DomainEventOrchestrator(uow, dispatcher);
+        var orchestrator = new DomainEventOrchestrator(
+            uow, dispatcher, new DomainEventCollector(), NullLogger<DomainEventOrchestrator>.Instance);
 
         await orchestrator.SaveEntitiesAsync([loan, item], CancellationToken.None);
 
@@ -159,6 +165,35 @@ public class DomainEventOrchestratorTests
         Assert.Equal(2, dispatched.Count);
         Assert.Empty(item.DomainEvents);
         Assert.Empty(loan.DomainEvents);
+    }
+
+    [Fact]
+    public async Task SaveEntitiesAsync_DrainsEventsRaisedByHandlers()
+    {
+        var root = new TestEntity();
+        var cascaded = new TestEntity();
+        root.AddDomainEvent(new TestEvent("root"));
+
+        var collector = new DomainEventCollector();
+        collector.Track(cascaded);
+
+        var dispatched = new List<IDomainEvent>();
+        var dispatcher = new CascadingDispatcher(dispatched, () =>
+        {
+            if (dispatched.Count == 1)
+                cascaded.AddDomainEvent(new TestEvent("cascaded"));
+        });
+        var uow = new RecordingUnitOfWork();
+        var orchestrator = new DomainEventOrchestrator(
+            uow, dispatcher, collector, NullLogger<DomainEventOrchestrator>.Instance);
+
+        await orchestrator.SaveEntitiesAsync(root, CancellationToken.None);
+
+        Assert.Equal(2, dispatcher.DispatchCallCount);
+        Assert.Equal(2, dispatched.Count);
+        Assert.Equal(1, uow.SaveChangesAsyncCallCount);
+        Assert.Empty(root.DomainEvents);
+        Assert.Empty(cascaded.DomainEvents);
     }
 
     // ---- Fakes (technology-agnostic, prove the swappability contract) ----
@@ -184,23 +219,62 @@ public class DomainEventOrchestratorTests
     {
         public int DispatchCallCount { get; private set; }
 
-        public Task DispatchAsync(
+        public ValueTask DispatchAsync(
             IReadOnlyCollection<IDomainEvent> domainEvents,
             CancellationToken cancellationToken = default
         )
         {
             DispatchCallCount++;
             recorded.AddRange(domainEvents);
-            return Task.CompletedTask;
+            return ValueTask.CompletedTask;
         }
+
+        public ValueTask DispatchPostCommitAsync(
+            IReadOnlyCollection<IDomainEvent> domainEvents,
+            CancellationToken cancellationToken = default
+        ) => ValueTask.CompletedTask;
     }
 
     private sealed class ThrowingDispatcher(Exception ex) : IDomainEventDispatcher
     {
-        public Task DispatchAsync(
+        public ValueTask DispatchAsync(
+            IReadOnlyCollection<IDomainEvent> domainEvents,
+            CancellationToken cancellationToken = default
+        ) => throw ex;
+
+        public ValueTask DispatchPostCommitAsync(
             IReadOnlyCollection<IDomainEvent> domainEvents,
             CancellationToken cancellationToken = default
         ) => throw ex;
     }
+
+    private sealed class CascadingDispatcher(
+        List<IDomainEvent> recorded,
+        Action onDispatch) : IDomainEventDispatcher
+    {
+        public int DispatchCallCount { get; private set; }
+
+        public ValueTask DispatchAsync(
+            IReadOnlyCollection<IDomainEvent> domainEvents,
+            CancellationToken cancellationToken = default
+        )
+        {
+            DispatchCallCount++;
+            recorded.AddRange(domainEvents);
+            onDispatch();
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask DispatchPostCommitAsync(
+            IReadOnlyCollection<IDomainEvent> domainEvents,
+            CancellationToken cancellationToken = default
+        ) => ValueTask.CompletedTask;
+    }
+
+    private sealed class TestEntity : Entity
+    {
+    }
+
+    private sealed record TestEvent(string Name) : DomainEvent;
 }
 

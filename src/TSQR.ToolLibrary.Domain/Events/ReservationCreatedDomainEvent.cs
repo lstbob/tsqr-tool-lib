@@ -4,4 +4,4 @@ public record ReservationCreatedDomainEvent(
     ReservationId ReservationId,
     InventoryItemId ItemId,
     MemberId MemberId,
-    DateTime ReservationDate) : IDomainEvent;
+    DateTime ReservationDate) : DomainEvent;
