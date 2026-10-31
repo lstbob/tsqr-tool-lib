@@ -4,5 +4,5 @@ namespace TSQR.ToolLibrary.Domain.Events;
 /// Representing event triggered when an item is loaned out.
 /// </summary>
 public record ItemLoanedDomainEvent(
-     InventoryItemId ItemId, MemberId BorrowerId, DateTime LoanDate) : IDomainEvent;
+     InventoryItemId ItemId, MemberId BorrowerId, DateTime LoanDate) : DomainEvent;
 

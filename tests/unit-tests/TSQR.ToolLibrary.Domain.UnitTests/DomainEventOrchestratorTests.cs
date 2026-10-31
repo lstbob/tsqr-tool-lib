@@ -4,6 +4,7 @@ using TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 using TSQR.ToolLibrary.Domain.Events;
+using TSQR.Common.Events;
 
 namespace TSQR.ToolLibrary.Domain.UnitTests;
 

@@ -5,4 +5,4 @@ public record PickupReminderEvent(
     InventoryItemId ItemId,
     MemberId MemberId,
     DateTime PickupDate
-) : IDomainEvent;
+) : DomainEvent;

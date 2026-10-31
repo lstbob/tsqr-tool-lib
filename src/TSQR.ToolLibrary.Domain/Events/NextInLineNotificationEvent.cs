@@ -5,4 +5,4 @@ public record NextInLineNotificationEvent(
     InventoryItemId ItemId,
     MemberId NextMemberId,
     string Reason
-) : IDomainEvent;
+) : DomainEvent;
