@@ -3,7 +3,7 @@ WORKDIR /src
 
 # Build tsqr-common from source (avoids GitHub Packages auth)
 COPY --from=common . ./tsqr-common
-RUN rm ./tsqr-common/nuget.config && \
+RUN rm -f ./tsqr-common/nuget.config && \
     dotnet pack ./tsqr-common/src/TSQR.Common/TSQR.Common.csproj -c Release -o /tmp/nupkg
 
 COPY nuget.config .
