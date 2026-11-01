@@ -1,4 +1,4 @@
-namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
+namespace TSQR.ToolLibrary.Domain.Aggregates.PolicyAggregate;
 
 public class Policy : Entity<PolicyId>, IAggregateRoot
 {

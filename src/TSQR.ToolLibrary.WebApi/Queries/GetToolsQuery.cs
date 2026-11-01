@@ -4,7 +4,7 @@ namespace TSQR.ToolLibrary.WebApi.Queries;
 
 public record GetToolsQuery(string? Q, int? Type, int? ManufacturerId, int Page, int PageSize);
 
-public sealed class GetToolsHandler(IToolRepository toolRepo)
+public sealed class GetToolsHandler(IToolQueries toolQueries)
     : IInteractor<GetToolsQuery, PagedResult<ToolListItem>>
 {
     public async Task<PagedResult<ToolListItem>> ExecuteAsync(
@@ -12,7 +12,7 @@ public sealed class GetToolsHandler(IToolRepository toolRepo)
         CancellationToken ct
     )
     {
-        var allTools = await toolRepo.GetAllAsync(ct);
+        var allTools = await toolQueries.GetAllAsync(ct);
 
         var filtered = allTools.AsEnumerable();
 

@@ -1,7 +1,7 @@
 using MemberAgg = TSQR.ToolLibrary.Domain.Aggregates.MemberAggregate.Member;
 using LoanAgg = TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate.Loan;
 using ToolAgg = TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate.Tool;
-using PolicyAgg = TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate.Policy;
+using PolicyAgg = TSQR.ToolLibrary.Domain.Aggregates.PolicyAggregate.Policy;
 
 namespace TSQR.ToolLibrary.Application.Loan.Commands;
 

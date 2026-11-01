@@ -1,6 +1,7 @@
 using TSQR.ToolLibrary.Domain.Aggregates.LocationAggregate;
+using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 
-namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
+namespace TSQR.ToolLibrary.Domain.Aggregates.PolicyAggregate;
 
 /// <summary>
 /// Repository for <see cref="Policy"/> aggregates. Lookup is keyed on

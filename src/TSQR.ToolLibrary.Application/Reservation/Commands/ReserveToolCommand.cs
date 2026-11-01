@@ -1,6 +1,6 @@
 using ReservationAgg = TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate.Reservation;
 using ToolAgg = TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate.Tool;
-using PolicyAgg = TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate.Policy;
+using PolicyAgg = TSQR.ToolLibrary.Domain.Aggregates.PolicyAggregate.Policy;
 
 namespace TSQR.ToolLibrary.Application.Reservation.Commands;
 

@@ -37,7 +37,7 @@ public class Loan : Entity<LoanId>, IAggregateRoot
     public decimal FineAccrued { get; private set; }
 
     /// <summary>
-    /// Per-day late fee snapshotted from the <see cref="Aggregates.ToolAggregate.Policy"/>
+    /// Per-day late fee snapshotted from the <see cref="Aggregates.PolicyAggregate.Policy"/>
     /// at checkout. Policy changes made after a loan has begun do not affect
     /// the rate applied to in-flight loans — the agreement is "frozen" the
     /// moment the tool leaves the shelf. This is the DDD-correct pattern for
@@ -47,7 +47,7 @@ public class Loan : Entity<LoanId>, IAggregateRoot
 
     /// <summary>
     /// Number of times this loan has been renewed. Bounded by the originating
-    /// <see cref="Aggregates.ToolAggregate.Policy.MaxRenewalCount"/> via the
+    /// <see cref="Aggregates.PolicyAggregate.Policy.MaxRenewalCount"/> via the
     /// <see cref="Renew"/> method.
     /// </summary>
     public int RenewalCount { get; private set; }
@@ -107,7 +107,7 @@ public class Loan : Entity<LoanId>, IAggregateRoot
     /// Backward-compatible factory. Picks a default 7-day loan duration and the
     /// legacy $1.00/day fine rate. New call sites should use the
     /// <see cref="Create(MemberId, InventoryItemId, int, decimal, int)"/> overload
-    /// which derives both from the active <see cref="Aggregates.ToolAggregate.Policy"/>.
+    /// which derives both from the active <see cref="Aggregates.PolicyAggregate.Policy"/>.
     /// </summary>
     public static Result<Loan> Create(
         MemberId memberId,
@@ -186,10 +186,10 @@ public class Loan : Entity<LoanId>, IAggregateRoot
 
     /// <summary>
     /// Renews the loan, extending the due date by <paramref name="maxLoanDurationDays"/>
-    /// (taken from the active <see cref="Aggregates.ToolAggregate.Policy"/> at the time
+    /// (taken from the active <see cref="Aggregates.PolicyAggregate.Policy"/> at the time
     /// of renewal). Rejects renewal if the loan is not currently active, if the loan
     /// has already been returned/ended, or if the policy's
-    /// <see cref="Aggregates.ToolAggregate.Policy.MaxRenewalCount"/> would be exceeded.
+    /// <see cref="Aggregates.PolicyAggregate.Policy.MaxRenewalCount"/> would be exceeded.
     /// Does not raise a domain event — the application-layer RenewLoanCommand (tracked
     /// separately) is responsible for any side effects.
     /// </summary>

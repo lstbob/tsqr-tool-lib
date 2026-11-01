@@ -1,4 +1,4 @@
-namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
+namespace TSQR.ToolLibrary.Domain.Aggregates.PolicyAggregate;
 
 /// <summary>
 /// Represents the unique identifier for a policy.

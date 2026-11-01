@@ -1,4 +1,4 @@
-namespace TSQR.ToolLibrary.Domain;
+namespace TSQR.ToolLibrary.Application.Queries;
 
 public record DashboardData(int TotalTools, int TotalMembers, int ActiveLoans, int UnderMaintenance, int PendingReservations);
 

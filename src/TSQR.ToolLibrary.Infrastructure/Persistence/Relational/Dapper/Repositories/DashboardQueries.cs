@@ -1,3 +1,4 @@
+using TSQR.ToolLibrary.Application.Queries;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 
 namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Repositories;

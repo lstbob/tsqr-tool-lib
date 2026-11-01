@@ -1,4 +1,4 @@
-namespace TSQR.ToolLibrary.Domain;
+namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 
 public interface IManufacturerRepository
 {

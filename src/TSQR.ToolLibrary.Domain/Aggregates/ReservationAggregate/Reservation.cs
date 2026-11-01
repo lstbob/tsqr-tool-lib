@@ -65,7 +65,7 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
 
     /// <summary>
     /// Policy-driven factory. <paramref name="maxLoanReservationDays"/> is
-    /// taken from the active <see cref="Aggregates.ToolAggregate.Policy"/> at
+    /// taken from the active <see cref="Aggregates.PolicyAggregate.Policy"/> at
     /// the moment of reservation and used to derive <see cref="ExpiryDate"/>.
     /// Raises <see cref="ReservationCreatedDomainEvent"/> on success.
     /// </summary>

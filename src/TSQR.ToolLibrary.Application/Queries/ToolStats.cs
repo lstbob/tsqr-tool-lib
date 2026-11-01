@@ -1,11 +1,4 @@
-namespace TSQR.ToolLibrary.Domain;
-
-public interface IToolRepository : IRepository<Tool, ToolId>
-{
-    Task<List<Tool>> GetAllAsync(CancellationToken cancellationToken = default);
-
-    Task<ToolStats> GetStatsAsync(CancellationToken cancellationToken = default);
-}
+namespace TSQR.ToolLibrary.Application.Queries;
 
 public record ToolStats(
     List<(int Key, string Label, int Count)> ByType,
