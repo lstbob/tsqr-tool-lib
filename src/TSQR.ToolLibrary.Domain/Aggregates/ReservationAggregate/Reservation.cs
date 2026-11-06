@@ -74,16 +74,19 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
         MemberId memberId,
         DateTime reservationDate,
         int maxLoanReservationDays,
-        int communityId = 0)
+        int communityId = 0,
+        int queuePosition = 1)
     {
         if (maxLoanReservationDays <= 0)
             return new ValidationError(nameof(maxLoanReservationDays), "Max loan reservation days must be positive.");
+        if (queuePosition <= 0)
+            return new ValidationError(nameof(queuePosition), "Queue position must be positive.");
 
         var expiryDate = reservationDate.AddDays(maxLoanReservationDays);
-        var reservation = Create(itemId, memberId, reservationDate, expiryDate, 1, communityId);
+        var reservation = Create(itemId, memberId, reservationDate, expiryDate, queuePosition, communityId);
         if (reservation.IsSuccess)
             reservation.Value.AddDomainEvent(new ReservationCreatedDomainEvent(
-                reservation.Value.Id, itemId, memberId, reservationDate));
+                reservation.Value.Id, itemId, memberId, reservationDate, queuePosition));
         return reservation;
     }
 
@@ -169,9 +172,14 @@ public class Reservation : Entity<ReservationId>, IAggregateRoot
         return Result.Success();
     }
 
-    public void MoveDownInQueue()
+    /// <summary>
+    /// Moves the reservation one slot closer to the front of the queue. Called
+    /// when a reservation ahead of it is cancelled/removed.
+    /// </summary>
+    public void MoveUpInQueue()
     {
-        QueuePosition++;
+        if (QueuePosition > 1)
+            QueuePosition--;
     }
 
     public void NotifyNextInLine(string reason)

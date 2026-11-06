@@ -11,7 +11,7 @@ public record ReserveToolCommand(
     int CommunityId = 1);
 
 public class ReserveToolCommandHandler(
-    IRepository<ReservationAgg, ReservationId> reservationRepository,
+    IReservationRepository reservationRepository,
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
     IToolRepository toolRepository,
     IPolicyRepository policyRepository,
@@ -39,6 +39,19 @@ public class ReserveToolCommandHandler(
         if (policy is null)
             return new DomainError(nameof(PolicyAgg), "No lending policy configured for this tool type.");
 
+        // Join the back of the active queue for this item. Reservations for
+        // loaned/reserved items are allowed; they simply wait in line instead
+        // of trying to reserve the inventory item a second time.
+        var existingReservations = await reservationRepository.GetByItemIdAsync(
+            command.ItemId, cancellationToken);
+        var activeReservations = existingReservations
+            .Where(r => r.Status is ReservationStatus.Pending
+                or ReservationStatus.Confirmed
+                or ReservationStatus.Active)
+            .ToList();
+        var nextQueuePosition = new ReservationQueueService()
+            .CalculateNextQueuePosition(activeReservations);
+
         // Policy-driven factory: Reservation.ExpiryDate is derived from
         // Policy.MaxLoanReservationDays instead of the legacy hardcoded 14.
         var reservationResult = ReservationAgg.Create(
@@ -46,7 +59,8 @@ public class ReserveToolCommandHandler(
             command.MemberId,
             command.ReservationDate,
             policy.MaxLoanReservationDays,
-            command.CommunityId);
+            command.CommunityId,
+            nextQueuePosition);
 
         if (reservationResult.IsFailure)
             return reservationResult.Error;

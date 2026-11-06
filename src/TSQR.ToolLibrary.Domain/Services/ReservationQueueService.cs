@@ -23,7 +23,7 @@ public class ReservationQueueService
         foreach (var reservation in activeReservations
             .Where(r => r.QueuePosition > cancelledReservation.QueuePosition))
         {
-            reservation.MoveDownInQueue();
+            reservation.MoveUpInQueue();
         }
 
         return activeReservations;
