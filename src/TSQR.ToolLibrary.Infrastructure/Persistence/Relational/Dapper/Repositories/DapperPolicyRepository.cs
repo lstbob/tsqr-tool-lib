@@ -26,7 +26,7 @@ public sealed class DapperPolicyRepository(
                      MaxLoanReservationDays
               FROM Policies
               WHERE ToolType = @ToolType
-                AND (LocationId IS @LocationId OR LocationId IS NULL)
+                AND (LocationId = @LocationId OR LocationId IS NULL)
               ORDER BY LocationId NULLS LAST
               LIMIT 1",
             new { ToolType = toolType, LocationId = locationId?.Value }
