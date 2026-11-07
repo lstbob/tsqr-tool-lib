@@ -1,26 +1,25 @@
-using TSQR.ToolLibrary.Infrastructure.Persistence.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 
 namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
 
 public class SqlRepository<TEntity, TId>(
     ISqlUnitOfWork uow,
-    ISqlEntityMapping<TEntity> mapping,
+    ISqlEntityMapping<TEntity, TId> mapping,
     ISqlDialect dialect,
     IDomainEventCollector eventCollector)
-    : IRepository<TEntity, TId>
+    : IRelationalRepository<TEntity, TId>
     where TEntity : Entity<TId>, IAggregateRoot
     where TId : ValueObject
 {
     public IUnitOfWork UnitOfWork => uow;
     protected ISqlConnection Database => uow.Connection;
 
-    public virtual async Task<TEntity?> GetByIdAsync(
+    public virtual Task<TEntity?> GetByIdAsync(
         TId id,
         CancellationToken cancellationToken = default
     )
     {
-        return await mapping.GetByIdAsync(uow.Connection, (int)((dynamic)id!).Value);
+        return mapping.GetByIdAsync(uow.Connection, id);
     }
 
     public virtual async Task AddAsync(
@@ -30,9 +29,17 @@ public class SqlRepository<TEntity, TId>(
     {
         var db = uow.Connection;
         var sql = mapping.InsertSql + dialect.SelectInsertedIdSuffix;
-        var id = await db.ExecuteScalarAsync<int>(sql, mapping.ToInsertParameters(entity));
+        var databaseId = await db.ExecuteScalarAsync<object>(
+            sql,
+            mapping.ToInsertParameters(entity));
 
-        entity.SetAssignedId((TId)Activator.CreateInstance(typeof(TId), [id])!);
+        if (databaseId is null)
+        {
+            throw new InvalidOperationException(
+                $"Insert for {typeof(TEntity).Name} did not return an identifier.");
+        }
+
+        entity.SetAssignedId(mapping.CreateId(databaseId));
         eventCollector.Track(entity);
     }
 
@@ -46,6 +53,6 @@ public class SqlRepository<TEntity, TId>(
     public virtual void Delete(TEntity entity)
     {
         var db = uow.Connection;
-        db.Execute(mapping.DeleteSql, new { Id = entity.Id });
+        db.Execute(mapping.DeleteSql, mapping.ToDeleteParameters(entity));
     }
 }

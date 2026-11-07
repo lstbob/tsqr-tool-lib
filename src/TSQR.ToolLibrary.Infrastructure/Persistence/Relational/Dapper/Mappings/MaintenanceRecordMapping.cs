@@ -36,7 +36,7 @@ internal sealed record MaintenanceRecordUpdateDto(
     DateTime? CompletedDate,
     Condition? ResultingCondition);
 
-public sealed class MaintenanceRecordMapping : ISqlEntityMapping<MaintenanceRecord>
+public sealed class MaintenanceRecordMapping : ISqlEntityMapping<MaintenanceRecord, MaintenanceRecordId>
 {
     public string TableName => "MaintenanceRecords";
 
@@ -57,12 +57,12 @@ public sealed class MaintenanceRecordMapping : ISqlEntityMapping<MaintenanceReco
 
     public string DeleteSql => "DELETE FROM MaintenanceRecords WHERE Id = @Id";
 
-    public async Task<MaintenanceRecord?> GetByIdAsync(ISqlConnection db, int id)
+    public async Task<MaintenanceRecord?> GetByIdAsync(ISqlConnection db, MaintenanceRecordId id)
     {
         var row = await db.QuerySingleOrDefaultAsync<MaintenanceRecordRow>(
             @"SELECT Id, ItemId, ReportedById, ReportedDate, Description,
                      Status, CompletedById, CompletedDate, ResultingCondition
-              FROM MaintenanceRecords WHERE Id = @Id", new { Id = id });
+              FROM MaintenanceRecords WHERE Id = @Id", new { Id = id.Value });
 
         if (row is null) return null;
 
@@ -100,4 +100,8 @@ public sealed class MaintenanceRecordMapping : ISqlEntityMapping<MaintenanceReco
         entity.CompletedById?.Value,
         entity.CompletedDate,
         entity.ResultingCondition);
+
+    public object ToDeleteParameters(MaintenanceRecord entity) => new { Id = entity.Id.Value };
+
+    public MaintenanceRecordId CreateId(object databaseId) => new(Convert.ToInt32(databaseId));
 }

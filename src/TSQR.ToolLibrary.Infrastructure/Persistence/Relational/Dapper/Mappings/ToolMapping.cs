@@ -40,7 +40,7 @@ internal sealed record ToolUpdateDto(
     string? Metadata,
     int CommunityId);
 
-public sealed class ToolMapping : ISqlEntityMapping<Tool>
+public sealed class ToolMapping : ISqlEntityMapping<Tool, ToolId>
 {
     public string TableName => "Tools";
 
@@ -58,14 +58,14 @@ public sealed class ToolMapping : ISqlEntityMapping<Tool>
 
     public string DeleteSql => "DELETE FROM Tools WHERE Id = @Id";
 
-    public async Task<Tool?> GetByIdAsync(ISqlConnection db, int id)
+    public async Task<Tool?> GetByIdAsync(ISqlConnection db, ToolId id)
     {
         var row = await db.QuerySingleOrDefaultAsync<ToolRow>(
             @"SELECT t.Id, t.Model, t.Description, t.ToolType, t.AmortizationRate, t.Metadata, t.CommunityId,
                      m.Id AS ManufacturerId, m.Name AS ManufacturerName
               FROM Tools t
               INNER JOIN Manufacturers m ON m.Id = t.ManufacturerId
-              WHERE t.Id = @Id", new { Id = id });
+              WHERE t.Id = @Id", new { Id = id.Value });
 
         if (row is null)
             return null;
@@ -82,7 +82,7 @@ public sealed class ToolMapping : ISqlEntityMapping<Tool>
 
         var scarcityRows = await db.QueryAsync<ScarcityRow>(
             "SELECT LocationId, ScarcityLevel FROM ToolScarcityByLocation WHERE ToolId = @Id",
-            new { Id = id });
+            new { Id = id.Value });
 
         foreach (var s in scarcityRows)
             tool.SetScarcityLevel(s.LocationId, s.ScarcityLevel);
@@ -108,4 +108,8 @@ public sealed class ToolMapping : ISqlEntityMapping<Tool>
         entity.AmortizationRate,
         entity.Metadata,
         entity.CommunityId);
+
+    public object ToDeleteParameters(Tool entity) => new { Id = entity.Id.Value };
+
+    public ToolId CreateId(object databaseId) => new(Convert.ToInt32(databaseId));
 }

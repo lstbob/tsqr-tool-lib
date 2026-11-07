@@ -36,7 +36,7 @@ internal sealed record ReservationUpdateDto(
     int QueuePosition,
     int CommunityId);
 
-public sealed class ReservationMapping : ISqlEntityMapping<Reservation>
+public sealed class ReservationMapping : ISqlEntityMapping<Reservation, ReservationId>
 {
     public string TableName => "Reservations";
 
@@ -55,12 +55,12 @@ public sealed class ReservationMapping : ISqlEntityMapping<Reservation>
 
     public string DeleteSql => "DELETE FROM Reservations WHERE Id = @Id";
 
-    public async Task<Reservation?> GetByIdAsync(ISqlConnection db, int id)
+    public async Task<Reservation?> GetByIdAsync(ISqlConnection db, ReservationId id)
     {
         var row = await db.QuerySingleOrDefaultAsync<ReservationRow>(
             @"SELECT Id, ItemId, MemberId, ReservationDate, ExpiryDate,
                      Status, IsConfirmed, QueuePosition
-              FROM Reservations WHERE Id = @Id", new { Id = id });
+              FROM Reservations WHERE Id = @Id", new { Id = id.Value });
 
         if (row is null)
             return null;
@@ -96,4 +96,8 @@ public sealed class ReservationMapping : ISqlEntityMapping<Reservation>
         entity.IsConfirmed,
         entity.QueuePosition,
         entity.CommunityId);
+
+    public object ToDeleteParameters(Reservation entity) => new { Id = entity.Id.Value };
+
+    public ReservationId CreateId(object databaseId) => new(Convert.ToInt32(databaseId));
 }

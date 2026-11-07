@@ -57,7 +57,7 @@ internal sealed record MemberUpdateDto(
     DateTime? EndDate,
     int CommunityId);
 
-public sealed class MemberMapping : ISqlEntityMapping<Member>
+public sealed class MemberMapping : ISqlEntityMapping<Member, MemberId>
 {
     public string TableName => "Members";
 
@@ -82,13 +82,13 @@ public sealed class MemberMapping : ISqlEntityMapping<Member>
 
     public string DeleteSql => "DELETE FROM Members WHERE Id = @Id";
 
-    public async Task<Member?> GetByIdAsync(ISqlConnection db, int id)
+    public async Task<Member?> GetByIdAsync(ISqlConnection db, MemberId id)
     {
         var row = await db.QuerySingleOrDefaultAsync<MemberRow>(
             @"SELECT Id, FirstName, MiddleName, LastName, Age, Address, Email, PhoneNumber,
                      Status, IsVerified, VerifiedByAdminId, VerificationDate,
                      MembershipType, StartDate, EndDate, CommunityId
-              FROM Members WHERE Id = @Id", new { Id = id });
+              FROM Members WHERE Id = @Id", new { Id = id.Value });
 
         if (row is null)
             return null;
@@ -148,4 +148,8 @@ public sealed class MemberMapping : ISqlEntityMapping<Member>
         entity.Record?.StartDate,
         entity.Record?.EndDate,
         entity.CommunityId);
+
+    public object ToDeleteParameters(Member entity) => new { Id = entity.Id.Value };
+
+    public MemberId CreateId(object databaseId) => new(Convert.ToInt32(databaseId));
 }

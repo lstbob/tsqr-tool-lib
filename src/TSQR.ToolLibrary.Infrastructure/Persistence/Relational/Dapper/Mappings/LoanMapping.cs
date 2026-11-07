@@ -41,7 +41,7 @@ internal sealed record LoanUpdateDto(
     int RenewalCount,
     int CommunityId);
 
-public sealed class LoanMapping : ISqlEntityMapping<Loan>
+public sealed class LoanMapping : ISqlEntityMapping<Loan, LoanId>
 {
     public string TableName => "Loans";
 
@@ -61,12 +61,12 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
 
     public string DeleteSql => "DELETE FROM Loans WHERE Id = @Id";
 
-    public async Task<Loan?> GetByIdAsync(ISqlConnection db, int id)
+    public async Task<Loan?> GetByIdAsync(ISqlConnection db, LoanId id)
     {
         var row = await db.QuerySingleOrDefaultAsync<LoanRow>(
             @"SELECT Id, MemberId, CheckoutDate, DueDate, ItemId,
                      Status, ReturnedDate, FineAccrued, LateFeePerDay, RenewalCount, CommunityId
-               FROM Loans WHERE Id = @Id", new { Id = id });
+               FROM Loans WHERE Id = @Id", new { Id = id.Value });
 
         if (row is null)
             return null;
@@ -107,4 +107,8 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan>
         entity.LateFeePerDay,
         entity.RenewalCount,
         entity.CommunityId);
+
+    public object ToDeleteParameters(Loan entity) => new { Id = entity.Id.Value };
+
+    public LoanId CreateId(object databaseId) => new(Convert.ToInt32(databaseId));
 }

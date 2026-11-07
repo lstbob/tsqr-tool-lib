@@ -1,11 +1,10 @@
-using TSQR.ToolLibrary.Infrastructure.Persistence.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
 namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Repositories;
 
 public sealed class ToolRepository(
     ISqlUnitOfWork uow,
-    ISqlEntityMapping<Tool> mapping,
+    ISqlEntityMapping<Tool, ToolId> mapping,
     ISqlDialect dialect,
     IDomainEventCollector eventCollector)
     : SqlRepository<Tool, ToolId>(uow, mapping, dialect, eventCollector),

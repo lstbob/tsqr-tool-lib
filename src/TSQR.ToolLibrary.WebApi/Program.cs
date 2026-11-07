@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using TSQR.Common.Messaging;
 using TSQR.ToolLibrary.Application;
-using TSQR.ToolLibrary.Infrastructure.Persistence.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Mappings;
@@ -87,13 +86,13 @@ builder.Services.AddScoped<ISqlUnitOfWork>(sp =>
 // resolve it without ever referencing a SQL/Dapper type.
 builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ISqlUnitOfWork>());
 
-builder.Services.AddSingleton<ISqlEntityMapping<InventoryItem>, InventoryItemMapping>();
-builder.Services.AddSingleton<ISqlEntityMapping<MaintenanceRecord>, MaintenanceRecordMapping>();
-builder.Services.AddSingleton<ISqlEntityMapping<Member>, MemberMapping>();
-builder.Services.AddSingleton<ISqlEntityMapping<Reservation>, ReservationMapping>();
-builder.Services.AddSingleton<ISqlEntityMapping<Tool>, ToolMapping>();
-builder.Services.AddSingleton<ISqlEntityMapping<Loan>, LoanMapping>();
-builder.Services.AddSingleton<ISqlEntityMapping<Policy>, PolicyMapping>();
+builder.Services.AddSingleton<ISqlEntityMapping<InventoryItem, InventoryItemId>, InventoryItemMapping>();
+builder.Services.AddSingleton<ISqlEntityMapping<MaintenanceRecord, MaintenanceRecordId>, MaintenanceRecordMapping>();
+builder.Services.AddSingleton<ISqlEntityMapping<Member, MemberId>, MemberMapping>();
+builder.Services.AddSingleton<ISqlEntityMapping<Reservation, ReservationId>, ReservationMapping>();
+builder.Services.AddSingleton<ISqlEntityMapping<Tool, ToolId>, ToolMapping>();
+builder.Services.AddSingleton<ISqlEntityMapping<Loan, LoanId>, LoanMapping>();
+builder.Services.AddSingleton<ISqlEntityMapping<Policy, PolicyId>, PolicyMapping>();
 
 builder.Services.AddScoped<
     IRepository<InventoryItem, InventoryItemId>,

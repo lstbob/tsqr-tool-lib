@@ -1,7 +1,6 @@
 using TSQR.ToolLibrary.Domain.Aggregates.LocationAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.PolicyAggregate;
 using TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
-using TSQR.ToolLibrary.Infrastructure.Persistence.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
 
@@ -9,7 +8,7 @@ namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Reposito
 
 public sealed class DapperPolicyRepository(
     ISqlUnitOfWork uow,
-    ISqlEntityMapping<Policy> mapping,
+    ISqlEntityMapping<Policy, PolicyId> mapping,
     ISqlDialect dialect,
     IDomainEventCollector eventCollector)
     : SqlRepository<Policy, PolicyId>(uow, mapping, dialect, eventCollector), IPolicyRepository

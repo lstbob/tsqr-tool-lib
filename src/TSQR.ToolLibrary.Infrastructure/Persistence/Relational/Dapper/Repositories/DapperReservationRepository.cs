@@ -1,4 +1,3 @@
-using TSQR.ToolLibrary.Infrastructure.Persistence.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Mappings;
@@ -7,7 +6,7 @@ namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Reposito
 
 public sealed class DapperReservationRepository(
     ISqlUnitOfWork uow,
-    ISqlEntityMapping<Reservation> mapping,
+    ISqlEntityMapping<Reservation, ReservationId> mapping,
     ISqlDialect dialect,
     IDomainEventCollector eventCollector)
     : SqlRepository<Reservation, ReservationId>(uow, mapping, dialect, eventCollector), IReservationRepository

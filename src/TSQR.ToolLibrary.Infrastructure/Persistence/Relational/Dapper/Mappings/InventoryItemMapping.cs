@@ -48,7 +48,7 @@ internal sealed record InventoryItemUpdateDto(
     bool IsUnderRepair,
     int CommunityId);
 
-public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
+public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem, InventoryItemId>
 {
     public string TableName => "InventoryItems";
 
@@ -76,13 +76,13 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
 
     public string DeleteSql => "DELETE FROM InventoryItems WHERE Id = @Id";
 
-    public async Task<InventoryItem?> GetByIdAsync(ISqlConnection db, int id)
+    public async Task<InventoryItem?> GetByIdAsync(ISqlConnection db, InventoryItemId id)
     {
         var row = await db.QuerySingleOrDefaultAsync<InventoryItemRow>(
             @"SELECT Id, ToolId, OriginalOwnerId, InitialAcquisitionDate, SerialNumber,
                      Status, Condition, CurrentHolderId, LastBorrowedDate,
                      LoanCount, TotalUsageTimeTicks, IsUnderRepair, CommunityId
-              FROM InventoryItems WHERE Id = @Id", new { Id = id });
+              FROM InventoryItems WHERE Id = @Id", new { Id = id.Value });
 
         if (row is null)
             return null;
@@ -130,4 +130,8 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem>
         entity.TotalUsageTime.Ticks,
         entity.IsUnderRepair,
         entity.CommunityId);
+
+    public object ToDeleteParameters(InventoryItem entity) => new { Id = entity.Id.Value };
+
+    public InventoryItemId CreateId(object databaseId) => new(Convert.ToInt32(databaseId));
 }

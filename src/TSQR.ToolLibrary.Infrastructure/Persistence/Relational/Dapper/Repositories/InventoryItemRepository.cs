@@ -1,4 +1,3 @@
-using TSQR.ToolLibrary.Infrastructure.Persistence.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
 
@@ -19,8 +18,8 @@ internal sealed record MaintenanceRecordRow
 
 public sealed class InventoryItemRepository(
     ISqlUnitOfWork uow,
-    ISqlEntityMapping<InventoryItem> itemMapping,
-    ISqlEntityMapping<MaintenanceRecord> recordMapping,
+    ISqlEntityMapping<InventoryItem, InventoryItemId> itemMapping,
+    ISqlEntityMapping<MaintenanceRecord, MaintenanceRecordId> recordMapping,
     ISqlDialect dialect,
     IDomainEventCollector eventCollector)
     : SqlRepository<InventoryItem, InventoryItemId>(uow, itemMapping, dialect, eventCollector),
@@ -78,11 +77,15 @@ public sealed class InventoryItemRepository(
         if (repair is not null)
         {
             var sql = recordMapping.InsertSql + dialect.SelectInsertedIdSuffix;
-            var id = await Database.ExecuteScalarAsync<int>(
+            var databaseId = await Database.ExecuteScalarAsync<object>(
                 sql,
                 recordMapping.ToInsertParameters(repair));
 
-            repair.SetAssignedId(new MaintenanceRecordId(id));
+            if (databaseId is null)
+                throw new InvalidOperationException(
+                    "Insert for MaintenanceRecord did not return an identifier.");
+
+            repair.SetAssignedId(recordMapping.CreateId(databaseId));
         }
     }
 
@@ -96,11 +99,15 @@ public sealed class InventoryItemRepository(
             if (repair.IsTransient())
             {
                 var sql = recordMapping.InsertSql + dialect.SelectInsertedIdSuffix;
-                var id = Database.ExecuteScalar<int>(
+                var databaseId = Database.ExecuteScalar<object>(
                     sql,
                     recordMapping.ToInsertParameters(repair));
 
-                repair.SetAssignedId(new MaintenanceRecordId(id));
+                if (databaseId is null)
+                    throw new InvalidOperationException(
+                        "Insert for MaintenanceRecord did not return an identifier.");
+
+                repair.SetAssignedId(recordMapping.CreateId(databaseId));
             }
             else
             {

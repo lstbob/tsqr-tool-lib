@@ -36,7 +36,7 @@ internal sealed record PolicyUpdateDto(
     int MaxRenewalCount,
     int MaxLoanReservationDays);
 
-public sealed class PolicyMapping : ISqlEntityMapping<Policy>
+public sealed class PolicyMapping : ISqlEntityMapping<Policy, PolicyId>
 {
     public string TableName => "Policies";
 
@@ -59,13 +59,13 @@ public sealed class PolicyMapping : ISqlEntityMapping<Policy>
 
     public string DeleteSql => "DELETE FROM Policies WHERE Id = @Id";
 
-    public async Task<Policy?> GetByIdAsync(ISqlConnection db, int id)
+    public async Task<Policy?> GetByIdAsync(ISqlConnection db, PolicyId id)
     {
         var row = await db.QuerySingleOrDefaultAsync<PolicyRow>(
             @"SELECT Id, ToolType, LocationId, Name, Description,
                      LateFeePerDay, MaxLoanDurationDays, MaxRenewalCount,
                      MaxLoanReservationDays
-              FROM Policies WHERE Id = @Id", new { Id = id });
+              FROM Policies WHERE Id = @Id", new { Id = id.Value });
 
         if (row is null)
             return null;
@@ -104,4 +104,8 @@ public sealed class PolicyMapping : ISqlEntityMapping<Policy>
         entity.MaxLoanDurationDays,
         entity.MaxRenewalCount,
         entity.MaxLoanReservationDays);
+
+    public object ToDeleteParameters(Policy entity) => new { Id = entity.Id.Value };
+
+    public PolicyId CreateId(object databaseId) => new(Convert.ToInt32(databaseId));
 }

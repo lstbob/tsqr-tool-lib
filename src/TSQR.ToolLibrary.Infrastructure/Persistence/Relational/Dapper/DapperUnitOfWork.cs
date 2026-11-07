@@ -1,5 +1,4 @@
 using System.Data;
-using TSQR.ToolLibrary.Infrastructure.Persistence.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 
 namespace TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
