@@ -20,6 +20,7 @@ internal sealed record MemberRow
     public DateTime? StartDate { get; init; }
     public DateTime? EndDate { get; init; }
     public int CommunityId { get; init; }
+    public long RowVersion { get; init; }
 }
 
 internal sealed record MemberInsertDto(
@@ -55,7 +56,8 @@ internal sealed record MemberUpdateDto(
     MembershipType? MembershipType,
     DateTime? StartDate,
     DateTime? EndDate,
-    int CommunityId);
+    int CommunityId,
+    long RowVersion);
 
 public sealed class MemberMapping : ISqlEntityMapping<Member, MemberId>
 {
@@ -78,16 +80,19 @@ public sealed class MemberMapping : ISqlEntityMapping<Member, MemberId>
               VerifiedByAdminId = @VerifiedByAdminId, VerificationDate = @VerificationDate,
               MembershipType = @MembershipType, StartDate = @StartDate, EndDate = @EndDate,
               CommunityId = @CommunityId
-          WHERE Id = @Id";
+          WHERE Id = @Id AND xmin::text::bigint = @RowVersion
+          RETURNING xmin::text::bigint";
 
-    public string DeleteSql => "DELETE FROM Members WHERE Id = @Id";
+    public string DeleteSql =>
+        "DELETE FROM Members WHERE Id = @Id AND xmin::text::bigint = @RowVersion";
 
     public async Task<Member?> GetByIdAsync(ISqlConnection db, MemberId id)
     {
         var row = await db.QuerySingleOrDefaultAsync<MemberRow>(
             @"SELECT Id, FirstName, MiddleName, LastName, Age, Address, Email, PhoneNumber,
                      Status, IsVerified, VerifiedByAdminId, VerificationDate,
-                     MembershipType, StartDate, EndDate, CommunityId
+                     MembershipType, StartDate, EndDate, CommunityId,
+                     xmin::text::bigint AS RowVersion
               FROM Members WHERE Id = @Id", new { Id = id.Value });
 
         if (row is null)
@@ -97,7 +102,7 @@ public sealed class MemberMapping : ISqlEntityMapping<Member, MemberId>
             ? MembershipRecord.Create(row.StartDate!.Value, row.MembershipType.Value)
             : null;
 
-        return Member.Create(
+        var member = Member.Create(
             row.Id,
             row.FirstName,
             row.MiddleName,
@@ -112,7 +117,15 @@ public sealed class MemberMapping : ISqlEntityMapping<Member, MemberId>
             row.VerificationDate,
             record,
             communityId: row.CommunityId);
+
+        member.SetRowVersion(row.RowVersion);
+        return member;
     }
+
+    public Task<long> GetRowVersionAsync(ISqlConnection db, MemberId id) =>
+        db.ExecuteScalarAsync<long>(
+            "SELECT xmin::text::bigint FROM Members WHERE Id = @Id",
+            new { Id = id.Value });
 
     public object ToInsertParameters(Member entity) => new MemberInsertDto(
         entity.FirstName,
@@ -147,9 +160,11 @@ public sealed class MemberMapping : ISqlEntityMapping<Member, MemberId>
         entity.Record?.MembershipType,
         entity.Record?.StartDate,
         entity.Record?.EndDate,
-        entity.CommunityId);
+        entity.CommunityId,
+        entity.RowVersion);
 
-    public object ToDeleteParameters(Member entity) => new { Id = entity.Id.Value };
+    public object ToDeleteParameters(Member entity) =>
+        new { Id = entity.Id.Value, RowVersion = entity.RowVersion };
 
     public MemberId CreateId(object databaseId) => new(Convert.ToInt32(databaseId));
 }

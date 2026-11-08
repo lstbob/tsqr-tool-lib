@@ -17,12 +17,15 @@ public sealed class DapperReservationRepository(
     )
     {
         var rows = await Database.QueryAsync<ReservationRow>(
-            "SELECT Id, ItemId, MemberId, ReservationDate, ExpiryDate, Status, IsConfirmed, QueuePosition FROM Reservations WHERE ItemId = @ItemId",
+            @"SELECT Id, ItemId, MemberId, ReservationDate, ExpiryDate, Status,
+                     IsConfirmed, QueuePosition, xmin::text::bigint AS RowVersion
+              FROM Reservations WHERE ItemId = @ItemId",
             new { ItemId = itemId.Value }
         );
 
         return rows.Select(r =>
-                Reservation.Create(
+            {
+                var reservation = Reservation.Create(
                     r.Id,
                     r.ItemId,
                     r.MemberId,
@@ -30,9 +33,11 @@ public sealed class DapperReservationRepository(
                     r.ExpiryDate,
                     r.Status,
                     r.IsConfirmed,
-                    r.QueuePosition
-                )
-            )
+                    r.QueuePosition);
+
+                reservation.SetRowVersion(r.RowVersion);
+                return reservation;
+            })
             .ToList();
     }
 }

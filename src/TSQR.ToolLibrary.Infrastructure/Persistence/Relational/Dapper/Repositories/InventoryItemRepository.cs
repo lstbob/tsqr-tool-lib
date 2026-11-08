@@ -14,6 +14,7 @@ internal sealed record MaintenanceRecordRow
     public MemberId? CompletedById { get; init; }
     public DateTime? CompletedDate { get; init; }
     public Condition? ResultingCondition { get; init; }
+    public long RowVersion { get; init; }
 }
 
 public sealed class InventoryItemRepository(
@@ -41,7 +42,8 @@ public sealed class InventoryItemRepository(
 
         var row = await Database.QuerySingleOrDefaultAsync<MaintenanceRecordRow>(
             @"SELECT Id, ItemId, ReportedById, ReportedDate, Description,
-                     Status, CompletedById, CompletedDate, ResultingCondition
+                     Status, CompletedById, CompletedDate, ResultingCondition,
+                     xmin::text::bigint AS RowVersion
               FROM MaintenanceRecords
               WHERE ItemId = @ItemId AND Status = ANY(@Statuses)
               ORDER BY Id DESC LIMIT 1",
@@ -61,7 +63,10 @@ public sealed class InventoryItemRepository(
                 row.ResultingCondition);
 
             if (recordResult.IsSuccess)
+            {
+                recordResult.Value.SetRowVersion(row.RowVersion);
                 item.RehydrateRepair(recordResult.Value);
+            }
         }
 
         return item;
@@ -86,6 +91,8 @@ public sealed class InventoryItemRepository(
                     "Insert for MaintenanceRecord did not return an identifier.");
 
             repair.SetAssignedId(recordMapping.CreateId(databaseId));
+            repair.SetRowVersion(
+                await recordMapping.GetRowVersionAsync(Database, repair.Id));
         }
     }
 
@@ -108,12 +115,23 @@ public sealed class InventoryItemRepository(
                         "Insert for MaintenanceRecord did not return an identifier.");
 
                 repair.SetAssignedId(recordMapping.CreateId(databaseId));
+                repair.SetRowVersion(
+                    Database.ExecuteScalar<long>(
+                        "SELECT xmin::text::bigint FROM MaintenanceRecords WHERE Id = @Id",
+                        new { Id = repair.Id.Value }));
             }
             else
             {
-                Database.Execute(
+                var newRowVersion = Database.ExecuteScalar<long>(
                     recordMapping.UpdateSql,
                     recordMapping.ToUpdateParameters(repair));
+
+                if (newRowVersion == 0)
+                {
+                    throw new ConcurrencyConflictException(recordMapping.TableName);
+                }
+
+                repair.SetRowVersion(newRowVersion);
             }
         }
     }

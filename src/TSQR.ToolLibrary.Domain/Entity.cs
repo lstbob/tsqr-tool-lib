@@ -12,6 +12,13 @@ public abstract class Entity
     private readonly List<IDomainEvent> _domainEvents = [];
 
     /// <summary>
+    /// Optimistic concurrency token for the persisted row. Relational
+    /// repositories load it when the entity is rehydrated and require it to
+    /// match before updating or deleting the row.
+    /// </summary>
+    public long RowVersion { get; private set; }
+
+    /// <summary>
     /// The domain events raised by this aggregate since the last dispatch.
     /// Exposed as a read-only list so the getter does not allocate a wrapper
     /// on every access.
@@ -33,6 +40,14 @@ public abstract class Entity
     /// only after a successful transaction commit.
     /// </summary>
     public void ClearDomainEvents() => _domainEvents.Clear();
+
+    /// <summary>
+    /// Records the row version returned by the persistence layer.
+    /// </summary>
+    internal void SetRowVersion(long rowVersion)
+    {
+        RowVersion = rowVersion;
+    }
 }
 
 /// <summary>

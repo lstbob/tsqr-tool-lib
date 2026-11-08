@@ -13,6 +13,7 @@ internal sealed record PolicyRow
     public int MaxLoanDurationDays { get; init; }
     public int MaxRenewalCount { get; init; }
     public int MaxLoanReservationDays { get; init; }
+    public long RowVersion { get; init; }
 }
 
 internal sealed record PolicyInsertDto(
@@ -34,7 +35,8 @@ internal sealed record PolicyUpdateDto(
     decimal LateFeePerDay,
     int MaxLoanDurationDays,
     int MaxRenewalCount,
-    int MaxLoanReservationDays);
+    int MaxLoanReservationDays,
+    long RowVersion);
 
 public sealed class PolicyMapping : ISqlEntityMapping<Policy, PolicyId>
 {
@@ -55,16 +57,18 @@ public sealed class PolicyMapping : ISqlEntityMapping<Policy, PolicyId>
               MaxLoanDurationDays = @MaxLoanDurationDays,
               MaxRenewalCount = @MaxRenewalCount,
               MaxLoanReservationDays = @MaxLoanReservationDays
-          WHERE Id = @Id";
+          WHERE Id = @Id AND xmin::text::bigint = @RowVersion
+          RETURNING xmin::text::bigint";
 
-    public string DeleteSql => "DELETE FROM Policies WHERE Id = @Id";
+    public string DeleteSql =>
+        "DELETE FROM Policies WHERE Id = @Id AND xmin::text::bigint = @RowVersion";
 
     public async Task<Policy?> GetByIdAsync(ISqlConnection db, PolicyId id)
     {
         var row = await db.QuerySingleOrDefaultAsync<PolicyRow>(
             @"SELECT Id, ToolType, LocationId, Name, Description,
                      LateFeePerDay, MaxLoanDurationDays, MaxRenewalCount,
-                     MaxLoanReservationDays
+                     MaxLoanReservationDays, xmin::text::bigint AS RowVersion
               FROM Policies WHERE Id = @Id", new { Id = id.Value });
 
         if (row is null)
@@ -81,8 +85,17 @@ public sealed class PolicyMapping : ISqlEntityMapping<Policy, PolicyId>
             row.MaxRenewalCount,
             row.MaxLoanReservationDays);
 
-        return result.IsSuccess ? result.Value : null;
+        if (!result.IsSuccess)
+            return null;
+
+        result.Value.SetRowVersion(row.RowVersion);
+        return result.Value;
     }
+
+    public Task<long> GetRowVersionAsync(ISqlConnection db, PolicyId id) =>
+        db.ExecuteScalarAsync<long>(
+            "SELECT xmin::text::bigint FROM Policies WHERE Id = @Id",
+            new { Id = id.Value });
 
     public object ToInsertParameters(Policy entity) => new PolicyInsertDto(
         entity.ToolType,
@@ -103,9 +116,11 @@ public sealed class PolicyMapping : ISqlEntityMapping<Policy, PolicyId>
         entity.LateFeePerDay,
         entity.MaxLoanDurationDays,
         entity.MaxRenewalCount,
-        entity.MaxLoanReservationDays);
+        entity.MaxLoanReservationDays,
+        entity.RowVersion);
 
-    public object ToDeleteParameters(Policy entity) => new { Id = entity.Id.Value };
+    public object ToDeleteParameters(Policy entity) =>
+        new { Id = entity.Id.Value, RowVersion = entity.RowVersion };
 
     public PolicyId CreateId(object databaseId) => new(Convert.ToInt32(databaseId));
 }

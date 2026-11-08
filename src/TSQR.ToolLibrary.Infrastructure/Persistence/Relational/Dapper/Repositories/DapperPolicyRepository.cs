@@ -22,7 +22,7 @@ public sealed class DapperPolicyRepository(
         var rows = await Database.QueryAsync<PolicyRow>(
             @"SELECT Id, ToolType, LocationId, Name, Description,
                      LateFeePerDay, MaxLoanDurationDays, MaxRenewalCount,
-                     MaxLoanReservationDays
+                     MaxLoanReservationDays, xmin::text::bigint AS RowVersion
               FROM Policies
               WHERE ToolType = @ToolType
                 AND (LocationId = @LocationId OR LocationId IS NULL)
@@ -46,7 +46,11 @@ public sealed class DapperPolicyRepository(
             row.MaxRenewalCount,
             row.MaxLoanReservationDays);
 
-        return result.IsSuccess ? result.Value : null;
+        if (!result.IsSuccess)
+            return null;
+
+        result.Value.SetRowVersion(row.RowVersion);
+        return result.Value;
     }
 
     private sealed record PolicyRow(
@@ -58,5 +62,6 @@ public sealed class DapperPolicyRepository(
         decimal LateFeePerDay,
         int MaxLoanDurationDays,
         int MaxRenewalCount,
-        int MaxLoanReservationDays);
+        int MaxLoanReservationDays,
+        long RowVersion);
 }

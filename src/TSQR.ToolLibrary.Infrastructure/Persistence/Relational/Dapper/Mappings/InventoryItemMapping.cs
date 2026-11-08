@@ -17,6 +17,7 @@ internal sealed record InventoryItemRow
     public long TotalUsageTimeTicks { get; init; }
     public bool IsUnderRepair { get; init; }
     public int CommunityId { get; init; }
+    public long RowVersion { get; init; }
 }
 
 internal sealed record InventoryItemInsertDto(
@@ -46,7 +47,8 @@ internal sealed record InventoryItemUpdateDto(
     int LoanCount,
     long TotalUsageTimeTicks,
     bool IsUnderRepair,
-    int CommunityId);
+    int CommunityId,
+    long RowVersion);
 
 public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem, InventoryItemId>
 {
@@ -72,22 +74,25 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem, Inve
               TotalUsageTimeTicks = @TotalUsageTimeTicks,
               IsUnderRepair = @IsUnderRepair,
               CommunityId = @CommunityId
-          WHERE Id = @Id";
+          WHERE Id = @Id AND xmin::text::bigint = @RowVersion
+          RETURNING xmin::text::bigint";
 
-    public string DeleteSql => "DELETE FROM InventoryItems WHERE Id = @Id";
+    public string DeleteSql =>
+        "DELETE FROM InventoryItems WHERE Id = @Id AND xmin::text::bigint = @RowVersion";
 
     public async Task<InventoryItem?> GetByIdAsync(ISqlConnection db, InventoryItemId id)
     {
         var row = await db.QuerySingleOrDefaultAsync<InventoryItemRow>(
             @"SELECT Id, ToolId, OriginalOwnerId, InitialAcquisitionDate, SerialNumber,
                      Status, Condition, CurrentHolderId, LastBorrowedDate,
-                     LoanCount, TotalUsageTimeTicks, IsUnderRepair, CommunityId
+                     LoanCount, TotalUsageTimeTicks, IsUnderRepair, CommunityId,
+                     xmin::text::bigint AS RowVersion
               FROM InventoryItems WHERE Id = @Id", new { Id = id.Value });
 
         if (row is null)
             return null;
 
-        return InventoryItem.Create(
+        var item = InventoryItem.Create(
             new InventoryItemId(row.Id),
             new ToolId(row.ToolId),
             new MemberId(row.OriginalOwnerId),
@@ -100,7 +105,15 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem, Inve
             row.LoanCount,
             TimeSpan.FromTicks(row.TotalUsageTimeTicks),
             row.CommunityId);
+
+        item.SetRowVersion(row.RowVersion);
+        return item;
     }
+
+    public Task<long> GetRowVersionAsync(ISqlConnection db, InventoryItemId id) =>
+        db.ExecuteScalarAsync<long>(
+            "SELECT xmin::text::bigint FROM InventoryItems WHERE Id = @Id",
+            new { Id = id.Value });
 
     public object ToInsertParameters(InventoryItem entity) => new InventoryItemInsertDto(
         entity.ToolId.Value,
@@ -129,9 +142,11 @@ public sealed class InventoryItemMapping : ISqlEntityMapping<InventoryItem, Inve
         entity.LoanCount,
         entity.TotalUsageTime.Ticks,
         entity.IsUnderRepair,
-        entity.CommunityId);
+        entity.CommunityId,
+        entity.RowVersion);
 
-    public object ToDeleteParameters(InventoryItem entity) => new { Id = entity.Id.Value };
+    public object ToDeleteParameters(InventoryItem entity) =>
+        new { Id = entity.Id.Value, RowVersion = entity.RowVersion };
 
     public InventoryItemId CreateId(object databaseId) => new(Convert.ToInt32(databaseId));
 }

@@ -40,19 +40,36 @@ public class SqlRepository<TEntity, TId>(
         }
 
         entity.SetAssignedId(mapping.CreateId(databaseId));
+        entity.SetRowVersion(await mapping.GetRowVersionAsync(db, entity.Id));
         eventCollector.Track(entity);
     }
 
     public virtual void Update(TEntity entity)
     {
         var db = uow.Connection;
-        db.Execute(mapping.UpdateSql, mapping.ToUpdateParameters(entity));
+        var newRowVersion = db.ExecuteScalar<long>(
+            mapping.UpdateSql,
+            mapping.ToUpdateParameters(entity));
+
+        if (newRowVersion == 0)
+        {
+            throw new ConcurrencyConflictException(mapping.TableName);
+        }
+
+        entity.SetRowVersion(newRowVersion);
         eventCollector.Track(entity);
     }
 
     public virtual void Delete(TEntity entity)
     {
         var db = uow.Connection;
-        db.Execute(mapping.DeleteSql, mapping.ToDeleteParameters(entity));
+        var affectedRows = db.Execute(
+            mapping.DeleteSql,
+            mapping.ToDeleteParameters(entity));
+
+        if (affectedRows == 0)
+        {
+            throw new ConcurrencyConflictException(mapping.TableName);
+        }
     }
 }

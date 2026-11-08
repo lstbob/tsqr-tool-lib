@@ -14,6 +14,21 @@ Infrastructure implementations are grouped by storage technology:
 - `InMemory/` — in-memory repositories for tests and local use.
 - `Document/` — reserved for future document/NoSQL backends (MongoDB, RavenDB, ...).
 
+## Optimistic concurrency
+
+Relational aggregates carry a `RowVersion` token on `Entity`. The PostgreSQL
+implementation uses the `xmin` system column, so no schema column or migration
+is required:
+
+- mappings select `xmin::text::bigint AS RowVersion` and rehydrate the token;
+- `UPDATE` and `DELETE` include `xmin::text::bigint = @RowVersion`;
+- `UPDATE` returns the new token with `RETURNING xmin::text::bigint`;
+- zero affected rows throw `ConcurrencyConflictException`, which the WebApi
+  maps to HTTP 409.
+
+`SqlRepository.AddAsync` reads the token after an insert so a newly created
+entity can also be updated safely inside the same transaction.
+
 ## Adding a backend
 
 1. Add `Persistence/<Technology>/` with its unit of work, mappings, and repositories.

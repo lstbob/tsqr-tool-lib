@@ -13,6 +13,7 @@ internal sealed record MaintenanceRecordRow
     public MemberId? CompletedById { get; init; }
     public DateTime? CompletedDate { get; init; }
     public Condition? ResultingCondition { get; init; }
+    public long RowVersion { get; init; }
 }
 
 internal sealed record MaintenanceRecordInsertDto(
@@ -34,7 +35,8 @@ internal sealed record MaintenanceRecordUpdateDto(
     MaintenanceStatus Status,
     int? CompletedById,
     DateTime? CompletedDate,
-    Condition? ResultingCondition);
+    Condition? ResultingCondition,
+    long RowVersion);
 
 public sealed class MaintenanceRecordMapping : ISqlEntityMapping<MaintenanceRecord, MaintenanceRecordId>
 {
@@ -53,15 +55,18 @@ public sealed class MaintenanceRecordMapping : ISqlEntityMapping<MaintenanceReco
               ReportedDate = @ReportedDate, Description = @Description,
               Status = @Status, CompletedById = @CompletedById,
               CompletedDate = @CompletedDate, ResultingCondition = @ResultingCondition
-          WHERE Id = @Id";
+          WHERE Id = @Id AND xmin::text::bigint = @RowVersion
+          RETURNING xmin::text::bigint";
 
-    public string DeleteSql => "DELETE FROM MaintenanceRecords WHERE Id = @Id";
+    public string DeleteSql =>
+        "DELETE FROM MaintenanceRecords WHERE Id = @Id AND xmin::text::bigint = @RowVersion";
 
     public async Task<MaintenanceRecord?> GetByIdAsync(ISqlConnection db, MaintenanceRecordId id)
     {
         var row = await db.QuerySingleOrDefaultAsync<MaintenanceRecordRow>(
             @"SELECT Id, ItemId, ReportedById, ReportedDate, Description,
-                     Status, CompletedById, CompletedDate, ResultingCondition
+                     Status, CompletedById, CompletedDate, ResultingCondition,
+                     xmin::text::bigint AS RowVersion
               FROM MaintenanceRecords WHERE Id = @Id", new { Id = id.Value });
 
         if (row is null) return null;
@@ -77,8 +82,17 @@ public sealed class MaintenanceRecordMapping : ISqlEntityMapping<MaintenanceReco
             row.CompletedDate,
             row.ResultingCondition);
 
-        return recordResult.IsSuccess ? recordResult.Value : null;
+        if (!recordResult.IsSuccess)
+            return null;
+
+        recordResult.Value.SetRowVersion(row.RowVersion);
+        return recordResult.Value;
     }
+
+    public Task<long> GetRowVersionAsync(ISqlConnection db, MaintenanceRecordId id) =>
+        db.ExecuteScalarAsync<long>(
+            "SELECT xmin::text::bigint FROM MaintenanceRecords WHERE Id = @Id",
+            new { Id = id.Value });
 
     public object ToInsertParameters(MaintenanceRecord entity) => new MaintenanceRecordInsertDto(
         entity.ItemId.Value,
@@ -99,9 +113,11 @@ public sealed class MaintenanceRecordMapping : ISqlEntityMapping<MaintenanceReco
         entity.Status,
         entity.CompletedById?.Value,
         entity.CompletedDate,
-        entity.ResultingCondition);
+        entity.ResultingCondition,
+        entity.RowVersion);
 
-    public object ToDeleteParameters(MaintenanceRecord entity) => new { Id = entity.Id.Value };
+    public object ToDeleteParameters(MaintenanceRecord entity) =>
+        new { Id = entity.Id.Value, RowVersion = entity.RowVersion };
 
     public MaintenanceRecordId CreateId(object databaseId) => new(Convert.ToInt32(databaseId));
 }
