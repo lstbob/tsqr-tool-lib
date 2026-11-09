@@ -9,9 +9,24 @@ namespace TSQR.ToolLibrary.WebApi.Controllers;
 [Authorize] // state-changing loan operations require an authenticated caller
 [Route("api/loans")]
 public sealed class LoansCommandController(
-    IInteractor<MarkLoanAsNotReturnedCommand, Result> markNotReturned
+    IInteractor<MarkLoanAsNotReturnedCommand, Result> markNotReturned,
+    IInteractor<RenewLoanCommand, Result> renewLoan
 ) : ControllerBase
 {
+    [HttpPost("{id:int}/renew")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> Renew(int id, CancellationToken ct)
+    {
+        var result = await renewLoan.ExecuteAsync(
+            new RenewLoanCommand(new LoanId(id)), ct);
+        if (result.IsSuccess)
+            return Ok();
+
+        return ToErrorResult(result.Error);
+    }
+
     [HttpPost("mark-not-returned")]
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status200OK)]
