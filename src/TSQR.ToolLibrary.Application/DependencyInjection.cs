@@ -46,6 +46,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IInteractor<LoanToolCommand, Result>, LoanToolCommandHandler>();
         services.AddScoped<IInteractor<MarkLoanAsNotReturnedCommand, Result>, MarkLoanAsNotReturnedCommandHandler>();
+        services.AddScoped<IInteractor<RenewLoanCommand, Result>, RenewLoanCommandHandler>();
         return services;
     }
 
