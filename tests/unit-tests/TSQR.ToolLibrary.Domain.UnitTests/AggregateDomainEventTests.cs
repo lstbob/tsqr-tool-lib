@@ -313,6 +313,27 @@ public class AggregateDomainEventTests
         Assert.IsType<ReservationCreatedDomainEvent>(Assert.Single(reservation.DomainEvents));
     }
 
+    [Fact]
+    public void Tool_Register_RaisesToolRegisteredEvent()
+    {
+        var owner = new MemberId(7);
+
+        var result = Tool.Register(
+            owner,
+            "Cordless Drill",
+            "18V cordless drill",
+            Manufacturer.Create(new ManufacturerId(1), "Acme"),
+            ToolType.PowerTool,
+            AmortizationRate.Low);
+
+        Assert.True(result.IsSuccess);
+        var registered = Assert.IsType<ToolRegisteredEvent>(Assert.Single(result.Value.DomainEvents));
+        Assert.Equal(result.Value.Id, registered.ToolId);
+        Assert.Equal(owner, registered.OwnerId);
+        Assert.Equal("Cordless Drill", registered.Model);
+        Assert.Equal(ToolType.PowerTool, registered.Type);
+    }
+
     // ---- Fixtures ----
 
     private static (Member member, Member admin) MakeMemberAndAdmin()
