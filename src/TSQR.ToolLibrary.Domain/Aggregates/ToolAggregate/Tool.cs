@@ -117,7 +117,9 @@ public class Tool : Entity<ToolId>, IAggregateRoot
         if (createResult.IsFailure)
             return createResult.Error;
 
-        return createResult.Value;
+        var tool = createResult.Value;
+        tool.AddDomainEvent(new ToolRegisteredEvent(tool.Id, ownerId, tool.Model, tool.Type));
+        return tool;
     }
 
     public Result UpdateToolDetails(
