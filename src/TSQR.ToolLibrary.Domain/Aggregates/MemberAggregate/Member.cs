@@ -226,8 +226,33 @@ public class Member : Entity<MemberId>, IAggregateRoot
         return Result.Success();
     }
 
+    /// <summary>
+    /// Maximum accrued fine balance a member may carry and still borrow.
+    /// Payment/waiver tracking does not exist yet, so this is an interim
+    /// policy threshold until fines can be settled explicitly.
+    /// </summary>
+    public const decimal MaxOutstandingFineBalance = 50m;
+
     public bool IsEligibleToBorrow()
     {
         return IsVerified && Status == MemberStatus.Active;
+    }
+
+    public Result EnsureEligibleToBorrow(decimal outstandingFineBalance, int activeOverdueLoanCount)
+    {
+        if (!IsEligibleToBorrow())
+            return new DomainError(nameof(Status), "Member is not eligible to borrow tools.");
+
+        if (outstandingFineBalance > MaxOutstandingFineBalance)
+            return new DomainError(
+                nameof(outstandingFineBalance),
+                $"Member has an outstanding fine balance above {MaxOutstandingFineBalance:F2}.");
+
+        if (activeOverdueLoanCount > 0)
+            return new DomainError(
+                nameof(activeOverdueLoanCount),
+                "Member has overdue loans and cannot borrow another tool.");
+
+        return Result.Success();
     }
 }

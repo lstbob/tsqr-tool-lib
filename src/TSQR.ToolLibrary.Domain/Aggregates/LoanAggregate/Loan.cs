@@ -156,6 +156,40 @@ public class Loan : Entity<LoanId>, IAggregateRoot
         int communityId = 0)
         => Create(memberId, itemId, DefaultMaxLoanDurationDays, DefaultLateFeePerDay, communityId);
 
+    /// <summary>
+    /// Rehydrates a loan from persistence. Unlike <see cref="Create(MemberId, InventoryItemId, int, decimal, int)"/>,
+    /// this does not apply new-loan guards (a stored loan may already be overdue)
+    /// and does not raise domain events.
+    /// </summary>
+    public static Loan Rehydrate(
+        LoanId id,
+        MemberId memberId,
+        DateTime checkoutDate,
+        DateTime dueDate,
+        InventoryItemId itemId,
+        LoanStatus status,
+        DateTime? returnedDate,
+        decimal fineAccrued,
+        decimal lateFeePerDay,
+        int renewalCount,
+        int communityId)
+    {
+        var loan = new Loan(
+            id,
+            memberId,
+            checkoutDate,
+            dueDate,
+            itemId,
+            status,
+            lateFeePerDay,
+            renewalCount,
+            communityId);
+
+        loan.ReturnedDate = returnedDate ?? default;
+        loan.FineAccrued = fineAccrued;
+        return loan;
+    }
+
     public Result EndLoan(DateTime expectedEndDate)
     {
         if (Status != LoanStatus.Active)

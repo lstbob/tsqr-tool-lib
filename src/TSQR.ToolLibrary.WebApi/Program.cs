@@ -99,7 +99,8 @@ builder.Services.AddScoped<
     InventoryItemRepository
 >();
 builder.Services.AddScoped<IRepository<Member, MemberId>, SqlRepository<Member, MemberId>>();
-builder.Services.AddScoped<IRepository<Loan, LoanId>, SqlRepository<Loan, LoanId>>();
+builder.Services.AddScoped<ILoanRepository, DapperLoanRepository>();
+builder.Services.AddScoped<IRepository<Loan, LoanId>>(sp => sp.GetRequiredService<ILoanRepository>());
 builder.Services.AddScoped<
     IRepository<Reservation, ReservationId>,
     SqlRepository<Reservation, ReservationId>

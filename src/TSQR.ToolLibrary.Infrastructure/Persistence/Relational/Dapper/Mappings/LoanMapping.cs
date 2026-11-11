@@ -76,22 +76,21 @@ public sealed class LoanMapping : ISqlEntityMapping<Loan, LoanId>
         if (row is null)
             return null;
 
-        var result = Loan.Create(
+        var loan = Loan.Rehydrate(
             row.Id,
             row.MemberId,
             row.CheckoutDate,
             row.DueDate,
             row.ItemId,
             row.Status,
+            row.ReturnedDate,
+            row.FineAccrued,
             row.LateFeePerDay,
             row.RenewalCount,
             row.CommunityId);
 
-        if (!result.IsSuccess)
-            return null;
-
-        result.Value.SetRowVersion(row.RowVersion);
-        return result.Value;
+        loan.SetRowVersion(row.RowVersion);
+        return loan;
     }
 
     public Task<long> GetRowVersionAsync(ISqlConnection db, LoanId id) =>
