@@ -9,7 +9,7 @@ public record LoanToolCommand(InventoryItemId ItemId, MemberId MemberId, int Com
 
 public class LoanToolCommandHandler(
     IRepository<MemberAgg, MemberId> memberRepository,
-    IRepository<LoanAgg, LoanId> loanRepository,
+    ILoanRepository loanRepository,
     IRepository<InventoryItem, InventoryItemId> inventoryRepository,
     IToolRepository toolRepository,
     IPolicyRepository policyRepository,
@@ -23,8 +23,25 @@ public class LoanToolCommandHandler(
         if (member is null)
             return new NotFoundError(nameof(command.MemberId), "Member not found.");
 
-        if (!member.IsEligibleToBorrow())
-            return new DomainError(nameof(member.Status), "Member is not eligible to borrow tools.");
+        var activeLoans = await loanRepository.GetActiveLoansByMemberAsync(
+            command.MemberId,
+            cancellationToken);
+        var outstandingFineBalance = await loanRepository.GetOutstandingFineBalanceAsync(
+            command.MemberId,
+            cancellationToken);
+        var activeOverdueLoanCount = activeLoans.Count(
+            loan => loan.Status == LoanStatus.Active && loan.DueDate < DateTime.UtcNow);
+
+        var eligibilityResult = member.EnsureEligibleToBorrow(
+            outstandingFineBalance,
+            activeOverdueLoanCount);
+        if (eligibilityResult.IsFailure)
+            return eligibilityResult.Error;
+
+        if (activeLoans.Any(loan => loan.Status == LoanStatus.Active && loan.ItemId == command.ItemId))
+            return new DomainError(
+                nameof(command.ItemId),
+                "Member already has an active loan for this tool.");
 
         var item = await inventoryRepository.GetByIdAsync(command.ItemId, cancellationToken);
         if (item is null)
@@ -34,6 +51,10 @@ public class LoanToolCommandHandler(
         var activeReservation = reservations.FirstOrDefault(r => r.Status is ReservationStatus.Confirmed or ReservationStatus.Active);
         if (activeReservation is not null && activeReservation.MemberId != command.MemberId)
             return new DomainError(nameof(command.ItemId), "Tool is reserved by another member.");
+
+        var itemLoanabilityResult = EnsureItemCanBeLoaned(item);
+        if (itemLoanabilityResult.IsFailure)
+            return itemLoanabilityResult.Error;
 
         // Load the Tool so we can resolve the active Policy by ToolType. The
         // (ToolType, null) lookup returns the global policy for the tool type;
@@ -65,6 +86,23 @@ public class LoanToolCommandHandler(
         var loan = loanResult.Value;
         await loanRepository.AddAsync(loan, cancellationToken);
         await orchestrator.SaveEntitiesAsync(loan, cancellationToken);
+
+        return Result.Success();
+    }
+
+    private static Result EnsureItemCanBeLoaned(InventoryItem item)
+    {
+        if (item.IsUnderRepair || item.Status == ItemStatus.UnderMaintenance)
+            return new DomainError(nameof(item.Status), "Tool is under repair and cannot be borrowed.");
+
+        if (item.Status == ItemStatus.Loaned)
+            return new DomainError(nameof(item.Status), "Tool is already loaned out.");
+
+        if (item.Status == ItemStatus.Lost)
+            return new DomainError(nameof(item.Status), "Tool is lost and cannot be borrowed.");
+
+        if (item.Status is not (ItemStatus.Available or ItemStatus.Reserved))
+            return new DomainError(nameof(item.Status), "Tool is not available for loan.");
 
         return Result.Success();
     }
