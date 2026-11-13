@@ -108,7 +108,7 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<IToolRepository, ToolRepository>();
 builder.Services.AddScoped<IRepository<Tool, ToolId>>(sp => sp.GetRequiredService<IToolRepository>());
 builder.Services.AddScoped<IToolQueries, ToolQueries>();
-builder.Services.AddScoped<IManufacturerRepository, ManufacturerRepository>();
+builder.Services.AddScoped<IManufacturerLookup, ManufacturerLookup>();
 builder.Services.AddScoped<IPolicyRepository, DapperPolicyRepository>();
 builder.Services.AddScoped<IRepository<Policy, PolicyId>>(sp => sp.GetRequiredService<IPolicyRepository>());
 builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();

@@ -4,7 +4,7 @@ namespace TSQR.ToolLibrary.WebApi.Queries;
 
 public record GetManufacturersQuery;
 
-public sealed class GetManufacturersHandler(IManufacturerRepository manufacturerRepo)
+public sealed class GetManufacturersHandler(IManufacturerLookup manufacturerLookup)
     : IInteractor<GetManufacturersQuery, List<ManufacturerDto>>
 {
     public async Task<List<ManufacturerDto>> ExecuteAsync(
@@ -12,7 +12,7 @@ public sealed class GetManufacturersHandler(IManufacturerRepository manufacturer
         CancellationToken ct
     )
     {
-        var manufacturers = await manufacturerRepo.GetAllAsync(ct);
+        var manufacturers = await manufacturerLookup.GetAllAsync(ct);
         return manufacturers.Select(m => new ManufacturerDto(m.Id.Value, m.Name)).ToList();
     }
 }

@@ -66,11 +66,6 @@ public abstract class Entity<TId>(TId id) : Entity
         _id = id;
     }
 
-    public Task<int> TestAsnc()
-    {
-        return Task.FromResult(3);
-    }
-
     /// <summary>
     /// Determines whether the entity is transient (i.e., has not been persisted).
     /// </summary>
