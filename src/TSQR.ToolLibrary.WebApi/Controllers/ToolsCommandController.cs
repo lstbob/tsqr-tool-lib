@@ -11,7 +11,7 @@ namespace TSQR.ToolLibrary.WebApi.Controllers;
 [Authorize] // state-changing tool operations require an authenticated caller
 [Route("api/tools")]
 public sealed class ToolsCommandController(
-    IManufacturerRepository manufacturerRepository,
+    IManufacturerLookup manufacturerLookup,
     IInteractor<RegisterToolCommand, Result<ToolId>> registerTool,
     IInteractor<UpdateToolDetailsCommand, Result> updateToolDetails,
     IInteractor<SetScarcityLevelCommand, Result> setScarcity,
@@ -23,7 +23,7 @@ public sealed class ToolsCommandController(
     IInteractor<MarkToolAsLostCommand, Result> markAsLost
 ) : ControllerBase
 {
-    private readonly IManufacturerRepository _manufacturerRepository = manufacturerRepository;
+    private readonly IManufacturerLookup _manufacturerLookup = manufacturerLookup;
     private readonly IInteractor<RegisterToolCommand, Result<ToolId>> _registerTool = registerTool;
     private readonly IInteractor<UpdateToolDetailsCommand, Result> _updateToolDetails =
         updateToolDetails;
@@ -46,7 +46,7 @@ public sealed class ToolsCommandController(
         CancellationToken ct
     )
     {
-        var manufacturer = await _manufacturerRepository.GetByIdAsync(
+        var manufacturer = await _manufacturerLookup.GetByIdAsync(
             new ManufacturerId(request.ManufacturerId),
             ct
         );
@@ -82,7 +82,7 @@ public sealed class ToolsCommandController(
         CancellationToken ct
     )
     {
-        var manufacturer = await _manufacturerRepository.GetByIdAsync(
+        var manufacturer = await _manufacturerLookup.GetByIdAsync(
             new ManufacturerId(request.ManufacturerId),
             ct
         );

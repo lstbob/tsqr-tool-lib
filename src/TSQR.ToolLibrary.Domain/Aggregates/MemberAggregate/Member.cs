@@ -219,8 +219,8 @@ public class Member : Entity<MemberId>, IAggregateRoot
 
     public Result Reinstate()
     {
-        if (Status != MemberStatus.Suspended && Status != MemberStatus.Banned)
-            return new DomainError(nameof(Status), "Only suspended or banned members can be reinstated.");
+        if (Status != MemberStatus.Suspended)
+            return new DomainError(nameof(Status), "Only suspended members can be reinstated.");
 
         Status = MemberStatus.Active;
         return Result.Success();
