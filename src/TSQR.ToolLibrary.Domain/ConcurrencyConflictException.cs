@@ -1,3 +1,5 @@
+using TSQR.Common.Exceptions;
+
 namespace TSQR.ToolLibrary.Domain;
 
 /// <summary>
@@ -8,7 +10,7 @@ namespace TSQR.ToolLibrary.Domain;
 public sealed class ConcurrencyConflictException(string entityName)
     : Exception(
         $"The {entityName} row was modified or deleted by another transaction. " +
-        "Reload the aggregate and retry the operation.")
+        "Reload the aggregate and retry the operation."), IConcurrencyConflictException
 {
     /// <summary>The table or entity whose row version did not match.</summary>
     public string EntityName { get; } = entityName;
