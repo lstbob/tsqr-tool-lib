@@ -1,9 +1,5 @@
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using TSQR.Common.Messaging;
+using TSQR.Common.WebApi;
 using TSQR.ToolLibrary.Application;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
@@ -13,61 +9,16 @@ using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper.Repositories
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Postgres;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 using TSQR.ToolLibrary.WebApi.Messaging;
-using TSQR.ToolLibrary.WebApi.Middleware;
 using TSQR.ToolLibrary.WebApi.Queries;
 
 TypeHandlerRegistrations.EnsureRegistered();
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenApi();
-
-var jwtSection = builder.Configuration.GetSection("Jwt");
-var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("JWT Key not configured.");
-var jwtIssuer = jwtSection["Issuer"] ?? "tsqr-autheo";
-var jwtAudience = jwtSection["Audience"] ?? "tsqr-services";
-
-builder
-    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtIssuer,
-            ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            ClockSkew = TimeSpan.Zero,
-        };
-    });
-
-// Deny by default: every endpoint requires an authenticated caller unless it
-// is explicitly marked [AllowAnonymous] (the public read/catalog endpoints).
-// Previously no endpoint enforced authorization, so the entire API — including
-// state-changing commands — was anonymous.
-builder.Services.AddAuthorization(options =>
+builder.AddTsqrApiDefaults(options =>
 {
-    options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+    options.ServiceName = "tsqr-tool-lib";
 });
-
-builder
-    .Services.AddControllers()
-    .ConfigureApiBehaviorOptions(options =>
-    {
-        options.InvalidModelStateResponseFactory = ctx =>
-        {
-            var firstError = ctx.ModelState.FirstOrDefault(kvp => kvp.Value?.Errors.Count > 0);
-
-            var error = firstError.Value?.Errors.FirstOrDefault();
-            var code = firstError.Key;
-            var message = error?.ErrorMessage ?? "Validation failed.";
-
-            return new BadRequestObjectResult(new ErrorResponse(code, message));
-        };
-    });
 
 var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
@@ -144,21 +95,5 @@ builder.Services.AddScoped<IInteractor<GetMaintenanceQuery, PagedResult<Maintena
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-    app.MapOpenApi();
-}
-
-// Global exception handler logs unhandled exceptions and returns a structured
-// 500 ErrorResponse. In Development, UseDeveloperExceptionPage above takes
-// precedence (the middleware's `when (!_env.IsDevelopment())` filter lets the
-// developer page render instead).
-app.UseMiddleware<ExceptionHandlingMiddleware>();
-
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
-
+app.UseTsqrApiDefaults();
 app.Run();
