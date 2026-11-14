@@ -6,9 +6,18 @@ COPY --from=common . ./tsqr-common
 RUN rm -f ./tsqr-common/nuget.config && \
     dotnet pack ./tsqr-common/src/TSQR.Common/TSQR.Common.csproj -c Release -o /tmp/nupkg
 
-COPY nuget.config .
-RUN dotnet nuget remove source github-lstbob && \
-    dotnet nuget add source /tmp/nupkg --name local-common
+# Use a clean NuGet configuration inside the image. The repository config
+# points at GitHub Packages, which requires a token that the build does not
+# have; TSQR.Common is restored from the locally packed feed instead.
+RUN printf '%s\n' \
+    '<?xml version="1.0" encoding="utf-8"?>' \
+    '<configuration>' \
+    '  <packageSources>' \
+    '    <clear />' \
+    '    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />' \
+    '    <add key="local-common" value="/tmp/nupkg" />' \
+    '  </packageSources>' \
+    '</configuration>' > /src/nuget.config
 COPY TSQR.ToolLibrary.sln .
 COPY src/TSQR.ToolLibrary.WebApi/ ./src/TSQR.ToolLibrary.WebApi/
 COPY src/TSQR.ToolLibrary.Application/ ./src/TSQR.ToolLibrary.Application/
