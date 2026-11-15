@@ -12,7 +12,9 @@ CREATE TABLE IF NOT EXISTS Tools (
     ManufacturerId INTEGER NOT NULL REFERENCES Manufacturers(Id),
     ToolType INTEGER NOT NULL,
     AmortizationRate INTEGER NOT NULL,
-    Metadata TEXT
+    Metadata TEXT,
+    CONSTRAINT CK_Tools_ToolType CHECK (ToolType BETWEEN 0 AND 6),
+    CONSTRAINT CK_Tools_AmortizationRate CHECK (AmortizationRate BETWEEN 0 AND 3)
 );
 
 CREATE TABLE IF NOT EXISTS Locations (
@@ -24,7 +26,9 @@ CREATE TABLE IF NOT EXISTS ToolScarcityByLocation (
     ToolId INTEGER NOT NULL REFERENCES Tools(Id),
     LocationId INTEGER NOT NULL REFERENCES Locations(Id),
     ScarcityLevel INTEGER NOT NULL,
-    PRIMARY KEY (ToolId, LocationId)
+    PRIMARY KEY (ToolId, LocationId),
+    CONSTRAINT CK_ToolScarcityByLocation_ScarcityLevel
+        CHECK (ScarcityLevel BETWEEN 0 AND 4)
 );
 
 CREATE TABLE IF NOT EXISTS Members (
@@ -42,7 +46,10 @@ CREATE TABLE IF NOT EXISTS Members (
     VerificationDate TIMESTAMP,
     MembershipType INTEGER,
     StartDate TIMESTAMP,
-    EndDate TIMESTAMP
+    EndDate TIMESTAMP,
+    CONSTRAINT CK_Members_Status CHECK (Status BETWEEN 0 AND 3),
+    CONSTRAINT CK_Members_MembershipType
+        CHECK (MembershipType IS NULL OR MembershipType BETWEEN 0 AND 4)
 );
 
 CREATE TABLE IF NOT EXISTS InventoryItems (
@@ -57,7 +64,9 @@ CREATE TABLE IF NOT EXISTS InventoryItems (
     LastBorrowedDate TIMESTAMP,
     LoanCount INTEGER NOT NULL DEFAULT 0,
     TotalUsageTimeTicks BIGINT NOT NULL DEFAULT 0,
-    IsUnderRepair BOOLEAN NOT NULL DEFAULT FALSE
+    IsUnderRepair BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT CK_InventoryItems_Status CHECK (Status BETWEEN 0 AND 5),
+    CONSTRAINT CK_InventoryItems_Condition CHECK (Condition BETWEEN 0 AND 5)
 );
 
 CREATE TABLE IF NOT EXISTS Reservations (
@@ -68,7 +77,8 @@ CREATE TABLE IF NOT EXISTS Reservations (
     ExpiryDate TIMESTAMP NOT NULL,
     Status INTEGER NOT NULL,
     IsConfirmed BOOLEAN NOT NULL DEFAULT FALSE,
-    QueuePosition INTEGER NOT NULL DEFAULT 0
+    QueuePosition INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT CK_Reservations_Status CHECK (Status BETWEEN 0 AND 5)
 );
 
 CREATE TABLE IF NOT EXISTS MaintenanceRecords (
@@ -80,7 +90,10 @@ CREATE TABLE IF NOT EXISTS MaintenanceRecords (
     Status INTEGER NOT NULL,
     CompletedById INTEGER REFERENCES Members(Id),
     CompletedDate TIMESTAMP,
-    ResultingCondition INTEGER
+    ResultingCondition INTEGER,
+    CONSTRAINT CK_MaintenanceRecords_Status CHECK (Status BETWEEN 0 AND 3),
+    CONSTRAINT CK_MaintenanceRecords_ResultingCondition
+        CHECK (ResultingCondition IS NULL OR ResultingCondition BETWEEN 0 AND 5)
 );
 
 CREATE TABLE IF NOT EXISTS Policies (
@@ -95,7 +108,8 @@ CREATE TABLE IF NOT EXISTS Policies (
     LateFeePerDay NUMERIC(10,2) NOT NULL,
     MaxLoanDurationDays INTEGER NOT NULL,
     MaxRenewalCount INTEGER NOT NULL,
-    MaxLoanReservationDays INTEGER NOT NULL
+    MaxLoanReservationDays INTEGER NOT NULL,
+    CONSTRAINT CK_Policies_ToolType CHECK (ToolType BETWEEN 0 AND 6)
 );
 
 CREATE TABLE IF NOT EXISTS Loans (
@@ -112,7 +126,8 @@ CREATE TABLE IF NOT EXISTS Loans (
     -- in-flight loans - this is the DDD-correct way to capture policy at a
     -- domain action.
     LateFeePerDay NUMERIC(10,2) NOT NULL DEFAULT 1.00,
-    RenewalCount INTEGER NOT NULL DEFAULT 0
+    RenewalCount INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT CK_Loans_Status CHECK (Status BETWEEN 0 AND 4)
 );
 
 CREATE TABLE IF NOT EXISTS OutboxMessages (
@@ -125,6 +140,19 @@ CREATE TABLE IF NOT EXISTS OutboxMessages (
     LastError TEXT,
     NextAttemptOn TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS IX_Members_Email
+    ON Members (Email);
+CREATE INDEX IF NOT EXISTS IX_InventoryItems_Status
+    ON InventoryItems (Status);
+CREATE INDEX IF NOT EXISTS IX_InventoryItems_CurrentHolderId
+    ON InventoryItems (CurrentHolderId);
+CREATE INDEX IF NOT EXISTS IX_Reservations_ItemId
+    ON Reservations (ItemId);
+CREATE INDEX IF NOT EXISTS IX_Loans_MemberId
+    ON Loans (MemberId);
+CREATE INDEX IF NOT EXISTS IX_Loans_Status
+    ON Loans (Status);
 
 CREATE INDEX IF NOT EXISTS IX_OutboxMessages_Pending
     ON OutboxMessages (NextAttemptOn)
