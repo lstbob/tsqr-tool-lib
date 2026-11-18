@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TSQR.Common.Authorization;
 using TSQR.ToolLibrary.Application.Loan.Commands;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 
@@ -28,7 +29,7 @@ public sealed class LoansCommandController(
     }
 
     [HttpPost("mark-not-returned")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.LoansManage)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
