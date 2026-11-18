@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TSQR.Common.Authorization;
 using TSQR.ToolLibrary.Application.Member.Commands;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 
@@ -20,7 +21,7 @@ public sealed class MembersCommandController(
 ) : ControllerBase
 {
     [HttpPost("register")]
-    [Authorize(Roles = "Admin,LocationCoordinator")]
+    [Authorize(Policy = Permissions.MembersRegister)]
     [ProducesResponseType(typeof(MemberId), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<MemberId>> Register(
@@ -79,7 +80,7 @@ public sealed class MembersCommandController(
     }
 
     [HttpPost("approve-access")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.MembersManage)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -101,7 +102,7 @@ public sealed class MembersCommandController(
     }
 
     [HttpPost("deny-access")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.MembersManage)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -120,7 +121,7 @@ public sealed class MembersCommandController(
     }
 
     [HttpPost("verify")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.MembersManage)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -139,7 +140,7 @@ public sealed class MembersCommandController(
     }
 
     [HttpPost("suspend")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.MembersManage)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -155,7 +156,7 @@ public sealed class MembersCommandController(
     }
 
     [HttpPost("ban")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.MembersManage)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -171,7 +172,7 @@ public sealed class MembersCommandController(
     }
 
     [HttpPost("reinstate")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.MembersManage)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]

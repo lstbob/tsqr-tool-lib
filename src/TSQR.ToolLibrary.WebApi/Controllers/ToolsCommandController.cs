@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TSQR.Common.Authorization;
 using TSQR.ToolLibrary.Application.Inventory.Commands;
 using TSQR.ToolLibrary.Application.Loan.Commands;
 using TSQR.ToolLibrary.Application.Tool.Commands;
@@ -37,7 +38,7 @@ public sealed class ToolsCommandController(
     private readonly IInteractor<MarkToolAsLostCommand, Result> _markAsLost = markAsLost;
 
     [HttpPost("register")]
-    [Authorize(Roles = "Admin,LocationCoordinator")]
+    [Authorize(Policy = Permissions.ToolsManage)]
     [ProducesResponseType(typeof(ToolId), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -73,7 +74,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("update-details")]
-    [Authorize(Roles = "Admin,LocationCoordinator")]
+    [Authorize(Policy = Permissions.ToolsManage)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -107,7 +108,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("scarcity")]
-    [Authorize(Roles = "Admin,LocationCoordinator")]
+    [Authorize(Policy = Permissions.ToolsManage)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -130,7 +131,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("remove-scarcity")]
-    [Authorize(Roles = "Admin,LocationCoordinator")]
+    [Authorize(Policy = Permissions.ToolsManage)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -152,7 +153,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("loan")]
-    [Authorize(Roles = "Admin,LocationCoordinator,Repairman")]
+    [Authorize(Policy = Permissions.ToolsOperate)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -171,7 +172,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("return")]
-    [Authorize(Roles = "Admin,LocationCoordinator,Repairman")]
+    [Authorize(Policy = Permissions.ToolsOperate)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -190,7 +191,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("mark-for-repair")]
-    [Authorize(Roles = "Admin,LocationCoordinator,Repairman")]
+    [Authorize(Policy = Permissions.ToolsOperate)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -213,7 +214,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("complete-repair")]
-    [Authorize(Roles = "Admin,LocationCoordinator,Repairman")]
+    [Authorize(Policy = Permissions.ToolsOperate)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -236,7 +237,7 @@ public sealed class ToolsCommandController(
     }
 
     [HttpPost("mark-lost")]
-    [Authorize(Roles = "Admin,LocationCoordinator,Repairman")]
+    [Authorize(Policy = Permissions.ToolsOperate)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]

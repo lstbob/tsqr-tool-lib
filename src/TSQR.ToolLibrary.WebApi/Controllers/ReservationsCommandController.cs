@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TSQR.Common.Authorization;
 using TSQR.ToolLibrary.Application.Reservation.Commands;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 
@@ -23,7 +24,7 @@ public sealed class ReservationsCommandController(
     private readonly IInteractor<CompleteReservationCommand, Result> _complete = complete;
 
     [HttpPost("create")]
-    [Authorize(Roles = "Admin,LocationCoordinator,Repairman,Regular")]
+    [Authorize(Policy = Permissions.ReservationsSelfService)]
     [ProducesResponseType(typeof(ReservationId), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -46,7 +47,7 @@ public sealed class ReservationsCommandController(
     }
 
     [HttpPost("activate")]
-    [Authorize(Roles = "Admin,LocationCoordinator,Repairman,Regular")]
+    [Authorize(Policy = Permissions.ReservationsSelfService)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -65,7 +66,7 @@ public sealed class ReservationsCommandController(
     }
 
     [HttpPost("cancel")]
-    [Authorize(Roles = "Admin,LocationCoordinator,Repairman,Regular")]
+    [Authorize(Policy = Permissions.ReservationsSelfService)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -81,7 +82,7 @@ public sealed class ReservationsCommandController(
     }
 
     [HttpPost("confirm-pickup")]
-    [Authorize(Roles = "Admin,LocationCoordinator,Repairman")]
+    [Authorize(Policy = Permissions.ReservationsConfirmPickup)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -100,7 +101,7 @@ public sealed class ReservationsCommandController(
     }
 
     [HttpPost("complete")]
-    [Authorize(Roles = "Admin,LocationCoordinator")]
+    [Authorize(Policy = Permissions.ReservationsComplete)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
