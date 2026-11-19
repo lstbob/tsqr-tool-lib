@@ -5,6 +5,7 @@ using TSQR.ToolLibrary.Application.Inventory.Commands;
 using TSQR.ToolLibrary.Application.Loan.Commands;
 using TSQR.ToolLibrary.Application.Tool.Commands;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
+using TSQR.ToolLibrary.WebApi.Security;
 
 namespace TSQR.ToolLibrary.WebApi.Controllers;
 
@@ -21,7 +22,9 @@ public sealed class ToolsCommandController(
     IInteractor<ReturnToolCommand, Result> returnTool,
     IInteractor<MarkToolForRepairCommand, Result> markForRepair,
     IInteractor<CompleteRepairCommand, Result> completeRepair,
-    IInteractor<MarkToolAsLostCommand, Result> markAsLost
+    IInteractor<MarkToolAsLostCommand, Result> markAsLost,
+    ICurrentUser currentUser,
+    ICurrentMemberResolver currentMember
 ) : ControllerBase
 {
     private readonly IManufacturerLookup _manufacturerLookup = manufacturerLookup;
@@ -36,6 +39,8 @@ public sealed class ToolsCommandController(
     private readonly IInteractor<MarkToolForRepairCommand, Result> _markForRepair = markForRepair;
     private readonly IInteractor<CompleteRepairCommand, Result> _completeRepair = completeRepair;
     private readonly IInteractor<MarkToolAsLostCommand, Result> _markAsLost = markAsLost;
+    private readonly ICurrentUser _currentUser = currentUser;
+    private readonly ICurrentMemberResolver _currentMember = currentMember;
 
     [HttpPost("register")]
     [Authorize(Policy = Permissions.ToolsManage)]
@@ -161,7 +166,9 @@ public sealed class ToolsCommandController(
     {
         var command = new LoanToolCommand(
             new InventoryItemId(request.ItemId),
-            new MemberId(request.MemberId)
+            new MemberId(request.MemberId),
+            ActorMemberId: await _currentMember.GetMemberIdAsync(ct),
+            CanLoanForOthers: _currentUser.HasPermission(Permissions.MembersManage)
         );
 
         var result = await _loanTool.ExecuteAsync(command, ct);
@@ -200,6 +207,13 @@ public sealed class ToolsCommandController(
         CancellationToken ct
     )
     {
+        var forbidden = await ForbidActingForAnotherMember(
+            request.ReportedById,
+            "report a repair",
+            ct);
+        if (forbidden is not null)
+            return forbidden;
+
         var command = new MarkToolForRepairCommand(
             new InventoryItemId(request.ItemId),
             new MemberId(request.ReportedById),
@@ -223,6 +237,13 @@ public sealed class ToolsCommandController(
         CancellationToken ct
     )
     {
+        var forbidden = await ForbidActingForAnotherMember(
+            request.CompletedById,
+            "complete a repair",
+            ct);
+        if (forbidden is not null)
+            return forbidden;
+
         var command = new CompleteRepairCommand(
             new InventoryItemId(request.ItemId),
             new MemberId(request.CompletedById),
@@ -243,6 +264,13 @@ public sealed class ToolsCommandController(
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> MarkAsLost(MarkToolAsLostRequest request, CancellationToken ct)
     {
+        var forbidden = await ForbidActingForAnotherMember(
+            request.ReporterId,
+            "mark a tool as lost",
+            ct);
+        if (forbidden is not null)
+            return forbidden;
+
         var command = new MarkToolAsLostCommand(
             new InventoryItemId(request.ItemId),
             new MemberId(request.ReporterId)
@@ -255,11 +283,33 @@ public sealed class ToolsCommandController(
         return ToErrorResult(result.Error);
     }
 
+    private async Task<ActionResult?> ForbidActingForAnotherMember(
+        int claimedMemberId,
+        string action,
+        CancellationToken ct)
+    {
+        if (_currentUser.HasPermission(Permissions.ToolsManage))
+            return null;
+
+        var actor = await _currentMember.GetMemberIdAsync(ct);
+        if (actor is null || actor.Value != claimedMemberId)
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new ErrorResponse(
+                    "Forbidden",
+                    $"You are not allowed to {action} on behalf of another member."));
+
+        return null;
+    }
+
     private ActionResult ToErrorResult(Error error)
     {
         return error switch
         {
             NotFoundError err => NotFound(new ErrorResponse(err.Code, err.Message)),
+            ForbiddenError err => StatusCode(
+                StatusCodes.Status403Forbidden,
+                new ErrorResponse(err.Code, err.Message)),
             _ => BadRequest(new ErrorResponse(error.Code, error.Message)),
         };
     }

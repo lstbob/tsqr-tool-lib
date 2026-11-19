@@ -29,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IInteractor<SuspendMemberCommand, Result>, SuspendMemberCommandHandler>();
         services.AddScoped<IInteractor<BanMemberCommand, Result>, BanMemberCommandHandler>();
         services.AddScoped<IInteractor<ReinstateMemberCommand, Result>, ReinstateMemberCommandHandler>();
+        services.AddScoped<IInteractor<LinkMemberAccountCommand, Result>, LinkMemberAccountCommandHandler>();
         return services;
     }
 

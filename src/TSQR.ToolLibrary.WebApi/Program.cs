@@ -10,6 +10,8 @@ using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Postgres;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
 using TSQR.ToolLibrary.WebApi.Messaging;
 using TSQR.ToolLibrary.WebApi.Queries;
+using TSQR.ToolLibrary.Application.Member.Accounts;
+using TSQR.ToolLibrary.WebApi.Security;
 
 TypeHandlerRegistrations.EnsureRegistered();
 
@@ -26,6 +28,9 @@ var connectionString =
 
 builder.Services.AddSingleton<IDbConnectionFactory>(_ => new PostgresConnectionFactory(connectionString));
 builder.Services.AddSingleton<ISqlDialect>(_ => new PostgresDialect());
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
+builder.Services.AddScoped<ICurrentMemberResolver, CurrentMemberResolver>();
 
 builder.Services.AddScoped<ISqlUnitOfWork>(sp =>
     new DapperUnitOfWork(
@@ -59,6 +64,7 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<IToolRepository, ToolRepository>();
 builder.Services.AddScoped<IRepository<Tool, ToolId>>(sp => sp.GetRequiredService<IToolRepository>());
 builder.Services.AddScoped<IToolQueries, ToolQueries>();
+builder.Services.AddScoped<IMemberAccountRepository, MemberAccountRepository>();
 builder.Services.AddScoped<IManufacturerLookup, ManufacturerLookup>();
 builder.Services.AddScoped<IPolicyRepository, DapperPolicyRepository>();
 builder.Services.AddScoped<IRepository<Policy, PolicyId>>(sp => sp.GetRequiredService<IPolicyRepository>());

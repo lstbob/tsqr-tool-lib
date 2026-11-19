@@ -2,6 +2,7 @@ global using TSQR.Common.Errors;
 global using TSQR.Common.Interactors;
 global using TSQR.Common.Results;
 global using TSQR.ToolLibrary.Application.Queries;
+global using TSQR.ToolLibrary.Application.Errors;
 global using TSQR.ToolLibrary.Domain;
 global using TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
 global using TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate;

@@ -28,7 +28,7 @@ public class LoanToolCommandHandlerTests
         var handler = CreateHandler(loanRepository, uow, item, MakeTool(), MakePolicy());
 
         var result = await handler.ExecuteAsync(
-            new LoanToolCommand(ItemId, BorrowerId),
+            new LoanToolCommand(ItemId, BorrowerId, ActorMemberId: BorrowerId),
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -51,7 +51,7 @@ public class LoanToolCommandHandlerTests
         var handler = CreateHandler(loanRepository, uow, item, MakeTool(), MakePolicy());
 
         var result = await handler.ExecuteAsync(
-            new LoanToolCommand(ItemId, BorrowerId),
+            new LoanToolCommand(ItemId, BorrowerId, ActorMemberId: BorrowerId),
             CancellationToken.None);
 
         Assert.True(result.IsFailure);
@@ -73,7 +73,7 @@ public class LoanToolCommandHandlerTests
         var handler = CreateHandler(loanRepository, uow, MakeItem(), MakeTool(), MakePolicy());
 
         var result = await handler.ExecuteAsync(
-            new LoanToolCommand(ItemId, BorrowerId),
+            new LoanToolCommand(ItemId, BorrowerId, ActorMemberId: BorrowerId),
             CancellationToken.None);
 
         Assert.True(result.IsFailure);
@@ -92,7 +92,7 @@ public class LoanToolCommandHandlerTests
         var handler = CreateHandler(loanRepository, uow, MakeItem(), MakeTool(), MakePolicy());
 
         var result = await handler.ExecuteAsync(
-            new LoanToolCommand(ItemId, BorrowerId),
+            new LoanToolCommand(ItemId, BorrowerId, ActorMemberId: BorrowerId),
             CancellationToken.None);
 
         Assert.True(result.IsFailure);
@@ -114,7 +114,7 @@ public class LoanToolCommandHandlerTests
         var handler = CreateHandler(loanRepository, uow, MakeItem(), MakeTool(), MakePolicy());
 
         var result = await handler.ExecuteAsync(
-            new LoanToolCommand(ItemId, BorrowerId),
+            new LoanToolCommand(ItemId, BorrowerId, ActorMemberId: BorrowerId),
             CancellationToken.None);
 
         Assert.True(result.IsFailure);
@@ -138,7 +138,7 @@ public class LoanToolCommandHandlerTests
             MakeMember(MemberStatus.Suspended));
 
         var result = await handler.ExecuteAsync(
-            new LoanToolCommand(ItemId, BorrowerId),
+            new LoanToolCommand(ItemId, BorrowerId, ActorMemberId: BorrowerId),
             CancellationToken.None);
 
         Assert.True(result.IsFailure);
