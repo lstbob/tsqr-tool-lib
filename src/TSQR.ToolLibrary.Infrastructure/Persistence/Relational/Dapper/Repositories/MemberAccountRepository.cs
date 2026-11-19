@@ -16,6 +16,18 @@ public sealed class MemberAccountRepository(ISqlUnitOfWork uow) : IMemberAccount
         return memberId.HasValue ? new MemberId(memberId.Value) : null;
     }
 
+    public async Task<int?> GetCommunityIdBySubjectAsync(
+        Guid authSubject,
+        CancellationToken ct = default)
+    {
+        return await uow.Connection.ExecuteScalarAsync<int?>(
+            @"SELECT m.CommunityId
+              FROM MemberAccounts ma
+              JOIN Members m ON m.Id = ma.MemberId
+              WHERE ma.AuthSubject = @AuthSubject",
+            new { AuthSubject = authSubject });
+    }
+
     public Task LinkAsync(
         MemberId memberId,
         Guid authSubject,
