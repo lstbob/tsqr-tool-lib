@@ -5,7 +5,12 @@ using PolicyAgg = TSQR.ToolLibrary.Domain.Aggregates.PolicyAggregate.Policy;
 
 namespace TSQR.ToolLibrary.Application.Loan.Commands;
 
-public record LoanToolCommand(InventoryItemId ItemId, MemberId MemberId, int CommunityId = 1);
+public record LoanToolCommand(
+    InventoryItemId ItemId,
+    MemberId MemberId,
+    int CommunityId = 1,
+    MemberId? ActorMemberId = null,
+    bool CanLoanForOthers = false);
 
 public class LoanToolCommandHandler(
     IRepository<MemberAgg, MemberId> memberRepository,
@@ -19,6 +24,14 @@ public class LoanToolCommandHandler(
 {
     public async Task<Result> ExecuteAsync(LoanToolCommand command, CancellationToken cancellationToken)
     {
+        var accessResult = AccessGuard.EnsureActingFor(
+            command.MemberId,
+            command.ActorMemberId,
+            command.CanLoanForOthers,
+            "loan a tool");
+        if (accessResult.IsFailure)
+            return accessResult.Error;
+
         var member = await memberRepository.GetByIdAsync(command.MemberId, cancellationToken);
         if (member is null)
             return new NotFoundError(nameof(command.MemberId), "Member not found.");

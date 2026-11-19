@@ -8,7 +8,9 @@ public record ReserveToolCommand(
     InventoryItemId ItemId,
     MemberId MemberId,
     DateTime ReservationDate,
-    int CommunityId = 1);
+    int CommunityId = 1,
+    MemberId? ActorMemberId = null,
+    bool CanReserveForOthers = false);
 
 public class ReserveToolCommandHandler(
     IReservationRepository reservationRepository,
@@ -20,6 +22,14 @@ public class ReserveToolCommandHandler(
 {
     public async Task<Result<ReservationId>> ExecuteAsync(ReserveToolCommand command, CancellationToken cancellationToken)
     {
+        var accessResult = AccessGuard.EnsureActingFor(
+            command.MemberId,
+            command.ActorMemberId,
+            command.CanReserveForOthers,
+            "reserve a tool");
+        if (accessResult.IsFailure)
+            return accessResult.Error;
+
         // Load the InventoryItem so we can resolve the Tool, and from there the
         // active Policy. The (ToolType, null) lookup returns the global policy
         // for the tool type; per-location policies are an additive follow-up.

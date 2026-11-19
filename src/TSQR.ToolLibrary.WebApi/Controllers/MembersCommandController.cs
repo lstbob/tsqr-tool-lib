@@ -17,7 +17,8 @@ public sealed class MembersCommandController(
     IInteractor<VerifyMemberCommand, Result> verifyMember,
     IInteractor<SuspendMemberCommand, Result> suspend,
     IInteractor<BanMemberCommand, Result> ban,
-    IInteractor<ReinstateMemberCommand, Result> reinstate
+    IInteractor<ReinstateMemberCommand, Result> reinstate,
+    IInteractor<LinkMemberAccountCommand, Result> linkAccount
 ) : ControllerBase
 {
     [HttpPost("register")]
@@ -165,6 +166,27 @@ public sealed class MembersCommandController(
         var command = new BanMemberCommand(new MemberId(request.MemberId));
 
         var result = await ban.ExecuteAsync(command, ct);
+        if (result.IsSuccess)
+            return Ok();
+
+        return ToErrorResult(result.Error);
+    }
+
+    [HttpPost("link-account")]
+    [Authorize(Policy = Permissions.MembersManage)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> LinkAccount(
+        LinkMemberAccountRequest request,
+        CancellationToken ct
+    )
+    {
+        var command = new LinkMemberAccountCommand(
+            new MemberId(request.MemberId),
+            request.AuthSubject);
+
+        var result = await linkAccount.ExecuteAsync(command, ct);
         if (result.IsSuccess)
             return Ok();
 

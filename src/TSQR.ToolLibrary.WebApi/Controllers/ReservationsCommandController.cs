@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using TSQR.Common.Authorization;
 using TSQR.ToolLibrary.Application.Reservation.Commands;
 using TSQR.ToolLibrary.WebApi.Controllers.Dtos;
+using TSQR.ToolLibrary.WebApi.Security;
 
 namespace TSQR.ToolLibrary.WebApi.Controllers;
 
@@ -14,7 +15,9 @@ public sealed class ReservationsCommandController(
     IInteractor<ActivateReservationCommand, Result> activate,
     IInteractor<CancelReservationCommand, Result> cancel,
     IInteractor<ConfirmPickupCommand, Result> confirmPickup,
-    IInteractor<CompleteReservationCommand, Result> complete
+    IInteractor<CompleteReservationCommand, Result> complete,
+    ICurrentUser currentUser,
+    ICurrentMemberResolver currentMember
 ) : ControllerBase
 {
     private readonly IInteractor<ReserveToolCommand, Result<ReservationId>> _reserve = reserve;
@@ -22,6 +25,8 @@ public sealed class ReservationsCommandController(
     private readonly IInteractor<CancelReservationCommand, Result> _cancel = cancel;
     private readonly IInteractor<ConfirmPickupCommand, Result> _confirmPickup = confirmPickup;
     private readonly IInteractor<CompleteReservationCommand, Result> _complete = complete;
+    private readonly ICurrentUser _currentUser = currentUser;
+    private readonly ICurrentMemberResolver _currentMember = currentMember;
 
     [HttpPost("create")]
     [Authorize(Policy = Permissions.ReservationsSelfService)]
@@ -36,7 +41,9 @@ public sealed class ReservationsCommandController(
         var command = new ReserveToolCommand(
             new InventoryItemId(request.ItemId),
             new MemberId(request.MemberId),
-            request.ReservationDate
+            request.ReservationDate,
+            ActorMemberId: await _currentMember.GetMemberIdAsync(ct),
+            CanReserveForOthers: CanManageAnyReservation()
         );
 
         var result = await _reserve.ExecuteAsync(command, ct);
@@ -56,7 +63,10 @@ public sealed class ReservationsCommandController(
         CancellationToken ct
     )
     {
-        var command = new ActivateReservationCommand(new ReservationId(request.ReservationId));
+        var command = new ActivateReservationCommand(
+            new ReservationId(request.ReservationId),
+            await _currentMember.GetMemberIdAsync(ct),
+            CanManageAnyReservation());
 
         var result = await _activate.ExecuteAsync(command, ct);
         if (result.IsSuccess)
@@ -72,7 +82,10 @@ public sealed class ReservationsCommandController(
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Cancel(CancelReservationRequest request, CancellationToken ct)
     {
-        var command = new CancelReservationCommand(new ReservationId(request.ReservationId));
+        var command = new CancelReservationCommand(
+            new ReservationId(request.ReservationId),
+            await _currentMember.GetMemberIdAsync(ct),
+            CanManageAnyReservation());
 
         var result = await _cancel.ExecuteAsync(command, ct);
         if (result.IsSuccess)
@@ -82,7 +95,7 @@ public sealed class ReservationsCommandController(
     }
 
     [HttpPost("confirm-pickup")]
-    [Authorize(Policy = Permissions.ReservationsConfirmPickup)]
+    [Authorize(Policy = Permissions.ReservationsSelfService)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
@@ -91,7 +104,10 @@ public sealed class ReservationsCommandController(
         CancellationToken ct
     )
     {
-        var command = new ConfirmPickupCommand(new ReservationId(request.ReservationId));
+        var command = new ConfirmPickupCommand(
+            new ReservationId(request.ReservationId),
+            await _currentMember.GetMemberIdAsync(ct),
+            CanManageAnyReservation());
 
         var result = await _confirmPickup.ExecuteAsync(command, ct);
         if (result.IsSuccess)
@@ -119,11 +135,17 @@ public sealed class ReservationsCommandController(
         return ToErrorResult(result.Error);
     }
 
+    private bool CanManageAnyReservation() =>
+        _currentUser.HasPermission(Permissions.ReservationsComplete);
+
     private ActionResult ToErrorResult(Error error)
     {
         return error switch
         {
             NotFoundError err => NotFound(new ErrorResponse(err.Code, err.Message)),
+            ForbiddenError err => StatusCode(
+                StatusCodes.Status403Forbidden,
+                new ErrorResponse(err.Code, err.Message)),
             _ => BadRequest(new ErrorResponse(error.Code, error.Message)),
         };
     }
