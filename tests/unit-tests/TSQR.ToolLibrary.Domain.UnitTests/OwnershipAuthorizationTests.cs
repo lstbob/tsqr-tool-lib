@@ -246,6 +246,11 @@ public class OwnershipAuthorizationTests
             CancellationToken ct = default) =>
             Task.FromResult(existing);
 
+        public Task<int?> GetCommunityIdBySubjectAsync(
+            Guid authSubject,
+            CancellationToken ct = default) =>
+            Task.FromResult<int?>(null);
+
         public Task LinkAsync(
             MemberId memberId,
             Guid authSubject,
