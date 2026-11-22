@@ -3,7 +3,7 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.InventoryAggregate;
 /// <summary>
 /// Represents the unique identifier for an inventory item.
 /// </summary>
-public class InventoryItemId(int value) : ValueObject
+public class InventoryItemId(int value) : ValueObject, IIntegerId
 {
     /// <summary>
     /// Gets the value of the inventory item identifier.

@@ -3,7 +3,7 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 /// <summary>
 /// Represents the unique identifier for a tool.
 /// </summary>
-public class ToolId(int value) : ValueObject
+public class ToolId(int value) : ValueObject, IIntegerId
 {
     public int Value { get; } = value;
 

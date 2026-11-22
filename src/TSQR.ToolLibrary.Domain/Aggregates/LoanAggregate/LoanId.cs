@@ -3,7 +3,7 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.LoanAggregate;
 /// <summary>
 /// Represents the unique identifier for a loan.
 /// </summary>
-public class LoanId(int value) : ValueObject
+public class LoanId(int value) : ValueObject, IIntegerId
 {
     public int Value { get; } = value;
 

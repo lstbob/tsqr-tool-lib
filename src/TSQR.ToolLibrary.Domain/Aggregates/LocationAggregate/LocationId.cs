@@ -3,7 +3,7 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.LocationAggregate;
 /// <summary>
 /// Represents the unique identifier for a location in the tool library system.
 /// </summary>
-public class LocationId(int value) : ValueObject
+public class LocationId(int value) : ValueObject, IIntegerId
 {
     /// <summary>
     /// Gets the integer value of the location identifier.

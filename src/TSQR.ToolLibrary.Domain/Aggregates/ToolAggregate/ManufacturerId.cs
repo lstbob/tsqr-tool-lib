@@ -3,7 +3,7 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.ToolAggregate;
 /// <summary>
 /// Represents a manufacturer identifier in the tool library system.
 /// </summary>
-public class ManufacturerId(int value) : ValueObject
+public class ManufacturerId(int value) : ValueObject, IIntegerId
 {
     /// <summary>
     /// Gets the value of the manufacturer identifier.
