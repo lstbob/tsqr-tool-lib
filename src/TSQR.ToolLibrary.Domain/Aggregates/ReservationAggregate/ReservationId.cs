@@ -3,7 +3,7 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.ReservationAggregate;
 /// <summary>
 /// Represents the unique identifier for a reservation.
 /// </summary>
-public class ReservationId(int value) : ValueObject
+public class ReservationId(int value) : ValueObject, IIntegerId
 {
     /// <summary>
     /// Gets the value of the reservation identifier.

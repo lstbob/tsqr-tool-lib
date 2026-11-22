@@ -10,6 +10,7 @@ global using TSQR.ToolLibrary.Domain.Events;
 global using TSQR.ToolLibrary.Application.Errors;
 global using TSQR.ToolLibrary.Application.Security;
 global using TSQR.ToolLibrary.Domain.Services;
+global using TSQR.Common.DomainKernel;
 global using TSQR.Common.Events;
 global using TSQR.Common.Errors;
 global using TSQR.Common.Interactors;

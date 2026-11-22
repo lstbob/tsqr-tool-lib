@@ -3,7 +3,7 @@ namespace TSQR.ToolLibrary.Domain.Aggregates.PolicyAggregate;
 /// <summary>
 /// Represents the unique identifier for a policy.
 /// </summary>
-public class PolicyId(int value) : ValueObject
+public class PolicyId(int value) : ValueObject, IIntegerId
 {
     /// <summary>
     /// Gets the value of the policy identifier.

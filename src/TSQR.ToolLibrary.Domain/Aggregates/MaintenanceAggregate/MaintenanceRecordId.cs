@@ -1,6 +1,6 @@
 namespace TSQR.ToolLibrary.Domain.Aggregates.MaintenanceAggregate;
 
-public class MaintenanceRecordId(int value) : ValueObject
+public class MaintenanceRecordId(int value) : ValueObject, IIntegerId
 {
     public int Value { get; } = value;
 

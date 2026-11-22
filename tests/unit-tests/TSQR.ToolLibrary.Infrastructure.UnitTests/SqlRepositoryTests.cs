@@ -1,3 +1,4 @@
+using TSQR.Common.DomainKernel;
 using TSQR.ToolLibrary.Domain;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Abstractions;
 using TSQR.ToolLibrary.Infrastructure.Persistence.Relational.Dapper;
