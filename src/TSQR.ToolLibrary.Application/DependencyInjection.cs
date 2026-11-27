@@ -71,6 +71,7 @@ public static class DependencyInjection
         services.AddScoped<IDomainEventHandler<LoanCreatedDomainEvent>, LoanCreatedDomainEventHandler>();
         services.AddScoped<IDomainEventHandler<ReservationCreatedDomainEvent>, ReservationCreatedDomainEventHandler>();
         services.AddScoped<IDomainEventHandler<ToolMarkedForRepairEvent>, ToolMarkedForRepairNotificationHandler>();
+        services.AddScoped<IDomainEventHandler<ItemLostDomainEvent>, ItemLostEventHandler>();
         services.AddScoped<IDomainEventHandler<NextInLineNotificationEvent>, NextInLineNotificationHandler>();
         services.AddScoped<IDomainEventHandler<PickupReminderEvent>, PickupReminderHandler>();
         services.AddScoped<IPostCommitDomainEventHandler<ReturnReminderEvent>, ReturnReminderHandler>();

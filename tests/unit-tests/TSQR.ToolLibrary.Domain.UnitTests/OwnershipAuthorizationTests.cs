@@ -346,6 +346,11 @@ public class OwnershipAuthorizationTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyCollection<Loan>>(Array.Empty<Loan>());
 
+        public Task<Loan?> GetActiveLoanByItemAsync(
+            InventoryItemId itemId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<Loan?>(null);
+
         public Task<decimal> GetOutstandingFineBalanceAsync(
             MemberId memberId,
             CancellationToken cancellationToken = default) =>

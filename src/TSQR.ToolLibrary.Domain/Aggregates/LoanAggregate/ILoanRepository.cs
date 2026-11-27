@@ -6,6 +6,8 @@ public interface ILoanRepository : IRepository<Loan, LoanId>
         MemberId memberId,
         CancellationToken cancellationToken = default);
 
+    Task<Loan?> GetActiveLoanByItemAsync(InventoryItemId itemId, CancellationToken cancellationToken = default);
+
     Task<decimal> GetOutstandingFineBalanceAsync(
         MemberId memberId,
         CancellationToken cancellationToken = default);

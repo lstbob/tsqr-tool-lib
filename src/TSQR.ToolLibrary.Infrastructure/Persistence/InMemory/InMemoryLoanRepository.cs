@@ -16,6 +16,18 @@ public class InMemoryLoanRepository
         return Task.FromResult<IReadOnlyCollection<Loan>>(loans);
     }
 
+    public Task<Loan?> GetActiveLoanByItemAsync(
+        InventoryItemId itemId,
+        CancellationToken cancellationToken = default)
+    {
+        var loan = GetAll()
+            .Where(l => l.ItemId.Equals(itemId) && l.Status == LoanStatus.Active)
+            .OrderByDescending(l => l.CheckoutDate)
+            .FirstOrDefault();
+
+        return Task.FromResult(loan);
+    }
+
     public Task<decimal> GetOutstandingFineBalanceAsync(
         MemberId memberId,
         CancellationToken cancellationToken = default)

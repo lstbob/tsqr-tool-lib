@@ -10,10 +10,12 @@ public class CompleteRepairCommandHandler(
     public async Task<Result> ExecuteAsync(CompleteRepairCommand command, CancellationToken cancellationToken)
     {
         var item = await inventoryRepository.GetByIdAsync(command.ItemId, cancellationToken);
+
         if (item is null)
             return new NotFoundError(nameof(command.ItemId), "Inventory item not found.");
 
         var repairResult = item.CompleteRepair(command.CompletedById, command.NewCondition);
+
         if (repairResult.IsFailure)
             return repairResult.Error;
 

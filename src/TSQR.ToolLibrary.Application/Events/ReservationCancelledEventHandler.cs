@@ -13,10 +13,12 @@ namespace TSQR.ToolLibrary.Application.Events;
 ///      and notify it - which raises <see cref="NextInLineNotificationEvent"/>
 ///      on that reservation, prompting <see cref="NextInLineNotificationHandler"/>
 ///      to hold the InventoryItem for them.
+///   3. If no reservation is left, release the hold on the InventoryItem.
 /// All mutations are persisted in the originating unit-of-work transaction.
 /// </summary>
 public class ReservationCancelledEventHandler(
-    IReservationRepository reservationRepository)
+    IReservationRepository reservationRepository,
+    IRepository<InventoryItem, InventoryItemId> inventoryRepository)
     : IDomainEventHandler<ReservationCancelledEvent>
 {
     public async ValueTask HandleAsync(
@@ -45,7 +47,12 @@ public class ReservationCancelledEventHandler(
         //    transaction to hold the InventoryItem for the promoted member.
         var nextInLine = queueService.GetNextInLine(allReservations);
         if (nextInLine is null)
+        {
+            var item = await inventoryRepository.GetByIdAsync(domainEvent.ItemId, cancellationToken);
+            if (item is not null && item.ReleaseHold().IsSuccess)
+                inventoryRepository.Update(item);
             return;
+        }
 
         nextInLine.NotifyNextInLine(
             "A prior reservation was cancelled. The tool is now available for you.");

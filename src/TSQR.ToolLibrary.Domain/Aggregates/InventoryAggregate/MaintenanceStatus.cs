@@ -5,5 +5,6 @@ public enum MaintenanceStatus
     NotSet = 0,
     Reported,
     InProgress,
-    Completed
+    Completed,
+    Cancelled
 }
