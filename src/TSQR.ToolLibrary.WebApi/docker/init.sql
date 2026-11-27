@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS MaintenanceRecords (
     CompletedById INTEGER REFERENCES Members(Id),
     CompletedDate TIMESTAMP,
     ResultingCondition INTEGER,
-    CONSTRAINT CK_MaintenanceRecords_Status CHECK (Status BETWEEN 0 AND 3),
+    CONSTRAINT CK_MaintenanceRecords_Status CHECK (Status BETWEEN 0 AND 4),
     CONSTRAINT CK_MaintenanceRecords_ResultingCondition
         CHECK (ResultingCondition IS NULL OR ResultingCondition BETWEEN 0 AND 5)
 );
@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS Loans (
     -- domain action.
     LateFeePerDay NUMERIC(10,2) NOT NULL DEFAULT 1.00,
     RenewalCount INTEGER NOT NULL DEFAULT 0,
-    CONSTRAINT CK_Loans_Status CHECK (Status BETWEEN 0 AND 4)
+    CONSTRAINT CK_Loans_Status CHECK (Status BETWEEN 0 AND 5)
 );
 
 CREATE TABLE IF NOT EXISTS OutboxMessages (

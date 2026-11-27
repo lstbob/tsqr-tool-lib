@@ -94,6 +94,17 @@ public class MaintenanceRecord : Entity<MaintenanceRecordId>
             communityId);
     }
 
+    public bool IsOpen => Status is MaintenanceStatus.Reported or MaintenanceStatus.InProgress;
+
+    public Result Cancel()
+    {
+        if (!IsOpen)
+            return new DomainError(nameof(Status), "Only open maintenance can be cancelled.");
+
+        Status = MaintenanceStatus.Cancelled;
+        return Result.Success();
+    }
+
     public Result StartWork()
     {
         if (Status != MaintenanceStatus.Reported)

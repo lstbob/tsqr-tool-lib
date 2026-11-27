@@ -42,7 +42,7 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
     public int CommunityId { get; private set; }
 
     private MaintenanceRecord? _currentRepair;
-    public bool IsUnderRepair => _currentRepair?.Status is MaintenanceStatus.Reported or MaintenanceStatus.InProgress;
+    public bool IsUnderRepair => _currentRepair is { IsOpen: true };
 
     internal MaintenanceRecord? GetCurrentRepair() => _currentRepair;
 
@@ -61,6 +61,7 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
     {
         if (toolId is null)
             return new ValidationError(nameof(toolId), "Tool ID is required.");
+        
         if (originalOwnerId is null)
             return new ValidationError(nameof(originalOwnerId), "Original owner ID is required.");
 
@@ -190,19 +191,48 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         return Result.Success();
     }
 
-    public Result MarkAsLost(MemberId reporter)
+    public Result ReleaseHold()
+    {
+        if (Status != ItemStatus.Reserved)
+            return new DomainError(nameof(Status), "Only a reserved tool can be released.");
+
+        Status = ItemStatus.Available;
+        return Result.Success();
+    }
+
+    public Result MarkAsLost(MemberId reportedById)
     {
         if (Status.Equals(ItemStatus.Lost))
             return new DomainError(nameof(Status), "Tool is already marked as lost.");
 
+        if (reportedById is null)
+            return new ValidationError(nameof(reportedById), "Reported by ID is required.");
+
+        var previousHolderId = CurrentHolderId;
+
+        if (_currentRepair is { IsOpen: true })
+        {
+            var cancelResult = _currentRepair.Cancel();
+            if (cancelResult.IsFailure)
+                return cancelResult.Error;
+        }
+
         CurrentHolderId = null;
         Status = ItemStatus.Lost;
+
+        AddDomainEvent(new ItemLostDomainEvent(Id, reportedById, previousHolderId));
         return Result.Success();
     }
 
     public Result MarkForRepair(MemberId reportedById, string description)
     {
-        if (_currentRepair is not null)
+        if (Status == ItemStatus.Loaned)
+            return new DomainError(nameof(Status), "Return the tool before you mark it for repair.");
+
+        if (Status == ItemStatus.Lost)
+            return new DomainError(nameof(Status), "A lost tool cannot be marked for repair.");
+
+        if (_currentRepair is { IsOpen: true })
             return new DomainError("RepairStatus", "Tool is already marked for repair.");
 
         if (reportedById is null)
@@ -225,7 +255,7 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
 
     public Result CompleteRepair(MemberId completedById, Condition newCondition)
     {
-        if (_currentRepair is null)
+        if (_currentRepair is not { IsOpen: true } repair)
             return new DomainError("RepairStatus", "Tool is not under repair.");
 
         if (completedById is null)
@@ -235,10 +265,10 @@ public class InventoryItem : Entity<InventoryItemId>, IAggregateRoot
         if (conditionValidation.IsFailure)
             return conditionValidation.Error;
 
-        if (_currentRepair.Status == MaintenanceStatus.Reported)
-            _currentRepair.StartWork();
+        if (repair.Status == MaintenanceStatus.Reported)
+            repair.StartWork();
 
-        var completeResult = _currentRepair.Complete(completedById, newCondition);
+        var completeResult = repair.Complete(completedById, newCondition);
         if (completeResult.IsFailure)
             return completeResult.Error;
 

@@ -23,25 +23,25 @@ public sealed class DapperLoanRepository(
                WHERE MemberId = @MemberId AND Status = @Status",
             new { MemberId = memberId.Value, Status = (int)LoanStatus.Active });
 
-        return rows.Select(row =>
-            {
-                var loan = Loan.Rehydrate(
-                    row.Id,
-                    row.MemberId,
-                    row.CheckoutDate,
-                    row.DueDate,
-                    row.ItemId,
-                    row.Status,
-                    row.ReturnedDate,
-                    row.FineAccrued,
-                    row.LateFeePerDay,
-                    row.RenewalCount,
-                    row.CommunityId);
+        return rows.Select(ToLoan).ToList();
+    }
 
-                loan.SetRowVersion(row.RowVersion);
-                return loan;
-            })
-            .ToList();
+    public async Task<Loan?> GetActiveLoanByItemAsync(
+        InventoryItemId itemId,
+        CancellationToken cancellationToken = default)
+    {
+        var rows = await Database.QueryAsync<LoanRow>(
+            @"SELECT Id, MemberId, CheckoutDate, DueDate, ItemId,
+                     Status, ReturnedDate, FineAccrued, LateFeePerDay, RenewalCount, CommunityId,
+                     xmin::text::bigint AS RowVersion
+               FROM Loans
+               WHERE ItemId = @ItemId AND Status = @Status
+               ORDER BY CheckoutDate DESC
+               LIMIT 1",
+            new { ItemId = itemId.Value, Status = (int)LoanStatus.Active });
+
+        var row = rows.FirstOrDefault();
+        return row is null ? null : ToLoan(row);
     }
 
     public Task<decimal> GetOutstandingFineBalanceAsync(
@@ -55,5 +55,24 @@ public sealed class DapperLoanRepository(
               FROM Loans
               WHERE MemberId = @MemberId AND FineAccrued > 0",
             new { MemberId = memberId.Value });
+    }
+
+    private static Loan ToLoan(LoanRow row)
+    {
+        var loan = Loan.Rehydrate(
+            row.Id,
+            row.MemberId,
+            row.CheckoutDate,
+            row.DueDate,
+            row.ItemId,
+            row.Status,
+            row.ReturnedDate,
+            row.FineAccrued,
+            row.LateFeePerDay,
+            row.RenewalCount,
+            row.CommunityId);
+
+        loan.SetRowVersion(row.RowVersion);
+        return loan;
     }
 }

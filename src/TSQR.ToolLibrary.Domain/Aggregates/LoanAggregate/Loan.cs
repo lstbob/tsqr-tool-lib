@@ -218,6 +218,22 @@ public class Loan : Entity<LoanId>, IAggregateRoot
         return Result.Success();
     }
 
+    public Result MarkItemLost(DateTime lostAt)
+    {
+        if (Status != LoanStatus.Active)
+            return new DomainError(nameof(Status), "Only active loans can be closed as lost.");
+
+        var lostAtResult = lostAt.Validate(nameof(lostAt));
+        if (lostAtResult.IsFailure)
+            return lostAtResult.Error;
+
+        Status = LoanStatus.Lost;
+        if (lostAt > DueDate)
+            FineAccrued = CalculateFine(lostAt);
+
+        return Result.Success();
+    }
+
     /// <summary>
     /// Renews the loan, extending the due date by <paramref name="maxLoanDurationDays"/>
     /// (taken from the active <see cref="Aggregates.PolicyAggregate.Policy"/> at the time

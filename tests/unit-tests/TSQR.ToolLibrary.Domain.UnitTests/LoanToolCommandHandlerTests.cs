@@ -286,6 +286,11 @@ public class LoanToolCommandHandlerTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult(activeLoans ?? (IReadOnlyCollection<Loan>)Array.Empty<Loan>());
 
+        public Task<Loan?> GetActiveLoanByItemAsync(
+            InventoryItemId itemId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<Loan?>(null);
+
         public Task<decimal> GetOutstandingFineBalanceAsync(
             MemberId memberId,
             CancellationToken cancellationToken = default) =>
